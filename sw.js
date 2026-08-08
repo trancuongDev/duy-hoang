@@ -1,14 +1,13 @@
-const CACHE = 'DHDT-lms-v1.5.0b';
+const CACHE = 'DHDT-lms-v1.5.1';
 const BASE = '/duyhoangdaytaon-cantho.1.1';
 const STATIC = [
-  `${BASE}/login.html`,
-  `${BASE}/admin.html`,
-  `${BASE}/student.html`,
   `${BASE}/style.css`,
   `${BASE}/config.js`,
   `${BASE}/trungthu.css`,
   `${BASE}/trungthu-wish.js`,
   `${BASE}/trungthu-bg.jpg`,
+  `${BASE}/css/trungthu-login.css`,
+  `${BASE}/js/trungthu-login-ui.js`,
   `${BASE}/app.js`,
   `${BASE}/admin.js`,
   `${BASE}/student.js`,
@@ -25,7 +24,6 @@ self.addEventListener('install', e => {
       .then(c => c.addAll(STATIC))
       .then(() => self.skipWaiting())
       .catch(err => {
-        // Nếu cache 1 file lỗi thì vẫn tiếp tục install
         console.warn('[SW] Cache install warning:', err);
         return self.skipWaiting();
       })
@@ -40,33 +38,39 @@ self.addEventListener('activate', e => {
         keys.filter(k => k !== CACHE).map(k => caches.delete(k))
       ))
       .then(() => self.clients.claim())
-      .then(() => {
-        // Đợi claim xong mới gửi message reload
-        return self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-      })
+      .then(() => self.clients.matchAll({ type: 'window', includeUncontrolled: true }))
       .then(clients => {
         clients.forEach(client => client.postMessage({ type: 'SW_UPDATED' }));
       })
   );
 });
 
-// Fetch: network-first với timeout 4s, fallback cache
+// Fetch: HTML luôn lấy mạng; asset network-first
 self.addEventListener('fetch', e => {
-  // Bỏ qua Supabase API và các request không phải GET
   if (e.request.method !== 'GET') return;
   if (e.request.url.includes('supabase.co')) return;
   if (e.request.url.includes('unpkg.com')) return;
   if (e.request.url.includes('cdn.')) return;
 
+  const isHtml = e.request.mode === 'navigate' ||
+    (e.request.headers.get('accept') || '').includes('text/html') ||
+    e.request.url.endsWith('.html');
+
+  // HTML: luôn network, không ghi cache (tránh kẹt bản cũ)
+  if (isHtml) {
+    e.respondWith(
+      fetch(e.request).catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
   e.respondWith(
     Promise.race([
-      // Network với timeout 4 giây
       new Promise((resolve, reject) => {
         const timer = setTimeout(() => reject(new Error('timeout')), 4000);
         fetch(e.request)
           .then(res => {
             clearTimeout(timer);
-            // Cập nhật cache nếu response hợp lệ
             if (res.ok) {
               const clone = res.clone();
               caches.open(CACHE).then(c => c.put(e.request, clone));
@@ -80,8 +84,6 @@ self.addEventListener('fetch', e => {
   );
 });
 
-// ── Proxy bảo mật: intercept request có header X-Secure-Proxy ──
-// Map tạm lưu token → url thật (xóa sau 60s)
 const _proxyMap = new Map();
 self.addEventListener('message', e => {
   if (e.data?.type === 'REGISTER_PROXY') {
