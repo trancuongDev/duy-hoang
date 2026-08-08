@@ -49,28 +49,6 @@
     setInterval(showMonitorToast, 5 * 60 * 1000); // Mỗi 5 phút
   </script>
 
-  <!-- THÔNG BÁO GIÁM SÁT -->
-  <div id="monitorNotice" style="display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99999;flex-direction:column;align-items:center;justify-content:center;gap:1rem;text-align:center;padding:2rem">
-    <div style="font-size:3rem">⚠️</div>
-    <div style="color:#ffcc00;font-size:1.2rem;font-weight:700">CẢNH BÁO</div>
-    <div style="color:#fff;font-size:.92rem;max-width:340px;line-height:1.8">
-      Nghiêm cấm mọi hành vi quay màn hình, chụp màn hình hoặc ghi lại nội dung dưới mọi hình thức.<br/>
-      Hệ thống đang giám sát toàn bộ hoạt động và có khả năng phát hiện các hành vi bất thường.<br/>
-      Mọi vi phạm sẽ bị ghi nhận, lưu bằng chứng và xử lý nghiêm khắc.
-    </div>
-    <div style="display:flex;align-items:center;gap:8px;margin-top:.5rem">
-      <span style="width:10px;height:10px;background:#ff3b3b;border-radius:50%;display:inline-block;animation:monitorBlink2 1s infinite"></span>
-      <span style="color:#ff3b3b;font-size:.85rem;font-weight:600">ĐANG GHI • LIVE</span>
-    </div>
-    <div style="color:#888;font-size:.78rem;margin-top:.5rem">Đang tải nội dung...</div>
-  </div>
-  <style>
-    @keyframes monitorBlink2{0%,100%{opacity:1}50%{opacity:.2}}
-  </style>
-  <script>
-    setTimeout(() => { document.getElementById('monitorNotice').style.display = 'none'; }, 5000);
-  </script>
-
       <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
 
   <!-- SIDEBAR -->
@@ -98,6 +76,9 @@
       </a>
       <a href="#" class="slink" data-page="schedule" data-label="Lịch học">
         <span class="slink-icon">📅</span><span class="slink-label">Lịch học</span>
+      </a>
+      <a href="#" class="slink" data-page="attendance" data-label="Điểm danh">
+        <span class="slink-icon">✅</span><span class="slink-label">Điểm danh</span>
       </a>
       <a href="#" class="slink" data-page="profile" data-label="Hồ sơ">
         <span class="slink-icon">👤</span><span class="slink-label">Hồ sơ</span>
@@ -456,6 +437,193 @@
       </div>
     </section>
 
+    <!-- ĐIỂM DANH -->
+    <section class="page" id="pageAttendance">
+      <style>
+        .att-session-card {
+          background: var(--card);
+          border: 1.5px solid var(--border);
+          border-radius: 16px;
+          padding: 1.1rem 1.25rem;
+          margin-bottom: .85rem;
+          transition: box-shadow .2s, border-color .2s;
+        }
+        .att-session-card:hover { box-shadow: 0 6px 24px rgba(99,102,241,.12); border-color: #a5b4fc; }
+        .att-badge {
+          display: inline-flex; align-items: center; gap: .3rem;
+          font-size: .7rem; font-weight: 700; padding: .2rem .65rem;
+          border-radius: 20px; letter-spacing: .3px;
+        }
+        .att-badge-present  { background: #dcfce7; color: #15803d; }
+        .att-badge-absent   { background: #fee2e2; color: #b91c1c; }
+        .att-badge-late     { background: #fef3c7; color: #92400e; }
+        .att-badge-excused  { background: #e0e7ff; color: #3730a3; }
+        .att-badge-open     { background: linear-gradient(135deg,#6366f1,#4f46e5); color: #fff; }
+        .att-btn-primary {
+          background: linear-gradient(135deg,#6366f1,#4f46e5);
+          color: #fff; border: none; border-radius: 10px;
+          padding: .6rem 1.2rem; font-size: .85rem; font-weight: 700;
+          cursor: pointer; transition: all .2s; display: inline-flex; align-items: center; gap: .4rem;
+        }
+        .att-btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
+        .att-btn-outline {
+          background: transparent; color: var(--primary);
+          border: 1.5px solid var(--primary); border-radius: 10px;
+          padding: .55rem 1rem; font-size: .82rem; font-weight: 700;
+          cursor: pointer; transition: all .2s; display: inline-flex; align-items: center; gap: .4rem;
+        }
+        .att-btn-outline:hover { background: var(--primary-light); }
+        .att-upload-zone {
+          border: 2px dashed #a5b4fc; border-radius: 12px;
+          padding: 1.5rem; text-align: center;
+          cursor: pointer; transition: all .2s; background: #f8faff;
+        }
+        .att-upload-zone:hover, .att-upload-zone.drag-over {
+          border-color: #6366f1; background: #eef2ff;
+        }
+        .att-preview-img {
+          width: 100%; max-height: 220px; object-fit: contain;
+          border-radius: 10px; margin-top: .75rem; display: none;
+        }
+        .att-history-row {
+          display: flex; align-items: center; gap: .75rem;
+          padding: .75rem 1rem; border-radius: 12px;
+          background: var(--card); border: 1px solid var(--border);
+          margin-bottom: .5rem; font-size: .83rem;
+        }
+        .att-stat-box {
+          flex: 1; background: var(--card); border: 1px solid var(--border);
+          border-radius: 14px; padding: 1rem; text-align: center;
+        }
+        .att-stat-num { font-size: 1.8rem; font-weight: 900; line-height: 1; }
+        .att-stat-label { font-size: .72rem; color: var(--muted); margin-top: .3rem; }
+      </style>
+
+      <!-- Header -->
+      <div style="background:linear-gradient(135deg,#065f46,#047857,#059669);border-radius:16px;padding:1.25rem 1.5rem;margin-bottom:1.25rem;color:#fff">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem">
+          <div>
+            <div style="font-size:1.2rem;font-weight:900;letter-spacing:-.3px">✅ Điểm Danh</div>
+            <div style="font-size:.8rem;opacity:.75;margin-top:.15rem">Điểm danh các buổi học của bạn</div>
+          </div>
+          <button onclick="loadAttendance()" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);color:#fff;padding:.4rem .85rem;border-radius:8px;font-size:.8rem;font-weight:700;cursor:pointer">🔄 Tải lại</button>
+        </div>
+      </div>
+
+      <!-- Thống kê nhanh -->
+      <div id="attStats" style="display:flex;gap:.75rem;margin-bottom:1.25rem;flex-wrap:wrap">
+        <div class="att-stat-box">
+          <div class="att-stat-num" id="attStatTotal" style="color:var(--primary)">—</div>
+          <div class="att-stat-label">Tổng buổi</div>
+        </div>
+        <div class="att-stat-box">
+          <div class="att-stat-num" id="attStatPresent" style="color:#16a34a">—</div>
+          <div class="att-stat-label">Đã điểm danh</div>
+        </div>
+        <div class="att-stat-box">
+          <div class="att-stat-num" id="attStatAbsent" style="color:#dc2626">—</div>
+          <div class="att-stat-label">Vắng</div>
+        </div>
+        <div class="att-stat-box">
+          <div class="att-stat-num" id="attStatRate" style="color:#d97706">—%</div>
+          <div class="att-stat-label">Tỉ lệ đi học</div>
+        </div>
+      </div>
+
+      <!-- Buổi đang mở điểm danh -->
+      <div id="attOpenSection" style="display:none;margin-bottom:1.5rem">
+        <div style="font-size:.8rem;font-weight:800;color:var(--primary);letter-spacing:.5px;text-transform:uppercase;margin-bottom:.6rem;display:flex;align-items:center;gap:.4rem">
+          <span style="width:8px;height:8px;background:#16a34a;border-radius:50%;animation:pulse 1.5s ease-in-out infinite"></span>
+          Đang mở điểm danh
+        </div>
+        <div id="attOpenList"></div>
+      </div>
+
+      <!-- Lịch sử điểm danh -->
+      <div>
+        <div style="font-size:.8rem;font-weight:800;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:.75rem">Lịch sử</div>
+        <div id="attHistoryList">
+          <div style="text-align:center;padding:2rem;color:var(--muted);font-size:.85rem">⏳ Đang tải...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODAL ĐIỂM DANH -->
+    <div id="attModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;overflow-y:auto;backdrop-filter:blur(4px);padding:1rem">
+      <div style="max-width:480px;margin:1.5rem auto;background:var(--card);border-radius:20px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.3)">
+        <!-- Header modal -->
+        <div id="attModalHeader" style="background:linear-gradient(135deg,#065f46,#059669);padding:1.25rem 1.5rem;color:#fff">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div id="attModalTitle" style="font-size:1rem;font-weight:900">Điểm danh buổi học</div>
+              <div id="attModalSub" style="font-size:.78rem;opacity:.75;margin-top:.15rem"></div>
+            </div>
+            <button onclick="document.getElementById('attModal').style.display='none'" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center">✕</button>
+          </div>
+        </div>
+
+        <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1rem">
+          <!-- Chọn trạng thái -->
+          <div>
+            <div style="font-size:.78rem;font-weight:700;color:var(--muted);margin-bottom:.5rem">Trạng thái của bạn hôm nay</div>
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+              <label style="flex:1;min-width:120px;cursor:pointer">
+                <input type="radio" name="attStatus" value="present" style="display:none" onchange="handleAttStatusChange(this)">
+                <div class="att-status-opt" data-val="present" style="border:2px solid #16a34a;border-radius:12px;padding:.75rem .5rem;text-align:center;transition:all .2s;opacity:.5">
+                  <div style="font-size:1.3rem">✅</div>
+                  <div style="font-size:.78rem;font-weight:700;color:#15803d;margin-top:.2rem">Có mặt</div>
+                </div>
+              </label>
+              <label style="flex:1;min-width:120px;cursor:pointer">
+                <input type="radio" name="attStatus" value="late" style="display:none" onchange="handleAttStatusChange(this)">
+                <div class="att-status-opt" data-val="late" style="border:2px solid #d97706;border-radius:12px;padding:.75rem .5rem;text-align:center;transition:all .2s;opacity:.5">
+                  <div style="font-size:1.3rem">⏰</div>
+                  <div style="font-size:.78rem;font-weight:700;color:#92400e;margin-top:.2rem">Đi muộn</div>
+                </div>
+              </label>
+              <label style="flex:1;min-width:120px;cursor:pointer">
+                <input type="radio" name="attStatus" value="excused" style="display:none" onchange="handleAttStatusChange(this)">
+                <div class="att-status-opt" data-val="excused" style="border:2px solid #6366f1;border-radius:12px;padding:.75rem .5rem;text-align:center;transition:all .2s;opacity:.5">
+                  <div style="font-size:1.3rem">📋</div>
+                  <div style="font-size:.78rem;font-weight:700;color:#4338ca;margin-top:.2rem">Xin nghỉ</div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Upload ảnh Google Meet (chỉ hiện khi có mặt / muộn) -->
+          <div id="attUploadSection" style="display:none">
+            <div style="font-size:.78rem;font-weight:700;color:var(--muted);margin-bottom:.5rem">📸 Ảnh chụp màn hình Google Meet <span style="color:#ef4444">*</span></div>
+            <div class="att-upload-zone" id="attUploadZone" onclick="document.getElementById('attFileInput').click()">
+              <div id="attUploadPrompt">
+                <div style="font-size:1.8rem;margin-bottom:.3rem">📷</div>
+                <div style="font-size:.82rem;font-weight:600;color:var(--primary)">Nhấn để chọn ảnh</div>
+                <div style="font-size:.72rem;color:var(--muted);margin-top:.2rem">Ảnh chứng minh đã vào Google Meet (JPG/PNG)</div>
+              </div>
+              <img id="attPreviewImg" class="att-preview-img" alt="preview"/>
+            </div>
+            <input type="file" id="attFileInput" accept="image/*" style="display:none" onchange="handleAttFileChange(this)">
+          </div>
+
+          <!-- Lý do vắng (chỉ hiện khi xin nghỉ) -->
+          <div id="attReasonSection" style="display:none">
+            <div style="font-size:.78rem;font-weight:700;color:var(--muted);margin-bottom:.5rem">📝 Lý do vắng mặt <span style="color:#ef4444">*</span></div>
+            <textarea id="attReasonInput" placeholder="Nhập lý do vắng (ốm, bận việc gia đình...)" rows="3"
+              style="width:100%;padding:.75rem;border:1.5px solid var(--border);border-radius:10px;font-size:.85rem;resize:vertical;outline:none;background:var(--card);color:var(--text);font-family:inherit;box-sizing:border-box"
+              onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='var(--border)'"></textarea>
+          </div>
+
+          <!-- Error -->
+          <div id="attModalError" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:.6rem .9rem;font-size:.82rem;color:#b91c1c"></div>
+
+          <!-- Nút submit -->
+          <button id="attSubmitBtn" onclick="submitAttendance()" class="att-btn-primary" style="width:100%;justify-content:center;padding:.85rem;font-size:.9rem">
+            <span id="attSubmitText">✅ Xác nhận điểm danh</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- HỒ SƠ -->
     <section class="page" id="pageProfile">
 
@@ -563,10 +731,15 @@
   <script src="student.js?v=1.3.5"></script>
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js').catch(() => {});
+      navigator.serviceWorker.register('./sw.js?v=1.5.1').catch(() => {});
       navigator.serviceWorker.addEventListener('message', e => {
         if (e.data?.type === 'SW_UPDATED') window.location.reload();
       });
+      if (window.caches) {
+        caches.keys().then(keys => Promise.all(
+          keys.filter(k => k !== 'DHDT-lms-v1.5.1').map(k => caches.delete(k))
+        ));
+      }
     }
   </script>
   <script>

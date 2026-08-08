@@ -322,12 +322,274 @@ CITY_DATA.forEach(d => {
   </div>
 </div>
 
-<!-- FOOTER -->
-<footer>
-  <div style="font-size:1.5rem;margin-bottom:.5rem">📐</div>
-  <div><b>© DHDT LMS</b> — Hệ thống học Toán trực tuyến</div>
-  <div>Bản quyền thuộc về <b>DHDT LMS</b> · Phát triển & điều hành bởi <b>Tr. Cường</b></div>
-  <div style="margin-top:.5rem;font-size:.72rem;opacity:.6">Nghiêm cấm sao chép, phân phối dưới mọi hình thức khi chưa được cho phép.</div>
+<!-- FLOATING SOCIAL BUTTONS -->
+<style>
+  .fab-wrap {
+    position: fixed;
+    bottom: 1.75rem;
+    right: 1.25rem;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: .6rem;
+    align-items: flex-end;
+  }
+  .fab-item {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    text-decoration: none;
+    border-radius: 50px;
+    padding: .55rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,.2);
+    transition: box-shadow .2s, padding .2s;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .fab-item svg { flex-shrink: 0; display: block; }
+  .fab-label {
+    font-size: .78rem;
+    font-weight: 700;
+    color: #fff;
+    width: 0;
+    overflow: hidden;
+    transition: width .25s cubic-bezier(.34,1.56,.64,1), margin .25s;
+    letter-spacing: .2px;
+    margin-left: 0;
+  }
+  .fab-item:hover { padding: .55rem 1rem .55rem .6rem; box-shadow: 0 8px 28px rgba(0,0,0,.28); }
+  .fab-item:hover .fab-label { width: 70px; margin-left: .5rem; }
+  .fab-item-fb { background: #1877f2; }
+  .fab-item-tt { background: #010101; }
+</style>
+
+<div class="fab-wrap">
+  <a href="https://www.facebook.com/duyhoangdaytoan" target="_blank" rel="noopener noreferrer" class="fab-item fab-item-fb" aria-label="Facebook">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878V14.89h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"/></svg>
+    <span class="fab-label">Facebook</span>
+  </a>
+  <a href="https://www.tiktok.com/@duyhoangdaytoan" target="_blank" rel="noopener noreferrer" class="fab-item fab-item-tt" aria-label="TikTok">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.76a4.85 4.85 0 01-1.01-.07z"/></svg>
+    <span class="fab-label">TikTok</span>
+  </a>
+</div>
+
+<!-- FOOTER LỚN -->
+<style>
+  /* ══ FOOTER ══ */
+  .footer-main {
+    position: relative;
+    background: linear-gradient(160deg, #0d0b2a 0%, #1a1848 55%, #2d2b6b 100%);
+    color: #fff;
+    padding: 3.5rem 2rem 0;
+    box-sizing: border-box;
+    width: 100%;
+    overflow: hidden;
+  }
+  /* Orb nền footer */
+  .footer-main::before {
+    content:'';
+    position:absolute;
+    top:-120px; left:-80px;
+    width:380px; height:380px;
+    background:radial-gradient(circle,rgba(99,102,241,.18) 0%,transparent 65%);
+    border-radius:50%;
+    pointer-events:none;
+  }
+  .footer-main::after {
+    content:'';
+    position:absolute;
+    bottom:-80px; right:-60px;
+    width:280px; height:280px;
+    background:radial-gradient(circle,rgba(139,92,246,.15) 0%,transparent 65%);
+    border-radius:50%;
+    pointer-events:none;
+  }
+  .footer-inner { position:relative; z-index:1; }
+  .footer-grid {
+    max-width:1000px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1.2fr 1fr 1fr;
+    gap: 2.5rem;
+    padding-bottom: 2.5rem;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+  }
+  .footer-col { display:flex; flex-direction:column; gap:.85rem; }
+  .footer-label {
+    font-size:.7rem; font-weight:800; color:#818cf8;
+    letter-spacing:1.2px; text-transform:uppercase;
+    display:flex; align-items:center; gap:.4rem; margin-bottom:.2rem;
+  }
+  .footer-label::after {
+    content:''; flex:1; height:1px;
+    background:linear-gradient(90deg,rgba(129,140,248,.3),transparent);
+  }
+  .footer-row {
+    display:flex; align-items:flex-start; gap:.65rem;
+    font-size:.8rem; color:rgba(255,255,255,.65); line-height:1.7;
+  }
+  .footer-row .fi {
+    width:30px; height:30px; border-radius:8px;
+    background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.1);
+    display:flex; align-items:center; justify-content:center;
+    font-size:.9rem; flex-shrink:0; margin-top:.05rem;
+  }
+  .footer-bottom {
+    max-width:1000px; margin:0 auto;
+    padding:1.25rem 0 1.75rem;
+    display:flex; align-items:center; justify-content:space-between;
+    gap:1rem; flex-wrap:wrap;
+  }
+  .footer-bottom-left { font-size:.72rem; color:rgba(255,255,255,.3); line-height:1.8; }
+  .footer-bottom-right { font-size:.72rem; color:rgba(255,255,255,.3); text-align:right; }
+  .footer-social { display:flex; gap:.55rem; }
+  .footer-social a {
+    width:42px; height:42px; border-radius:12px;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0; transition:transform .2s, box-shadow .2s, filter .2s;
+    border:1px solid rgba(255,255,255,.1);
+  }
+  .footer-social a:hover { transform:translateY(-4px) scale(1.08); filter:brightness(1.2); }
+  .footer-badge {
+    display:inline-flex; align-items:center; gap:.5rem;
+    align-self:flex-start; width:fit-content;
+    background:linear-gradient(135deg, rgba(16,185,129,.18), rgba(16,185,129,.08));
+    border:1px solid rgba(16,185,129,.4);
+    border-radius:999px;
+    padding:.4rem .9rem .4rem .7rem;
+    box-shadow:0 0 0 1px rgba(16,185,129,.08), inset 0 1px 0 rgba(255,255,255,.06);
+  }
+  .footer-badge-dot {
+    width:7px; height:7px; border-radius:50%; flex-shrink:0;
+    background:#34d399;
+    box-shadow:0 0 0 3px rgba(52,211,153,.2), 0 0 10px rgba(16,185,129,.7);
+    animation:footerPulse 2s ease-in-out infinite;
+  }
+  .footer-badge-text {
+    font-size:.72rem; font-weight:700; letter-spacing:.2px;
+    color:#a7f3d0; line-height:1;
+  }
+  @keyframes footerPulse {
+    0%,100% { box-shadow:0 0 0 3px rgba(52,211,153,.18), 0 0 8px rgba(16,185,129,.55); }
+    50% { box-shadow:0 0 0 5px rgba(52,211,153,.12), 0 0 16px rgba(16,185,129,.85); }
+  }
+  .footer-dev-link {
+    color:#a5b4fc; text-decoration:none; font-weight:700;
+    transition:color .2s;
+  }
+  .footer-dev-link:hover { color:#fff; text-decoration:underline; }
+  @media (max-width:760px) {
+    .footer-main { padding: 2.5rem 1.25rem 0; }
+    .footer-grid { grid-template-columns: 1fr 1fr; gap:1.75rem; }
+    .footer-bottom { flex-direction:column; text-align:center; }
+    .footer-bottom-right { text-align:center; }
+  }
+  @media (max-width:480px) {
+    .footer-grid { grid-template-columns: 1fr; }
+  }
+</style>
+
+<footer class="footer-main">
+  <div class="footer-inner">
+    <div class="footer-grid">
+
+      <!-- Cột 1: Brand -->
+      <div class="footer-col">
+        <div style="display:flex;align-items:center;gap:.8rem">
+          <div style="width:48px;height:48px;border-radius:14px;overflow:hidden;box-shadow:0 6px 20px rgba(0,0,0,.5),0 0 0 2px rgba(99,102,241,.3);flex-shrink:0">
+            <img src="icons/icon-192.png" style="width:100%;height:100%;object-fit:cover" alt="Logo"/>
+          </div>
+          <div>
+            <div style="font-size:1rem;font-weight:900;letter-spacing:-.3px;line-height:1.2">DHDT LMS</div>
+            <div style="font-size:.7rem;color:#818cf8;font-weight:600;margin-top:.15rem;letter-spacing:.3px">Education System</div>
+          </div>
+        </div>
+        <p style="font-size:.78rem;color:rgba(255,255,255,.45);line-height:1.75;margin:0;max-width:220px">
+          Nền tảng học Toán &amp; luyện thi thông minh dành cho học viên THPT.
+        </p>
+        <div class="footer-badge">
+          <span class="footer-badge-dot"></span>
+          <span class="footer-badge-text">Đang hoạt động</span>
+        </div>
+      </div>
+
+      <!-- Cột 2: Hỗ trợ -->
+      <div class="footer-col">
+        <div class="footer-label">Hỗ trợ</div>
+        <div class="footer-row">
+          <div class="fi">📍</div>
+          <span>Nguyễn Thông, An Thới,<br/>Bình Thủy, Cần Thơ</span>
+        </div>
+        <div class="footer-row">
+          <div class="fi">🕐</div>
+          <span>Thứ 2 – Chủ nhật<br/><b style="color:#a5b4fc">7:00 – 22:00</b></span>
+        </div>
+        <div class="footer-row">
+          <div class="fi">✨</div>
+          <span>Phát triển bởi<br/>
+            <a href="https://profile.trancuong08.io.vn/" target="_blank" class="footer-dev-link">Tr.Cường08</a>
+            &amp;
+            <a href="https://portfolio.quoctoan.io.vn/" target="_blank" class="footer-dev-link">Quốc Toàn</a>
+          </span>
+        </div>
+        <a href="policy.html" style="display:inline-flex;align-items:center;gap:.4rem;font-size:.76rem;color:rgba(165,180,252,.7);font-weight:600;text-decoration:none;padding:.4rem .75rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;transition:all .2s;width:fit-content" onmouseover="this.style.background='rgba(99,102,241,.2)';this.style.color='#fff';this.style.borderColor='rgba(99,102,241,.4)'" onmouseout="this.style.background='rgba(255,255,255,.05)';this.style.color='rgba(165,180,252,.7)';this.style.borderColor='rgba(255,255,255,.1)'">
+          🔒 Chính sách &amp; Điều khoản
+        </a>
+      </div>
+
+      <!-- Cột 3: Kết nối -->
+      <div class="footer-col">
+        <div class="footer-label">Kết nối</div>
+        <div class="footer-social">
+          <a href="https://www.facebook.com/duyhoangdaytoan" target="_blank" rel="noopener noreferrer" title="Facebook"
+             style="background:linear-gradient(135deg,#1877f2,#0d6efd);box-shadow:0 4px 16px rgba(24,119,242,.4)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878V14.89h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"/></svg>
+          </a>
+          <a href="https://www.tiktok.com/@duyhoangdaytoan" target="_blank" rel="noopener noreferrer" title="TikTok"
+             style="background:linear-gradient(135deg,#1a1a2e,#16213e);box-shadow:0 4px 16px rgba(0,0,0,.5)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="#fff"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.76a4.85 4.85 0 01-1.01-.07z"/></svg>
+          </a>
+        </div>
+        <p style="font-size:.74rem;color:rgba(255,255,255,.35);line-height:1.75;margin:0">
+          Theo dõi để nhận thông tin mới nhất về bài giảng &amp; lộ trình học.
+        </p>
+        <div style="margin-top:.25rem;display:flex;flex-direction:column;gap:.4rem">
+          <a href="https://www.facebook.com/duyhoangdaytoan" target="_blank" rel="noopener noreferrer"
+             style="display:flex;align-items:center;gap:.5rem;font-size:.75rem;color:rgba(165,180,252,.7);text-decoration:none;transition:color .2s"
+             onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(165,180,252,.7)'">
+            <span style="width:6px;height:6px;background:#1877f2;border-radius:50%;flex-shrink:0"></span>
+            facebook.com/duyhoangdaytoan
+          </a>
+          <a href="https://www.tiktok.com/@duyhoangdaytoan" target="_blank" rel="noopener noreferrer"
+             style="display:flex;align-items:center;gap:.5rem;font-size:.75rem;color:rgba(165,180,252,.7);text-decoration:none;transition:color .2s"
+             onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(165,180,252,.7)'">
+            <span style="width:6px;height:6px;background:#ee1d52;border-radius:50%;flex-shrink:0"></span>
+            tiktok.com/@duyhoangdaytoan
+          </a>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Bottom bar -->
+    <div class="footer-bottom">
+      <div class="footer-bottom-left">
+        <div style="font-size:.75rem;color:rgba(255,255,255,.5);font-weight:700;margin-bottom:.3rem">© 2026 DHDT LMS — All rights reserved</div>
+        <div>Nghiêm cấm sao chép, phân phối nội dung dưới mọi hình thức khi chưa có sự cho phép bằng văn bản.</div>
+      </div>
+      <div class="footer-bottom-right">
+        <div style="display:inline-flex;align-items:center;gap:.5rem;background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.25);border-radius:20px;padding:.3rem .9rem">
+          <span style="font-size:.7rem;color:rgba(255,255,255,.4)">Phiên bản</span>
+          <span style="font-size:.75rem;font-weight:800;color:#818cf8">v1.4.9</span>
+          <span style="width:1px;height:12px;background:rgba(255,255,255,.15)"></span>
+          <a href="https://profile.trancuong08.io.vn/" target="_blank" class="footer-dev-link" style="font-size:.72rem">Tr.Cường</a>
+          <span style="color:rgba(255,255,255,.2);font-size:.7rem">&amp;</span>
+          <a href="https://portfolio.quoctoan.io.vn/" target="_blank" class="footer-dev-link" style="font-size:.72rem">Quốc Toàn</a>
+        </div>
+      </div>
+    </div>
+  </div>
 </footer>
 
 <script>

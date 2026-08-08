@@ -1,4 +1,4 @@
-const CACHE = 'DHDT-lms-v1.4.9';
+const CACHE = 'DHDT-lms-v1.5.1';
 const BASE = '/duyhoangdaytaon-cantho.1.1';
 const STATIC = [
   `${BASE}/login.html`,

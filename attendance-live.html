@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Điểm Danh Live — DHDT LMS</title>
+  <meta http-equiv="X-Frame-Options" content="DENY"/>
+  <link rel="icon" type="image/png" href="icons/icon-192.png"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Inter',sans-serif;background:#edf2f7;color:#0f172a;min-height:100vh;transition:background .25s,color .25s}
+    body.dark{background:#0f172a;color:#f8fafc}
+    /* Background pattern cho light mode */
+    body:not(.dark){background-image:radial-gradient(#c7d2e0 1px, transparent 1px);background-size:28px 28px;background-attachment:fixed}
+    .topbar{background:linear-gradient(135deg,#065f46,#047857);padding:.85rem 1.5rem;display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap;position:sticky;top:0;z-index:200;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+    .live-dot{width:9px;height:9px;background:#4ade80;border-radius:50%;flex-shrink:0;animation:livePulse 1.2s ease-in-out infinite}
+    @keyframes livePulse{0%,100%{box-shadow:0 0 0 0 rgba(74,222,128,.6)}50%{box-shadow:0 0 0 7px rgba(74,222,128,0)}}
+    .stats-bar{display:flex;gap:.65rem;flex-wrap:wrap;padding:1rem 1.5rem;background:#f7fafc;border-bottom:1px solid #e8edf2;position:relative;z-index:1;transition:background .25s}
+    body.dark .stats-bar{background:#1e293b;border-color:rgba(255,255,255,.06)}
+    .stat-box{background:#fff;border:1px solid #e8edf2;box-shadow:0 1px 4px rgba(0,0,0,.06);border-radius:12px;padding:.65rem 1rem;text-align:center;min-width:80px;flex:1;transition:background .25s,border-color .25s}
+    body.dark .stat-box{background:#0f172a;border-color:rgba(255,255,255,.08)}
+    .stat-num{font-size:1.5rem;font-weight:900;line-height:1}
+    .stat-lbl{font-size:.67rem;color:#64748b;margin-top:.2rem}
+    body.dark .stat-lbl{color:#94a3b8}
+    .container{max-width:1100px;margin:0 auto;padding:1.25rem 1.5rem;position:relative;z-index:1}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:.75rem;align-items:start}
+    .card{background:#fff;border:1.5px solid #e8edf2;box-shadow:0 2px 8px rgba(0,0,0,.06);border-radius:14px;overflow:hidden;transition:border-color .18s,box-shadow .18s,background .25s}
+    body.dark .card{background:#1e293b;border-color:rgba(255,255,255,.08)}
+    .card:hover{box-shadow:0 6px 20px rgba(0,0,0,.12);border-color:#cbd5e1}
+    body.dark .card:hover{box-shadow:0 6px 24px rgba(0,0,0,.35)}
+    .card.present{border-color:#16a34a;background:linear-gradient(160deg,#f0fdf4 0%,#fff 60%)}
+    body.dark .card.present{border-color:#166534;background:linear-gradient(160deg,#0d2818 0%,#1e293b 60%)}
+    .card.late{border-color:#d97706;background:linear-gradient(160deg,#fffbeb 0%,#fff 60%)}
+    body.dark .card.late{border-color:#854d0e;background:linear-gradient(160deg,#2d1d06 0%,#1e293b 60%)}
+    .card.excused{border-color:#6366f1;background:linear-gradient(160deg,#eef2ff 0%,#fff 60%)}
+    body.dark .card.excused{border-color:#312e81;background:linear-gradient(160deg,#160f3d 0%,#1e293b 60%)}
+    .card.absent{border-color:#e2e8f0}
+    body.dark .card.absent{border-color:rgba(255,255,255,.07)}
+    .ftab{background:#f1f5f9;border:1px solid #e2e8f0;color:#64748b;font-size:.77rem;font-weight:700;padding:.32rem .8rem;border-radius:20px;cursor:pointer;transition:all .18s}
+    body.dark .ftab{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);color:#94a3b8}
+    .ftab.active,.ftab:hover{background:#065f46;border-color:#10b981;color:#4ade80}
+    .btn{display:inline-flex;align-items:center;gap:.35rem;padding:.45rem .95rem;border-radius:9px;font-size:.8rem;font-weight:700;cursor:pointer;border:none;transition:all .18s}
+    .btn-ghost{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.2)}
+    .btn-ghost:hover{background:rgba(255,255,255,.22)}
+    .btn-danger{background:#7f1d1d;color:#fca5a5}
+    .btn-danger:hover{filter:brightness(1.15)}
+    .theme-btn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:all .18s;flex-shrink:0}
+    .theme-btn:hover{background:rgba(255,255,255,.25)}
+    .search{background:#fff;border:1.5px solid #e2e8f0;border-radius:10px;padding:.48rem .9rem;color:#0f172a;font-size:.85rem;outline:none;font-family:inherit;width:220px;transition:border-color .18s,background .25s,color .25s}
+    body.dark .search{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.1);color:#f8fafc}
+    .search:focus{border-color:#10b981}
+    .session-info{background:#fff;border:1.5px solid #e8edf2;box-shadow:0 2px 8px rgba(0,0,0,.05);border-radius:14px;padding:1rem 1.25rem;margin-bottom:1.1rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;transition:background .25s,border-color .25s}
+    body.dark .session-info{background:#1e293b;border-color:rgba(255,255,255,.08)}
+    .toolbar{background:#fff;border:1.5px solid #e8edf2;box-shadow:0 1px 4px rgba(0,0,0,.05);border-radius:12px;padding:.65rem 1rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.6rem;transition:background .25s,border-color .25s}
+    body.dark .toolbar{background:#1e293b;border-color:rgba(255,255,255,.08)}
+    .imgmodal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;backdrop-filter:blur(8px);padding:1.5rem;align-items:center;justify-content:center;pointer-events:none}
+    .imgmodal.open{display:flex;pointer-events:auto;animation:mfade .2s ease}
+    @keyframes mfade{from{opacity:0}to{opacity:1}}
+    .imgmodal-inner{display:flex;flex-direction:column;align-items:center;gap:.8rem;max-width:580px;width:100%;animation:mslide .22s ease}
+    @keyframes mslide{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+    .toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(60px);background:#1e293b;color:#f8fafc;padding:.6rem 1.2rem;border-radius:12px;font-size:.84rem;font-weight:600;z-index:99999;opacity:0;transition:all .28s;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,.4);white-space:nowrap}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+    @media(max-width:640px){.stats-bar{gap:.4rem}.stat-box{min-width:68px}.grid{grid-template-columns:1fr}.search{width:150px}}
+  </style>
+  </style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:.55rem;flex:1;min-width:0">
+    <div class="live-dot"></div>
+    <span style="font-weight:900;font-size:1rem;white-space:nowrap">Điểm Danh Live</span>
+    <span id="sessionTitleTop" style="font-size:.82rem;opacity:.65;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></span>
+  </div>
+  <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;flex-shrink:0">
+    <span id="lastUpdateBadge" style="font-size:.7rem;color:rgba(255,255,255,.5)">🔄 Đang tải...</span>
+    <span id="statusBadge" style="font-size:.72rem;font-weight:700;padding:.22rem .65rem;border-radius:20px;background:#065f46;color:#4ade80;border:1px solid #059669">● Live</span>
+    <button class="btn btn-ghost" onclick="location.href='admin.html'">← Quay lại</button>
+    <button class="btn btn-ghost" onclick="exportCSV()">⬇ CSV</button>
+    <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Chuyển giao diện">🌙</button>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats-bar">
+  <div class="stat-box"><div class="stat-num" id="sTotal" style="color:#94a3b8">—</div><div class="stat-lbl">Tổng HS</div></div>
+  <div class="stat-box"><div class="stat-num" id="sPresent" style="color:#4ade80">—</div><div class="stat-lbl">Có mặt</div></div>
+  <div class="stat-box"><div class="stat-num" id="sLate" style="color:#fde047">—</div><div class="stat-lbl">Đi muộn</div></div>
+  <div class="stat-box"><div class="stat-num" id="sExcused" style="color:#a5b4fc">—</div><div class="stat-lbl">Xin phép</div></div>
+  <div class="stat-box"><div class="stat-num" id="sAbsent" style="color:#fca5a5">—</div><div class="stat-lbl">Vắng</div></div>
+  <div class="stat-box"><div class="stat-num" id="sRate" style="color:#34d399">—%</div><div class="stat-lbl">Tỉ lệ</div></div>
+</div>
+
+<!-- MAIN -->
+<div class="container">
+  <!-- Session info -->
+  <div class="session-info" id="sessionInfoBar" style="display:none">
+    <div>
+      <div id="sessionInfoTitle" style="font-weight:800;font-size:.95rem;margin-bottom:.25rem"></div>
+      <div id="sessionInfoMeta" style="font-size:.76rem;color:#94a3b8;display:flex;gap:.65rem;flex-wrap:wrap"></div>
+    </div>
+    <button id="toggleSessionBtn" class="btn btn-danger" onclick="toggleSession()">🔒 Đóng điểm danh</button>
+  </div>
+
+  <!-- Toolbar -->
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.65rem;margin-bottom:1rem">
+    <div style="display:flex;gap:.35rem;flex-wrap:wrap">
+      <button class="ftab active" onclick="setFilter('all',this)">Tất cả</button>
+      <button class="ftab" onclick="setFilter('present',this)">✅ Có mặt</button>
+      <button class="ftab" onclick="setFilter('late',this)">⏰ Muộn</button>
+      <button class="ftab" onclick="setFilter('excused',this)">📋 Xin phép</button>
+      <button class="ftab" onclick="setFilter('absent',this)">❌ Vắng</button>
+    </div>
+    <input class="search" id="searchInput" placeholder="🔍 Tìm học sinh..." oninput="renderCards()"/>
+  </div>
+
+  <!-- Cards grid -->
+  <div class="grid" id="studentGrid">
+    <div style="grid-column:1/-1;text-align:center;padding:3rem;color:#475569">⏳ Đang tải...</div>
+  </div>
+</div>
+
+<!-- IMAGE MODAL -->
+<div class="imgmodal" id="imgModal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="imgmodal-inner">
+    <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
+      <div style="display:flex;align-items:center;gap:.6rem">
+        <div id="imgAvatar" style="width:36px;height:36px;border-radius:10px;background:#065f46;color:#4ade80;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.88rem;flex-shrink:0"></div>
+        <div>
+          <div id="imgName" style="font-size:.88rem;font-weight:800;color:#f8fafc"></div>
+          <div id="imgTime" style="font-size:.7rem;color:#64748b;margin-top:.05rem"></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:.4rem">
+        <a id="imgDownload" href="#" target="_blank" download style="display:inline-flex;align-items:center;gap:.3rem;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);color:#f8fafc;padding:.32rem .75rem;border-radius:8px;font-size:.76rem;font-weight:700;text-decoration:none;cursor:pointer">⬇ Tải</a>
+        <button onclick="document.getElementById('imgModal').classList.remove('open')" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:#f8fafc;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center">✕</button>
+      </div>
+    </div>
+    <img id="imgSrc" src="" alt="Ảnh điểm danh" style="max-width:100%;max-height:72vh;border-radius:14px;box-shadow:0 24px 64px rgba(0,0,0,.7);object-fit:contain"/>
+    <div style="display:flex;align-items:center;gap:.5rem">
+      <span style="background:#065f46;color:#4ade80;font-size:.7rem;font-weight:700;padding:.22rem .65rem;border-radius:20px">✓ Ảnh xác nhận Google Meet</span>
+      <span style="font-size:.7rem;color:#475569">ESC hoặc click ngoài để đóng</span>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// Auth guard
+const _role = sessionStorage.getItem('dh_role');
+if (_role !== 'teacher' && _role !== 'assistant') location.href = 'login.html';
+
+// Supabase
+const db = supabase.createClient(
+  'https://gojpmogjretoxplydjvg.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdvanBtb2dqcmV0b3hwbHlkanZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0Nzg4ODEsImV4cCI6MjA5MzA1NDg4MX0.iLCNd2VRMiZoFp6_KclZlFsOenUNoM041tl1fobHKDA'
+);
+
+const params    = new URLSearchParams(location.search);
+const sessionId = parseInt(params.get('id'));
+let _session = null, _students = [], _records = {}, _filter = 'all';
+let _realtimeSub = null, _pollInterval = null;
+
+const ST = {
+  present: { label:'Có mặt',   icon:'✅', cls:'present', abg:'#166534', ac:'#4ade80' },
+  late:    { label:'Đi muộn',  icon:'⏰', cls:'late',    abg:'#854d0e', ac:'#fde047' },
+  excused: { label:'Xin phép', icon:'📋', cls:'excused', abg:'#312e81', ac:'#a5b4fc' },
+  absent:  { label:'Vắng',     icon:'❌', cls:'absent',  abg:'#1e293b', ac:'#64748b' },
+};
+
+if (!sessionId) {
+  document.body.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;gap:1rem;color:#ef4444">
+    <div style="font-size:2rem">❌</div>
+    <div>Không tìm thấy buổi điểm danh</div>
+    <a href="admin.html" style="color:#60a5fa">← Quay lại admin</a>
+  </div>`;
+}
+
+async function loadAll() {
+  if (!sessionId) return;
+  const { data: sess } = await db.from('attendance_sessions').select('*').eq('id', sessionId).single();
+  _session = sess;
+  if (!_session) { document.getElementById('studentGrid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:3rem;color:#ef4444">❌ Không tìm thấy buổi điểm danh.</div>'; return; }
+
+  const dateStr = new Date(_session.session_date + 'T00:00:00').toLocaleDateString('vi-VN', { weekday:'long', day:'2-digit', month:'2-digit', year:'numeric' });
+  document.getElementById('sessionTitleTop').textContent = '— ' + _session.title;
+  document.title = 'Live: ' + _session.title;
+  document.getElementById('sessionInfoBar').style.display = '';
+  document.getElementById('sessionInfoTitle').textContent = _session.title;
+  document.getElementById('sessionInfoMeta').innerHTML =
+    `<span>📅 ${dateStr}</span>` +
+    (_session.start_time ? `<span>🕐 ${_session.start_time}${_session.end_time?' – '+_session.end_time:''}</span>` : '') +
+    `<span>📚 ${_session.class_name}</span>` +
+    (_session.meet_link ? `<a href="${_session.meet_link}" target="_blank" style="color:#34d399;font-weight:600;text-decoration:none">🎥 Meet</a>` : '');
+
+  const toggleBtn = document.getElementById('toggleSessionBtn');
+  const badge = document.getElementById('statusBadge');
+  if (_session.is_active) {
+    toggleBtn.textContent = '🔒 Đóng điểm danh'; toggleBtn.className = 'btn btn-danger';
+    badge.textContent = '● Live';
+  } else {
+    toggleBtn.textContent = '🔓 Mở lại'; toggleBtn.style.cssText = 'background:#166534;color:#4ade80;border:none;border-radius:9px;padding:.45rem .95rem;font-size:.8rem;font-weight:700;cursor:pointer';
+    badge.textContent = '● Đã đóng'; badge.style.cssText = 'font-size:.72rem;font-weight:700;padding:.22rem .65rem;border-radius:20px;background:#1e293b;color:#64748b;border:1px solid rgba(255,255,255,.1)';
+  }
+
+  // Load students (students.class_name + student_classes)
+  const [{ data: allStu }, { data: scRows }] = await Promise.all([
+    db.from('students').select('id,username,full_name,class_name').eq('active', true),
+    db.from('student_classes').select('student_id,class_name'),
+  ]);
+  const scMap = {};
+  (scRows||[]).forEach(r => { if(!scMap[r.student_id]) scMap[r.student_id]=[]; scMap[r.student_id].push(r.class_name.trim()); });
+  _students = (allStu||[]).filter(s => {
+    if ((scMap[s.id]||[]).includes(_session.class_name)) return true;
+    return (s.class_name||'').split(',').map(c=>c.trim()).includes(_session.class_name);
+  });
+
+  await refreshRecords();
+  subscribeRealtime();
+  startPolling();
+}
+
+async function refreshRecords() {
+  const { data: recs } = await db.from('attendance').select('*').eq('session_id', sessionId);
+  _records = Object.fromEntries((recs||[]).map(r=>[r.username,r]));
+  updateStats(); renderCards();
+  document.getElementById('lastUpdateBadge').textContent = '🔄 ' + new Date().toLocaleTimeString('vi-VN');
+}
+
+function updateStats() {
+  const total   = _students.length;
+  const present = _students.filter(s=>_records[s.username]?.status==='present').length;
+  const late    = _students.filter(s=>_records[s.username]?.status==='late').length;
+  const excused = _students.filter(s=>_records[s.username]?.status==='excused').length;
+  const absent  = total - present - late - excused;
+  const rate    = total > 0 ? Math.round(((present+late)/total)*100) : 0;
+  document.getElementById('sTotal').textContent   = total;
+  document.getElementById('sPresent').textContent = present;
+  document.getElementById('sLate').textContent    = late;
+  document.getElementById('sExcused').textContent = excused;
+  document.getElementById('sAbsent').textContent  = Math.max(0,absent);
+  document.getElementById('sRate').textContent    = rate + '%';
+}
+</script>
+
+<script>
+function renderCards() {
+  const q    = (document.getElementById('searchInput')?.value||'').toLowerCase().trim();
+  const grid = document.getElementById('studentGrid');
+  const ord  = { present:0, late:1, excused:2, absent:3 };
+  let list = _students.filter(s => {
+    const st = _records[s.username]?.status || 'absent';
+    if (_filter !== 'all' && st !== _filter) return false;
+    if (q && !(s.full_name||'').toLowerCase().includes(q) && !s.username.toLowerCase().includes(q)) return false;
+    return true;
+  }).sort((a,b) => {
+    const sa = _records[a.username]?.status||'absent', sb = _records[b.username]?.status||'absent';
+    return ord[sa] !== ord[sb] ? ord[sa]-ord[sb] : (a.full_name||'').localeCompare(b.full_name||'','vi');
+  });
+
+  if (!list.length) { grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:3rem;color:#475569">🔍 Không có học sinh nào.</div>'; return; }
+  grid.innerHTML = list.map(s => {
+    const rec    = _records[s.username];
+    const status = rec?.status || 'absent';
+    const st     = ST[status] || ST.absent;
+    const name   = s.full_name || s.username;
+    const ini    = name.trim().split(/\s+/).slice(-2).map(w=>w[0]||'').join('').toUpperCase()||'?';
+    const time   = rec?.check_in_time ? new Date(rec.check_in_time).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}) : null;
+    const bc = { present:'#166534', late:'#854d0e', excused:'#312e81', absent:'#374151' };
+    const bt = { present:'#4ade80', late:'#fde047', excused:'#a5b4fc', absent:'#9ca3af' };
+    return `<div class="card ${st.cls}">
+      <div style="display:flex;align-items:center;gap:.65rem;padding:.85rem 1rem .7rem">
+        <div style="width:40px;height:40px;min-width:40px;border-radius:11px;background:${st.abg};color:${st.ac};display:flex;align-items:center;justify-content:center;font-size:.88rem;font-weight:800">${ini}</div>
+        <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:.87rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" class="card-name">${name}</div>
+          <div style="font-size:.69rem;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">@${s.username}</div>
+        </div>
+        <span style="flex-shrink:0;background:${bc[status]};color:${bt[status]};font-size:.7rem;font-weight:700;padding:.2rem .55rem;border-radius:20px;white-space:nowrap">${st.icon} ${st.label}</span>
+      </div>
+      <div style="height:1px;background:rgba(255,255,255,.05);margin:0 1rem"></div>
+      <div style="padding:.65rem 1rem .8rem;display:flex;flex-direction:column;gap:.45rem">
+        <div style="font-size:.73rem;color:#64748b">${time?`⏰ Điểm danh lúc <span style="color:#94a3b8;font-weight:600">${time}</span>`:'<span style="color:#475569;font-style:italic">Chưa điểm danh</span>'}</div>
+        ${rec?.proof_image_url?`<button onclick="openImg('${rec.proof_image_url}','${s.username}')" style="display:inline-flex;align-items:center;gap:.35rem;background:#065f46;color:#4ade80;border:none;border-radius:8px;padding:.32rem .75rem;font-size:.73rem;font-weight:700;cursor:pointer;width:fit-content" onmouseover="this.style.filter='brightness(1.2)'" onmouseout="this.style.filter=''">📷 Xem ảnh Meet</button>`:(status!=='absent'?`<span style="font-size:.72rem;color:#475569;padding:.28rem .6rem;border-radius:7px;background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.08);width:fit-content">📷 Chưa có ảnh</span>`:'')}
+        ${rec?.absence_reason?`<div style="background:rgba(99,102,241,.12);border-left:2px solid #6366f1;border-radius:0 6px 6px 0;padding:.32rem .6rem;font-size:.73rem;color:#a5b4fc;line-height:1.5">📝 ${rec.absence_reason}</div>`:''}
+        ${status!=='absent'?`<button onclick="adminMark('${s.username}','${name.replace(/'/g,"\\'")}','absent')" style="background:#7f1d1d;color:#fca5a5;border:none;border-radius:7px;padding:.28rem .6rem;font-size:.7rem;font-weight:700;cursor:pointer;width:fit-content" onmouseover="this.style.filter='brightness(1.15)'" onmouseout="this.style.filter=''">❌ Đánh vắng</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function setFilter(f, el) {
+  _filter = f;
+  document.querySelectorAll('.ftab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderCards();
+}
+
+function openImg(url, username) {
+  const s   = _students.find(st=>st.username===username);
+  const rec = _records[username];
+  const name = s?.full_name || rec?.student_name || username || '';
+  const ini  = name.trim().split(/\s+/).slice(-2).map(w=>w[0]||'').join('').toUpperCase()||'?';
+  const time = rec?.check_in_time ? '⏰ ' + new Date(rec.check_in_time).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit',second:'2-digit'}) : '';
+  document.getElementById('imgSrc').src    = url;
+  document.getElementById('imgDownload').href = url;
+  document.getElementById('imgAvatar').textContent = ini;
+  document.getElementById('imgName').textContent   = name;
+  document.getElementById('imgTime').textContent   = time;
+  document.getElementById('imgModal').classList.add('open');
+}
+document.addEventListener('keydown', e => { if (e.key==='Escape') document.getElementById('imgModal').classList.remove('open'); });
+</script>
+
+<script>
+function subscribeRealtime() {
+  if (_realtimeSub) { try { db.removeChannel(_realtimeSub); } catch(e){} }
+  _realtimeSub = db.channel('att_live_' + sessionId)
+    .on('postgres_changes', { event:'*', schema:'public', table:'attendance' }, payload => {
+      const rec = payload.new || payload.old;
+      if (!rec || String(rec.session_id) !== String(sessionId)) return;
+      if (payload.eventType === 'DELETE') delete _records[rec.username];
+      else _records[rec.username] = { ..._records[rec.username], ...rec };
+      updateStats(); renderCards();
+      document.getElementById('lastUpdateBadge').textContent = '🔄 ' + new Date().toLocaleTimeString('vi-VN');
+      if (payload.eventType !== 'DELETE') {
+        const s = _students.find(st=>st.username===rec.username);
+        const name = s?.full_name || rec.student_name || rec.username;
+        showToast((ST[rec.status]||ST.absent).icon + ' ' + name + ' — ' + (ST[rec.status]||ST.absent).label);
+        if (Notification.permission==='granted' && document.visibilityState==='hidden') {
+          try { new Notification('Điểm danh: '+name, { body:(ST[rec.status]?.label||''), icon:'icons/icon-192.png' }); } catch(e){}
+        }
+      }
+    })
+    .subscribe(s => {
+      document.getElementById('lastUpdateBadge').textContent = s==='SUBSCRIBED' ? '🟢 Realtime' : '🔴 ' + s;
+    });
+  if ('Notification' in window && Notification.permission==='default') Notification.requestPermission();
+}
+
+function startPolling() {
+  if (_pollInterval) clearInterval(_pollInterval);
+  _pollInterval = setInterval(async () => {
+    const { data: recs } = await db.from('attendance').select('*').eq('session_id', sessionId);
+    if (!recs) return;
+    let changed = false;
+    recs.forEach(r => {
+      if (!_records[r.username] || _records[r.username].updated_at !== r.updated_at) { _records[r.username]=r; changed=true; }
+    });
+    if (changed) { updateStats(); renderCards(); document.getElementById('lastUpdateBadge').textContent='🔄 '+new Date().toLocaleTimeString('vi-VN'); }
+  }, 8000);
+}
+
+async function toggleSession() {
+  if (!_session) return;
+  const newActive = !_session.is_active;
+  await db.from('attendance_sessions').update({ is_active: newActive }).eq('id', sessionId);
+  _session.is_active = newActive;
+  const btn = document.getElementById('toggleSessionBtn');
+  const badge = document.getElementById('statusBadge');
+  if (newActive) {
+    btn.textContent='🔒 Đóng điểm danh'; btn.className='btn btn-danger';
+    badge.textContent='● Live'; badge.style.cssText='font-size:.72rem;font-weight:700;padding:.22rem .65rem;border-radius:20px;background:#065f46;color:#4ade80;border:1px solid #059669';
+    showToast('🔓 Đã mở lại điểm danh');
+  } else {
+    btn.textContent='🔓 Mở lại'; btn.style.cssText='background:#166534;color:#4ade80;border:none;border-radius:9px;padding:.45rem .95rem;font-size:.8rem;font-weight:700;cursor:pointer';
+    badge.textContent='● Đã đóng'; badge.style.cssText='font-size:.72rem;font-weight:700;padding:.22rem .65rem;border-radius:20px;background:#1e293b;color:#64748b;border:1px solid rgba(255,255,255,.1)';
+    showToast('🔒 Đã đóng điểm danh');
+  }
+}
+
+async function adminMark(username, name, status) {
+  const payload = { session_id:sessionId, username, student_name:name, class_name:_session?.class_name, status, check_in_time:status!=='absent'?new Date().toISOString():null, updated_at:new Date().toISOString() };
+  await db.from('attendance').upsert(payload, { onConflict:'session_id,username' });
+  _records[username] = { ..._records[username], ...payload };
+  updateStats(); renderCards();
+  showToast((ST[status]||ST.absent).icon + ' Đã cập nhật: ' + name);
+}
+
+let _toastT;
+function showToast(msg, ok=true) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.background = ok?'#065f46':'#7f1d1d';
+  t.classList.add('show'); clearTimeout(_toastT);
+  _toastT = setTimeout(()=>t.classList.remove('show'), 3500);
+}
+
+function exportCSV() {
+  const rows = [['Họ tên','Username','Trạng thái','Giờ điểm danh','Lý do','Có ảnh']];
+  _students.forEach(s => {
+    const r = _records[s.username];
+    rows.push([s.full_name||s.username, s.username, r?(ST[r.status]?.label||r.status):'Vắng',
+      r?.check_in_time?new Date(r.check_in_time).toLocaleTimeString('vi-VN'):'', r?.absence_reason||'', r?.proof_image_url?'Có':'Không']);
+  });
+  const csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a = Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'})),download:`diemdanh_${(_session?.title||'').replace(/\s/g,'_')}.csv`});
+  a.click();
+}
+
+if (sessionId) loadAll();
+
+// ── Dark/Light mode ───────────────────────────────────────────────
+function toggleTheme() {
+  const isDark = document.body.classList.toggle('dark');
+  document.getElementById('themeBtn').textContent = isDark ? '☀️' : '🌙';
+  localStorage.setItem('att_live_theme', isDark ? 'dark' : 'light');
+  renderCards(); // re-render cards với màu mới
+}
+// Mặc định sáng, khôi phục nếu đã chọn tối
+(function() {
+  const saved = localStorage.getItem('att_live_theme');
+  if (saved === 'dark') {
+    document.body.classList.add('dark');
+    document.getElementById('themeBtn').textContent = '☀️';
+  }
+})();
+</script>
+</body>
+</html>

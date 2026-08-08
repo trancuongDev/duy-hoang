@@ -58,6 +58,7 @@
       <a href="homework.html" class="slink" data-label="Bài Tập"><span class="slink-icon">📝</span><span class="slink-label">Bài Tập</span></a>
       <a href="#" class="slink" data-page="files" data-label="Lưu trữ"><span class="slink-icon">🗂️</span><span class="slink-label">Lưu trữ tài liệu</span></a>
       <a href="#" class="slink" data-page="schedule" data-label="Lịch học"><span class="slink-icon">📅</span><span class="slink-label">Lịch học</span></a>
+      <a href="#" class="slink" data-page="attendance-admin" data-label="Điểm danh"><span class="slink-icon">✅</span><span class="slink-label">Điểm danh</span></a>
       <a href="#" class="slink" data-page="profile" data-label="Hồ sơ"><span class="slink-icon"></span><span class="slink-label">Hồ sơ</span></a>
       <a href="#" class="slink" data-page="guide" data-label="Hướng dẫn"><span class="slink-icon">📖</span><span class="slink-label">Hướng dẫn sử dụng</span></a>
     </nav>
@@ -661,6 +662,120 @@
         <button class="btn-primary" id="pwSaveBtn" style="margin-top:0.5rem">Lưu thay đổi</button>
       </div>
     </section>
+
+    <!-- PAGE: ĐIỂM DANH ADMIN -->
+    <section class="page" id="pageAttendanceAdmin">
+      <style>
+        .att-stat-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:.85rem;margin-bottom:1.5rem}
+        .att-stat-item{background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:1.1rem 1.25rem;display:flex;align-items:center;gap:.85rem;transition:box-shadow .2s}
+        .att-stat-item:hover{box-shadow:0 4px 20px rgba(0,0,0,.08)}
+        .att-stat-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0}
+        .att-stat-num{font-size:1.6rem;font-weight:900;line-height:1;letter-spacing:-.5px}
+        .att-stat-lbl{font-size:.72rem;color:var(--muted);margin-top:.15rem;font-weight:600}
+        .att-filter-bar{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:.75rem 1rem;margin-bottom:1.25rem}
+        .att-filter-bar select,.att-filter-bar input[type=date]{padding:.45rem .8rem;border:1.5px solid var(--border);border-radius:9px;font-size:.84rem;background:var(--card);color:var(--text);outline:none}
+        .att-session-row{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:1rem 1.25rem;margin-bottom:.7rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;transition:border-color .2s,box-shadow .2s}
+        .att-session-row:hover{border-color:rgba(99,102,241,.35);box-shadow:0 4px 20px rgba(99,102,241,.08)}
+        .att-session-row.open{border-color:rgba(16,185,129,.4);background:linear-gradient(135deg,rgba(16,185,129,.03),var(--card))}
+        .att-pill{display:inline-flex;align-items:center;gap:.25rem;font-size:.7rem;font-weight:700;padding:.2rem .6rem;border-radius:20px}
+        .att-pill-open{background:#d1fae5;color:#065f46}
+        .att-pill-closed{background:var(--primary-light,#eef2ff);color:var(--muted)}
+        .att-mini-stat{display:inline-flex;align-items:center;gap:.25rem;font-size:.72rem;font-weight:700;padding:.2rem .55rem;border-radius:8px}
+        .att-action-btn{padding:.38rem .8rem;border:none;border-radius:8px;font-size:.76rem;font-weight:700;cursor:pointer;transition:filter .15s;display:inline-flex;align-items:center;gap:.3rem}
+        .att-action-btn:hover{filter:brightness(1.12)}
+        @media(max-width:640px){.att-stat-strip{grid-template-columns:repeat(2,1fr)}}
+      </style>
+
+      <!-- Header banner -->
+      <div style="background:linear-gradient(135deg,#065f46,#047857);border-radius:18px;padding:1.4rem 1.6rem;margin-bottom:1.5rem;color:#fff;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem">
+        <div>
+          <div style="font-size:1.25rem;font-weight:900;letter-spacing:-.3px;display:flex;align-items:center;gap:.5rem">
+            <span style="width:34px;height:34px;background:rgba(255,255,255,.15);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0">✅</span>
+            Quản lý Điểm danh
+          </div>
+          <div style="font-size:.8rem;opacity:.75;margin-top:.3rem">Tạo buổi, theo dõi và xuất báo cáo điểm danh học viên</div>
+        </div>
+        <button onclick="openAttAdminCreateModal()" style="display:inline-flex;align-items:center;gap:.45rem;background:#fff;color:#065f46;border:none;border-radius:11px;padding:.6rem 1.25rem;font-size:.86rem;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.2);transition:all .2s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
+          ➕ Tạo buổi điểm danh
+        </button>
+      </div>
+
+      <!-- Stats -->
+      <div class="att-stat-strip">
+        <div class="att-stat-item"><div class="att-stat-icon" style="background:#eef2ff">📋</div><div><div class="att-stat-num" id="aStatTotal" style="color:var(--primary)">0</div><div class="att-stat-lbl">Tổng buổi</div></div></div>
+        <div class="att-stat-item"><div class="att-stat-icon" style="background:#d1fae5">✅</div><div><div class="att-stat-num" id="aStatPresent" style="color:#16a34a">0</div><div class="att-stat-lbl">Có mặt hôm nay</div></div></div>
+        <div class="att-stat-item"><div class="att-stat-icon" style="background:#fee2e2">❌</div><div><div class="att-stat-num" id="aStatAbsent" style="color:#dc2626">0</div><div class="att-stat-lbl">Vắng hôm nay</div></div></div>
+        <div class="att-stat-item"><div class="att-stat-icon" style="background:#e0e7ff">📝</div><div><div class="att-stat-num" id="aStatExcused" style="color:#4338ca">0</div><div class="att-stat-lbl">Xin phép</div></div></div>
+      </div>
+
+      <!-- Filter -->
+      <div class="att-filter-bar">
+        <span style="font-size:.76rem;font-weight:700;color:var(--muted);white-space:nowrap">🔍 Lọc:</span>
+        <select id="attAdminFilterClass"><option value="">Tất cả lớp</option></select>
+        <input type="date" id="attAdminFilterDate"/>
+        <button class="btn-primary" style="padding:.45rem 1rem;font-size:.84rem" onclick="loadAttAdminSessions()">Áp dụng</button>
+        <button class="btn-outline" style="padding:.45rem 1rem;font-size:.84rem" onclick="document.getElementById('attAdminFilterDate').value='';loadAttAdminSessions()">Xóa lọc</button>
+      </div>
+
+      <!-- List -->
+      <div id="attAdminSessionList"><div style="text-align:center;padding:3rem;color:var(--muted)">⏳ Đang tải...</div></div>
+    </section>
+
+    <!-- MODAL TẠO / SỬA BUỔI -->
+    <div id="attAdminModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;overflow-y:auto;backdrop-filter:blur(6px);padding:1rem">
+      <div style="max-width:500px;margin:1.75rem auto;background:var(--card);border-radius:20px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.3)">
+        <div style="background:linear-gradient(135deg,#065f46,#059669);padding:1.25rem 1.5rem;color:#fff;display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:.55rem">
+            <span style="width:32px;height:32px;background:rgba(255,255,255,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.95rem">✅</span>
+            <span style="font-weight:900;font-size:.95rem" id="attAdminModalTitle">Tạo buổi điểm danh</span>
+          </div>
+          <button onclick="document.getElementById('attAdminModal').style.display='none'" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:.9rem">✕</button>
+        </div>
+        <div style="padding:1.4rem;display:flex;flex-direction:column;gap:.85rem">
+          <div><label style="font-size:.74rem;font-weight:700;color:var(--muted);display:block;margin-bottom:.3rem">Tiêu đề <span style="color:var(--danger)">*</span></label>
+            <input type="text" id="attAdminTitle" placeholder="VD: Buổi học 15/01 — Toán 12A" style="width:100%;padding:.7rem .85rem;border:1.5px solid var(--border);border-radius:10px;font-size:.88rem;background:var(--card);color:var(--text);box-sizing:border-box;outline:none" onfocus="this.style.borderColor='#059669'" onblur="this.style.borderColor='var(--border)'"/></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem">
+            <div><label style="font-size:.74rem;font-weight:700;color:var(--muted);display:block;margin-bottom:.3rem">Lớp <span style="color:var(--danger)">*</span></label>
+              <select id="attAdminClass" style="width:100%;padding:.7rem .85rem;border:1.5px solid var(--border);border-radius:10px;font-size:.88rem;background:var(--card);color:var(--text);outline:none"><option value="">-- Chọn lớp --</option></select></div>
+            <div><label style="font-size:.74rem;font-weight:700;color:var(--muted);display:block;margin-bottom:.3rem">Ngày <span style="color:var(--danger)">*</span></label>
+              <input type="date" id="attAdminDate" style="width:100%;padding:.7rem .85rem;border:1.5px solid var(--border);border-radius:10px;font-size:.88rem;background:var(--card);color:var(--text);box-sizing:border-box;outline:none"/></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem">
+            <div><label style="font-size:.74rem;font-weight:700;color:var(--muted);display:block;margin-bottom:.3rem">Giờ bắt đầu</label>
+              <input type="time" id="attAdminStartTime" style="width:100%;padding:.7rem .85rem;border:1.5px solid var(--border);border-radius:10px;font-size:.88rem;background:var(--card);color:var(--text);box-sizing:border-box;outline:none"/></div>
+            <div><label style="font-size:.74rem;font-weight:700;color:var(--muted);display:block;margin-bottom:.3rem">Giờ kết thúc</label>
+              <input type="time" id="attAdminEndTime" style="width:100%;padding:.7rem .85rem;border:1.5px solid var(--border);border-radius:10px;font-size:.88rem;background:var(--card);color:var(--text);box-sizing:border-box;outline:none"/></div>
+          </div>
+          <div><label style="font-size:.74rem;font-weight:700;color:var(--muted);display:block;margin-bottom:.3rem">🎥 Link Google Meet</label>
+            <input type="url" id="attAdminMeetLink" placeholder="https://meet.google.com/..." style="width:100%;padding:.7rem .85rem;border:1.5px solid var(--border);border-radius:10px;font-size:.88rem;background:var(--card);color:var(--text);box-sizing:border-box;outline:none" onfocus="this.style.borderColor='#059669'" onblur="this.style.borderColor='var(--border)'"/></div>
+          <div><label style="font-size:.74rem;font-weight:700;color:var(--muted);display:block;margin-bottom:.3rem">Ghi chú</label>
+            <textarea id="attAdminDesc" rows="2" placeholder="Nội dung buổi học..." style="width:100%;padding:.7rem .85rem;border:1.5px solid var(--border);border-radius:10px;font-size:.88rem;background:var(--card);color:var(--text);resize:vertical;box-sizing:border-box;font-family:inherit;outline:none"></textarea></div>
+          <label style="display:flex;align-items:center;gap:.55rem;cursor:pointer;font-size:.85rem;font-weight:600;background:var(--primary-light,#eef2ff);padding:.6rem .85rem;border-radius:10px">
+            <input type="checkbox" id="attAdminIsActive" checked style="accent-color:#059669;width:15px;height:15px;flex-shrink:0"/>Mở điểm danh ngay sau khi lưu</label>
+          <div id="attAdminModalError" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:.55rem .85rem;font-size:.82rem;color:#b91c1c"></div>
+          <button onclick="saveAttAdminSession()" style="width:100%;padding:.8rem;font-size:.9rem;font-weight:800;background:linear-gradient(135deg,#065f46,#059669);color:#fff;border:none;border-radius:12px;cursor:pointer;box-shadow:0 4px 14px rgba(5,150,105,.3);transition:filter .2s" onmouseover="this.style.filter='brightness(1.08)'" onmouseout="this.style.filter=''">
+            <span id="attAdminSaveText">💾 Lưu buổi điểm danh</span></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL CHI TIẾT ĐIỂM DANH -->
+    <div id="attDetailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9100;overflow-y:auto;backdrop-filter:blur(6px);padding:1rem">
+      <div style="max-width:660px;margin:1.75rem auto;background:var(--card);border-radius:20px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.3)">
+        <div style="background:linear-gradient(135deg,#1e1b4b,#4338ca);padding:1.25rem 1.5rem;color:#fff;display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div style="font-weight:900;font-size:.98rem" id="attDetailTitle">Chi tiết điểm danh</div>
+            <div style="font-size:.75rem;opacity:.7;margin-top:.15rem" id="attDetailSub"></div>
+          </div>
+          <div style="display:flex;gap:.5rem">
+            <button onclick="exportAttendanceCSV()" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;padding:.35rem .8rem;border-radius:8px;font-size:.76rem;font-weight:700;cursor:pointer;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.25)'" onmouseout="this.style.background='rgba(255,255,255,.15)'">⬇ CSV</button>
+            <button onclick="document.getElementById('attDetailModal').style.display='none'" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:.9rem;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.25)'" onmouseout="this.style.background='rgba(255,255,255,.15)'">✕</button>
+          </div>
+        </div>
+        <div style="display:flex;border-bottom:1px solid var(--border)" id="attDetailStats"></div>
+        <div style="padding:1rem 1.25rem;max-height:58vh;overflow-y:auto" id="attDetailList"></div>
+      </div>
+    </div>
 
     <!-- PAGE: LỊCH HỌC V2 -->
     <section class="page" id="pageSchedule">

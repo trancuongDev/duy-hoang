@@ -391,6 +391,7 @@ function showPage(name) {
   if (name === 'schedule')       { populateClassFilters(); renderSchedule(); }
   if (name === 'files')          initFileManager();
   if (name === 'guide')          adminRenderGuide();
+  if (name === 'attendance-admin') { populateAttAdminClassFilter(); loadAttAdminSessions(); }
 }
 document.querySelectorAll('.slink[data-page]').forEach(l => {
   l.addEventListener('click', e => { e.preventDefault(); showPage(l.dataset.page); document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebarBackdrop').classList.remove('show'); });
@@ -3441,7 +3442,7 @@ document.getElementById('clearAlertsBtn').addEventListener('click', async ()=>{
 });
 
 // ---- Init ----
-const _validPages = ['overview','lessons','lesson-groups','create-student','students','classes','security','devices','access-stats','login-history','announcements','files','schedule','profile'];
+const _validPages = ['overview','lessons','lesson-groups','create-student','students','classes','security','devices','access-stats','login-history','announcements','files','schedule','profile','attendance-admin'];
 const _savedPage = sessionStorage.getItem('dh_page');
 populateClassFilters().then(() => {
   showPage(_validPages.includes(_savedPage) ? _savedPage : 'overview');
@@ -7006,3 +7007,320 @@ function adminFilterGuide(q) {
       </div>`;
   }).join('');
 }
+
+
+// ════════════════════════════════════════════════════════════════
+// ĐIỂM DANH ADMIN — ATTENDANCE ADMIN MODULE
+// ════════════════════════════════════════════════════════════════
+
+let _attAdminEditId = null; // null = tạo mới, số = sửa
+
+const ATT_STATUS_ADMIN = {
+  present: { label: 'Có mặt',   icon: '✅', color: '#16a34a', bg: '#dcfce7' },
+  late:    { label: 'Đi muộn',  icon: '⏰', color: '#d97706', bg: '#fef3c7' },
+  excused: { label: 'Xin phép', icon: '📋', color: '#4338ca', bg: '#e0e7ff' },
+  absent:  { label: 'Vắng',     icon: '❌', color: '#dc2626', bg: '#fee2e2' },
+};
+
+// ── Populate filter lớp ─────────────────────────────────────────
+async function populateAttAdminClassFilter() {
+  const sel1 = document.getElementById('attAdminFilterClass');
+  const sel2 = document.getElementById('attAdminClass');
+  const { data: classes } = await db.from('classes').select('name').order('name');
+  const options = (classes || []).map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+  if (sel1) sel1.innerHTML = '<option value="">Tất cả lớp</option>' + options;
+  if (sel2) sel2.innerHTML = '<option value="">-- Chọn lớp --</option>' + options;
+  // Set ngày mặc định
+  const dateEl = document.getElementById('attAdminDate');
+  if (dateEl && !dateEl.value) dateEl.value = new Date().toISOString().split('T')[0];
+}
+
+// ── Load danh sách buổi điểm danh ──────────────────────────────
+async function loadAttAdminSessions() {
+  const listEl = document.getElementById('attAdminSessionList');
+  if (!listEl) return;
+  listEl.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted)">⏳ Đang tải...</div>';
+
+  const filterClass = document.getElementById('attAdminFilterClass')?.value || '';
+  const filterDate  = document.getElementById('attAdminFilterDate')?.value  || '';
+
+  let query = db.from('attendance_sessions').select('*').order('session_date', { ascending: false }).order('created_at', { ascending: false });
+  if (filterClass) query = query.eq('class_name', filterClass);
+  if (filterDate)  query = query.eq('session_date', filterDate);
+
+  const { data: sessions, error } = await query;
+  if (error) { listEl.innerHTML = `<div style="color:#ef4444;padding:1rem">❌ Lỗi: ${error.message}</div>`; return; }
+  if (!sessions?.length) {
+    listEl.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted)">📭 Chưa có buổi điểm danh nào.<br/><small>Nhấn "Tạo buổi điểm danh" để bắt đầu.</small></div>';
+    updateAttAdminStats([]);
+    return;
+  }
+
+  // Lấy tổng điểm danh theo từng session
+  const sessionIds = sessions.map(s => s.id);
+  const { data: allRecs } = await db.from('attendance').select('session_id,status').in('session_id', sessionIds);
+  const recMap = {};
+  (allRecs || []).forEach(r => {
+    if (!recMap[r.session_id]) recMap[r.session_id] = { present:0, late:0, excused:0, absent:0, total:0 };
+    recMap[r.session_id][r.status] = (recMap[r.session_id][r.status] || 0) + 1;
+    recMap[r.session_id].total++;
+  });
+
+  updateAttAdminStats(sessions, allRecs || []);
+
+  listEl.innerHTML = sessions.map(s => {
+    const rec = recMap[s.id] || {};
+    const dateStr = new Date(s.session_date + 'T00:00:00').toLocaleDateString('vi-VN', { weekday:'short', day:'2-digit', month:'2-digit', year:'numeric' });
+    const present = (rec.present||0) + (rec.late||0);
+    return `
+      <div class="att-session-row ${s.is_active ? 'open' : ''}" id="attSession_${s.id}">
+        <!-- Icon trạng thái -->
+        <div style="width:46px;height:46px;border-radius:13px;background:${s.is_active?'#d1fae5':'var(--primary-light,#eef2ff)'};display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0">${s.is_active?'🟢':'📋'}</div>
+        <!-- Info -->
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:.3rem">
+            <span style="font-weight:800;font-size:.93rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.title}</span>
+            <span class="att-pill ${s.is_active ? 'att-pill-open' : 'att-pill-closed'}">${s.is_active ? '● Đang mở' : '● Đã đóng'}</span>
+          </div>
+          <div style="font-size:.76rem;color:var(--muted);display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:.45rem">
+            <span>📅 ${dateStr}</span>
+            ${s.start_time ? `<span>🕐 ${s.start_time}${s.end_time?' – '+s.end_time:''}</span>` : ''}
+            <span>📚 ${s.class_name}</span>
+            ${s.meet_link ? `<a href="${s.meet_link}" target="_blank" style="color:var(--primary);font-weight:600;text-decoration:none">🎥 Meet</a>` : ''}
+          </div>
+          <div style="display:flex;gap:.4rem;flex-wrap:wrap">
+            <span class="att-mini-stat" style="background:#d1fae5;color:#15803d">✅ ${present} có mặt</span>
+            <span class="att-mini-stat" style="background:#fee2e2;color:#b91c1c">❌ ${rec.absent||0} vắng</span>
+            <span class="att-mini-stat" style="background:#e0e7ff;color:#3730a3">📋 ${rec.excused||0} xin phép</span>
+            <span class="att-mini-stat" style="background:var(--primary-light,#eef2ff);color:var(--muted)">👥 ${rec.total||0} đã điểm danh</span>
+          </div>
+        </div>
+        <!-- Actions -->
+        <div style="display:flex;gap:.4rem;flex-wrap:wrap;flex-shrink:0;align-items:center">
+          <button class="att-action-btn" style="background:var(--primary-light,#eef2ff);color:var(--primary)" onclick="viewAttDetail(${s.id},'${s.title.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')">👁 Chi tiết</button>
+          <button class="att-action-btn" style="background:linear-gradient(135deg,#065f46,#059669);color:#fff" onclick="window.open('attendance-live.html?id=${s.id}','_blank')">📡 Live</button>
+          <button class="att-action-btn" style="background:${s.is_active?'#fee2e2':'#d1fae5'};color:${s.is_active?'#b91c1c':'#15803d'}" onclick="toggleAttSession(${s.id},${!s.is_active})">${s.is_active?'🔒 Đóng':'🔓 Mở'}</button>
+          <button class="att-action-btn" style="background:#fef3c7;color:#92400e" onclick="editAttSession(${JSON.stringify(s).replace(/"/g,'&quot;')})">✏️</button>
+          <button class="att-action-btn" style="background:#fee2e2;color:#b91c1c" onclick="deleteAttSession(${s.id})">🗑</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ── Thống kê nhanh admin ────────────────────────────────────────
+function updateAttAdminStats(sessions, allRecs = []) {
+  const today = new Date().toISOString().split('T')[0];
+  const todaySessions = sessions.filter(s => s.session_date === today).map(s => s.id);
+  const todayRecs = allRecs.filter(r => todaySessions.includes(r.session_id));
+  const el = id => document.getElementById(id);
+  if (el('aStatTotal'))   el('aStatTotal').textContent   = sessions.length;
+  if (el('aStatPresent')) el('aStatPresent').textContent = todayRecs.filter(r => r.status==='present'||r.status==='late').length;
+  if (el('aStatAbsent'))  el('aStatAbsent').textContent  = todayRecs.filter(r => r.status==='absent').length;
+  if (el('aStatExcused')) el('aStatExcused').textContent = todayRecs.filter(r => r.status==='excused').length;
+}
+
+// ── Mở modal tạo mới ────────────────────────────────────────────
+function openAttAdminCreateModal() {
+  _attAdminEditId = null;
+  document.getElementById('attAdminModalTitle').textContent = 'Tạo buổi điểm danh';
+  document.getElementById('attAdminTitle').value = '';
+  document.getElementById('attAdminClass').value = '';
+  document.getElementById('attAdminDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('attAdminStartTime').value = '';
+  document.getElementById('attAdminEndTime').value = '';
+  document.getElementById('attAdminMeetLink').value = '';
+  document.getElementById('attAdminDesc').value = '';
+  document.getElementById('attAdminIsActive').checked = true;
+  document.getElementById('attAdminModalError').style.display = 'none';
+  document.getElementById('attAdminSaveText').textContent = '💾 Lưu buổi điểm danh';
+  document.getElementById('attAdminModal').style.display = '';
+}
+
+// ── Sửa buổi điểm danh ──────────────────────────────────────────
+function editAttSession(s) {
+  _attAdminEditId = s.id;
+  document.getElementById('attAdminModalTitle').textContent = 'Chỉnh sửa buổi điểm danh';
+  document.getElementById('attAdminTitle').value     = s.title || '';
+  document.getElementById('attAdminClass').value     = s.class_name || '';
+  document.getElementById('attAdminDate').value      = s.session_date || '';
+  document.getElementById('attAdminStartTime').value = s.start_time || '';
+  document.getElementById('attAdminEndTime').value   = s.end_time || '';
+  document.getElementById('attAdminMeetLink').value  = s.meet_link || '';
+  document.getElementById('attAdminDesc').value      = s.description || '';
+  document.getElementById('attAdminIsActive').checked = s.is_active !== false;
+  document.getElementById('attAdminModalError').style.display = 'none';
+  document.getElementById('attAdminSaveText').textContent = '💾 Cập nhật';
+  document.getElementById('attAdminModal').style.display = '';
+}
+
+// ── Lưu buổi điểm danh ──────────────────────────────────────────
+async function saveAttAdminSession() {
+  const title    = document.getElementById('attAdminTitle').value.trim();
+  const cls      = document.getElementById('attAdminClass').value;
+  const date     = document.getElementById('attAdminDate').value;
+  const start    = document.getElementById('attAdminStartTime').value;
+  const end      = document.getElementById('attAdminEndTime').value;
+  const meet     = document.getElementById('attAdminMeetLink').value.trim();
+  const desc     = document.getElementById('attAdminDesc').value.trim();
+  const isActive = document.getElementById('attAdminIsActive').checked;
+  const errEl    = document.getElementById('attAdminModalError');
+
+  if (!title) { errEl.textContent = 'Vui lòng nhập tiêu đề'; errEl.style.display = ''; return; }
+  if (!cls)   { errEl.textContent = 'Vui lòng chọn lớp';     errEl.style.display = ''; return; }
+  if (!date)  { errEl.textContent = 'Vui lòng chọn ngày';    errEl.style.display = ''; return; }
+  errEl.style.display = 'none';
+
+  const btn = document.getElementById('attAdminSaveText');
+  btn.textContent = '⏳ Đang lưu...';
+
+  const payload = {
+    title, class_name: cls, session_date: date,
+    start_time: start || null, end_time: end || null,
+    meet_link: meet || null, description: desc || null,
+    is_active: isActive,
+    created_by: sessionStorage.getItem('dh_user') || 'admin',
+  };
+
+  let error;
+  if (_attAdminEditId) {
+    ({ error } = await db.from('attendance_sessions').update(payload).eq('id', _attAdminEditId));
+  } else {
+    ({ error } = await db.from('attendance_sessions').insert(payload));
+  }
+
+  if (error) { errEl.textContent = 'Lỗi: ' + error.message; errEl.style.display = ''; btn.textContent = '💾 Lưu buổi điểm danh'; return; }
+
+  document.getElementById('attAdminModal').style.display = 'none';
+  showToast(_attAdminEditId ? 'Đã cập nhật buổi điểm danh' : 'Đã tạo buổi điểm danh mới');
+  loadAttAdminSessions();
+}
+
+// ── Toggle mở/đóng điểm danh ────────────────────────────────────
+async function toggleAttSession(id, isActive) {
+  const { error } = await db.from('attendance_sessions').update({ is_active: isActive }).eq('id', id);
+  if (error) { showToast('Lỗi: ' + error.message, false); return; }
+  showToast(isActive ? '🔓 Đã mở điểm danh' : '🔒 Đã đóng điểm danh');
+  loadAttAdminSessions();
+}
+
+// ── Xóa buổi điểm danh ──────────────────────────────────────────
+async function deleteAttSession(id) {
+  if (!confirm('Xóa buổi điểm danh này? Toàn bộ dữ liệu điểm danh của buổi cũng sẽ bị xóa.')) return;
+  const { error } = await db.from('attendance_sessions').delete().eq('id', id);
+  if (error) { showToast('Lỗi: ' + error.message, false); return; }
+  showToast('Đã xóa buổi điểm danh');
+  loadAttAdminSessions();
+}
+
+// ── Xem chi tiết điểm danh buổi ─────────────────────────────────
+let _currentDetailSessionId = null;
+let _currentDetailSessionTitle = '';
+async function viewAttDetail(sessionId, title) {
+  _currentDetailSessionId    = sessionId;
+  _currentDetailSessionTitle = title;
+  document.getElementById('attDetailTitle').textContent = title;
+  document.getElementById('attDetailSub').textContent   = 'Đang tải...';
+  document.getElementById('attDetailStats').innerHTML   = '';
+  document.getElementById('attDetailList').innerHTML    = '<div style="text-align:center;padding:2rem;color:var(--muted)">⏳ Đang tải...</div>';
+  document.getElementById('attDetailModal').style.display = '';
+
+  // Lấy thông tin buổi
+  const { data: session } = await db.from('attendance_sessions').select('*').eq('id', sessionId).single();
+  if (session) {
+    const dateStr = new Date(session.session_date + 'T00:00:00').toLocaleDateString('vi-VN', { weekday:'long', day:'2-digit', month:'2-digit', year:'numeric' });
+    document.getElementById('attDetailSub').textContent = `📅 ${dateStr}  •  📚 ${session.class_name}`;
+  }
+
+  // Lấy tất cả học sinh trong lớp
+  const { data: students } = await db.from('students').select('username,full_name,class_name').eq('active', true);
+  const classStudents = (students || []).filter(s =>
+    (s.class_name || '').split(',').map(c=>c.trim()).includes(session?.class_name)
+  );
+
+  // Lấy bản ghi điểm danh của buổi
+  const { data: records } = await db.from('attendance').select('*').eq('session_id', sessionId);
+  const recMap = Object.fromEntries((records || []).map(r => [r.username, r]));
+
+  // Thống kê
+  const present  = (records || []).filter(r => r.status === 'present' || r.status === 'late').length;
+  const excused  = (records || []).filter(r => r.status === 'excused').length;
+  const absent   = classStudents.length - present - excused;
+  const statsHtml = [
+    { label: 'Có mặt', val: present, color: '#16a34a', bg: '#dcfce7' },
+    { label: 'Xin phép', val: excused, color: '#4338ca', bg: '#e0e7ff' },
+    { label: 'Vắng', val: Math.max(0, absent), color: '#dc2626', bg: '#fee2e2' },
+    { label: 'Tổng HS', val: classStudents.length, color: '#0369a1', bg: '#e0f2fe' },
+  ].map(s => `<div style="flex:1;text-align:center;padding:.75rem .5rem;border-right:1px solid var(--border);last-child:border-right:none">
+    <div style="font-size:1.4rem;font-weight:900;color:${s.color}">${s.val}</div>
+    <div style="font-size:.7rem;color:var(--muted);margin-top:.15rem">${s.label}</div>
+  </div>`).join('');
+  document.getElementById('attDetailStats').innerHTML = statsHtml;
+
+  // Danh sách học sinh
+  if (!classStudents.length) {
+    document.getElementById('attDetailList').innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted)">Chưa có học sinh nào trong lớp này.</div>';
+    return;
+  }
+
+  const html = classStudents.map(s => {
+    const rec = recMap[s.username];
+    const st  = rec ? (ATT_STATUS_ADMIN[rec.status] || ATT_STATUS_ADMIN.absent) : ATT_STATUS_ADMIN.absent;
+    return `
+      <div style="display:flex;align-items:flex-start;gap:.75rem;padding:.75rem;border-radius:12px;background:var(--card);border:1px solid var(--border);margin-bottom:.5rem">
+        <div style="width:38px;height:38px;border-radius:10px;background:${st.bg};display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">${st.icon}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:.88rem">${s.full_name || s.username}</div>
+          <div style="font-size:.73rem;color:var(--muted)">@${s.username}</div>
+          ${rec?.absence_reason ? `<div style="font-size:.76rem;color:#92400e;background:#fef3c7;padding:.2rem .5rem;border-radius:6px;margin-top:.3rem;display:inline-block">📝 ${rec.absence_reason}</div>` : ''}
+          ${rec?.check_in_time ? `<div style="font-size:.72rem;color:var(--muted);margin-top:.2rem">⏰ ${new Date(rec.check_in_time).toLocaleTimeString('vi-VN')}</div>` : ''}
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.35rem;flex-shrink:0">
+          <span style="background:${st.bg};color:${st.color};font-size:.72rem;font-weight:700;padding:.2rem .6rem;border-radius:8px">${st.icon} ${st.label}</span>
+          ${rec?.proof_image_url ? `<img src="${rec.proof_image_url}" style="max-width:80px;max-height:60px;border-radius:6px;object-fit:contain;cursor:pointer;border:1px solid var(--border)" onclick="window.open('${rec.proof_image_url}')" title="Xem ảnh điểm danh"/>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+  document.getElementById('attDetailList').innerHTML = html;
+}
+
+// ── Xuất CSV ─────────────────────────────────────────────────────
+async function exportAttendanceCSV() {
+  if (!_currentDetailSessionId) return;
+  const { data: session } = await db.from('attendance_sessions').select('*').eq('id', _currentDetailSessionId).single();
+  const { data: students } = await db.from('students').select('username,full_name').eq('active', true);
+  const { data: records  } = await db.from('attendance').select('*').eq('session_id', _currentDetailSessionId);
+  const recMap = Object.fromEntries((records || []).map(r => [r.username, r]));
+  const classStudents = (students || []).filter(s =>
+    (s.class_name || '').split(',').map(c=>c.trim()).includes(session?.class_name)
+  );
+
+  const rows = [['Họ tên', 'Username', 'Trạng thái', 'Giờ điểm danh', 'Lý do vắng', 'Có ảnh']];
+  classStudents.forEach(s => {
+    const r = recMap[s.username];
+    rows.push([
+      s.full_name || s.username,
+      s.username,
+      r ? (ATT_STATUS_ADMIN[r.status]?.label || r.status) : 'Vắng',
+      r?.check_in_time ? new Date(r.check_in_time).toLocaleTimeString('vi-VN') : '',
+      r?.absence_reason || '',
+      r?.proof_image_url ? 'Có' : 'Không',
+    ]);
+  });
+
+  const csv = rows.map(r => r.map(cell => `"${String(cell).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = `diemdanh_${_currentDetailSessionTitle.replace(/\s/g,'_')}_${session?.session_date || ''}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// Đóng modal admin khi click ngoài
+document.getElementById('attAdminModal')?.addEventListener('click', e => {
+  if (e.target === document.getElementById('attAdminModal')) document.getElementById('attAdminModal').style.display = 'none';
+});
+document.getElementById('attDetailModal')?.addEventListener('click', e => {
+  if (e.target === document.getElementById('attDetailModal')) document.getElementById('attDetailModal').style.display = 'none';
+});
