@@ -1,0 +1,208 @@
+/* ══ DHDT Noel Theme ══ */
+:root {
+  --noel-red: #c41e3a;
+  --noel-red-deep: #8b1228;
+  --noel-gold: #f5d76e;
+  --noel-gold-deep: #d4a017;
+  --noel-green: #1f7a4c;
+  --noel-green-deep: #0f3d28;
+  --noel-bg: #0a1628;
+  --noel-bg-mid: #0f2a1f;
+  --noel-cream: #fff8f0;
+}
+
+body.noel-theme {
+  --noel-on: 1;
+}
+
+/* Snow layer */
+.noel-snow {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+  overflow: hidden;
+}
+
+.noel-snow i {
+  position: absolute;
+  top: -12px;
+  width: var(--s, 4px);
+  height: var(--s, 4px);
+  background: #fff;
+  border-radius: 50%;
+  opacity: .75;
+  box-shadow: 0 0 6px rgba(255, 255, 255, .55);
+  animation: noelFall var(--d, 12s) linear infinite;
+  animation-delay: var(--delay, 0s);
+  left: var(--x, 50%);
+}
+
+.noel-snow i:nth-child(3n) {
+  background: #e8f4ff;
+  box-shadow: 0 0 8px rgba(245, 215, 110, .35);
+}
+
+.noel-snow i:nth-child(5n) {
+  width: calc(var(--s, 4px) * 1.6);
+  height: calc(var(--s, 4px) * 1.6);
+  opacity: .9;
+}
+
+@keyframes noelFall {
+  0% {
+    transform: translate3d(0, -10vh, 0) rotate(0deg);
+    opacity: 0;
+  }
+  8% { opacity: .85; }
+  90% { opacity: .7; }
+  100% {
+    transform: translate3d(var(--drift, 40px), 110vh, 0) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+@keyframes noelTwinkle {
+  0%, 100% { opacity: .35; filter: brightness(.9); }
+  50% { opacity: 1; filter: brightness(1.25); }
+}
+
+/* String lights under nav */
+.noel-lights {
+  position: fixed;
+  top: 56px;
+  left: 0;
+  right: 0;
+  height: 14px;
+  z-index: 99;
+  pointer-events: none;
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-start;
+  padding: 0 4%;
+}
+
+.noel-lights span {
+  width: 8px;
+  height: 10px;
+  border-radius: 50% 50% 40% 40%;
+  background: var(--c, #c41e3a);
+  box-shadow: 0 0 8px var(--c, #c41e3a), 0 0 16px var(--c, #c41e3a);
+  animation: noelTwinkle 2.4s ease-in-out infinite;
+  animation-delay: var(--d, 0s);
+  position: relative;
+}
+
+.noel-lights span::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  width: 2px;
+  height: 6px;
+  background: rgba(255, 255, 255, .25);
+  transform: translateX(-50%);
+}
+
+@media (max-width: 640px) {
+  .noel-lights { top: 52px; }
+  .noel-lights span:nth-child(n+12) { display: none; }
+}
+
+/* Shared festive utilities */
+.noel-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  background: rgba(196, 30, 58, .18);
+  border: 1px solid rgba(245, 215, 110, .45);
+  border-radius: 20px;
+  padding: .4rem 1rem;
+  font-size: .8rem;
+  font-weight: 700;
+  color: var(--noel-gold);
+}
+
+.noel-btn-primary {
+  background: linear-gradient(135deg, #c41e3a 0%, #a01830 45%, #1f7a4c 100%) !important;
+  box-shadow: 0 8px 28px rgba(196, 30, 58, .4) !important;
+}
+
+.noel-btn-primary:hover {
+  box-shadow: 0 12px 36px rgba(196, 30, 58, .55) !important;
+}
+
+/* ══ Santa + Reindeer characters (SVG) ══ */
+.noel-chars {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 40;
+  overflow: hidden;
+}
+
+.noel-santa,
+.noel-reindeer {
+  position: absolute;
+  width: min(160px, 28vw);
+  height: auto;
+  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, .35));
+}
+
+.noel-santa {
+  right: max(1.5%, 8px);
+  bottom: 6%;
+  animation: noelSantaBob 3.2s ease-in-out infinite;
+}
+
+.noel-reindeer {
+  left: max(1.5%, 8px);
+  bottom: 7%;
+  width: min(150px, 26vw);
+  animation: noelDeerBob 2.6s ease-in-out infinite;
+}
+
+body.auth-page .noel-chars {
+  z-index: 1;
+}
+
+.noel-santa.login-pos {
+  right: max(2%, 10px);
+  bottom: 10%;
+  width: min(130px, 24vw);
+}
+
+.noel-reindeer.login-pos {
+  left: max(2%, 10px);
+  bottom: 12%;
+  width: min(120px, 22vw);
+}
+
+@keyframes noelSantaBob {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-10px) rotate(2deg); }
+}
+
+@keyframes noelDeerBob {
+  0%, 100% { transform: translateY(0) rotate(2deg); }
+  50% { transform: translateY(-8px) rotate(-2deg); }
+}
+
+@media (max-width: 760px) {
+  .noel-santa,
+  .noel-reindeer {
+    width: min(96px, 22vw);
+    opacity: .92;
+  }
+  .noel-santa { bottom: 4%; right: 2%; }
+  .noel-reindeer { bottom: 4%; left: 2%; }
+  .noel-santa.login-pos,
+  .noel-reindeer.login-pos {
+    width: min(88px, 20vw);
+    opacity: .85;
+  }
+}
+
+@media (max-width: 420px) {
+  .noel-chars { display: none; }
+}

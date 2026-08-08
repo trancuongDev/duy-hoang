@@ -1,8 +1,5 @@
 //// Khởi tạo Supabase client (CDN đã load sẵn qua script tag)
-const db = supabase.createClient(
-  'https://gojpmogjretoxplydjvg.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdvanBtb2dqcmV0b3hwbHlkanZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0Nzg4ODEsImV4cCI6MjA5MzA1NDg4MX0.iLCNd2VRMiZoFp6_KclZlFsOenUNoM041tl1fobHKDA'
-);
+const db = DH_CFG.createDb();
 
 // ── Toast thông báo ──────────────────────────────────────────────
 let _toastTimer = null;
@@ -6569,7 +6566,7 @@ async function doBulkCreate() {
 // ============================================================
 
 // ⚠️ AbstractAPI Email Validation key — https://app.abstractapi.com/api/email-validation
-const _ABSTRACT_EMAIL_KEY = '11ea460b7a2340ce82c50f41a8f5cb19';
+const _ABSTRACT_EMAIL_KEY = DH_CFG.abstractKey;
 
 // Cache kết quả tránh gọi API nhiều lần cùng 1 gmail
 const _gmailCheckCache = {};

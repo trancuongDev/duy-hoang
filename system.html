@@ -12,6 +12,7 @@
   <meta name="mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="config.js"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
   <style>
     /* ── System page overrides ── */
@@ -235,7 +236,7 @@
         <span>🚪</span> Đăng xuất
       </button>
     </div>
-    <div style="padding:.4rem 1rem .7rem;font-size:.65rem;color:rgba(255,255,255,.2);font-weight:600;letter-spacing:.3px">v1.4.9 System</div>
+    <div style="padding:.4rem 1rem .7rem;font-size:.65rem;color:rgba(255,255,255,.2);font-weight:600;letter-spacing:.3px">v1.5.0 System</div>
   </aside>
 
   <!-- MAIN -->
@@ -551,10 +552,7 @@
 'use strict';
 
 // ── Supabase ─────────────────────────────────────────────────────
-const db = supabase.createClient(
-  'https://gojpmogjretoxplydjvg.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdvanBtb2dqcmV0b3hwbHlkanZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0Nzg4ODEsImV4cCI6MjA5MzA1NDg4MX0.iLCNd2VRMiZoFp6_KclZlFsOenUNoM041tl1fobHKDA'
-);
+const db = DH_CFG.createDb();
 
 // ── Auth Guard ────────────────────────────────────────────────────
 (function authGuard() {

@@ -1,0 +1,155 @@
+/* ══ DHDT Trung Thu Theme ══ */
+:root {
+  --tt-gold: #f5d76e;
+  --tt-amber: #e8a317;
+  --tt-lantern: #e85d04;
+  --tt-lantern-deep: #9a031e;
+  --tt-moon: #fff4d6;
+  --tt-bg: #0b1026;
+  --tt-bg-mid: #1a1440;
+  --tt-cream: #fff8eb;
+  --tt-ink: #f7f1e6;
+}
+
+body.trungthu-theme {
+  --tt-on: 1;
+  background-color: #0b1026;
+  background-image:
+    linear-gradient(165deg, rgba(11, 16, 38, .48) 0%, rgba(26, 20, 64, .42) 50%, rgba(11, 16, 38, .58) 100%),
+    url('trungthu-bg.jpg');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+/* Soft mist over photo */
+.tt-glow {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 55% 42% at 82% 10%, rgba(255, 244, 214, .16) 0%, transparent 58%),
+    radial-gradient(ellipse 45% 38% at 12% 78%, rgba(232, 93, 4, .1) 0%, transparent 60%),
+    linear-gradient(180deg, rgba(11, 16, 38, .2) 0%, transparent 35%, rgba(11, 16, 38, .4) 100%);
+}
+
+.tt-glow::after {
+  content: none;
+}
+
+/* Soft gold sparks — behind content */
+.tt-spark {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.tt-spark i {
+  position: absolute;
+  width: var(--s, 3px);
+  height: var(--s, 3px);
+  border-radius: 50%;
+  background: #f5d76e;
+  box-shadow: 0 0 10px rgba(245, 215, 110, .65);
+  left: var(--x, 50%);
+  top: -10px;
+  opacity: .55;
+  animation: ttFloat var(--d, 16s) linear infinite;
+  animation-delay: var(--delay, 0s);
+}
+
+@keyframes ttFloat {
+  0% { transform: translate3d(0, 0, 0) scale(.6); opacity: 0; }
+  12% { opacity: .65; }
+  88% { opacity: .35; }
+  100% { transform: translate3d(var(--drift, 24px), 110vh, 0) scale(1); opacity: 0; }
+}
+
+body.auth-page .tt-spark {
+  z-index: 1;
+}
+
+.tt-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .55rem;
+  background: rgba(255, 244, 214, .06);
+  border: 1px solid rgba(245, 215, 110, .28);
+  border-radius: 999px;
+  padding: .42rem 1.05rem;
+  font-size: .78rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  color: #f5d76e;
+}
+
+.tt-badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #f5d76e;
+  box-shadow: 0 0 10px rgba(245, 215, 110, .8);
+}
+
+.tt-btn-primary {
+  background: linear-gradient(135deg, #e85d04 0%, #9a031e 55%, #7c2d12 100%) !important;
+  box-shadow: 0 10px 32px rgba(232, 93, 4, .38) !important;
+}
+
+.tt-btn-primary:hover {
+  box-shadow: 0 14px 40px rgba(232, 93, 4, .52) !important;
+}
+
+/* ══ Scrollbar Trung Thu (html + body — Windows gắn thanh kéo ở html) ══ */
+html:has(body.trungthu-theme),
+body.trungthu-theme {
+  scrollbar-width: thin;
+  scrollbar-color: #e8a317 #1a1440;
+}
+
+html:has(body.trungthu-theme)::-webkit-scrollbar,
+body.trungthu-theme::-webkit-scrollbar,
+html:has(body.trungthu-theme) *::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+html:has(body.trungthu-theme)::-webkit-scrollbar-button,
+body.trungthu-theme::-webkit-scrollbar-button,
+html:has(body.trungthu-theme) *::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+html:has(body.trungthu-theme)::-webkit-scrollbar-track,
+body.trungthu-theme::-webkit-scrollbar-track,
+html:has(body.trungthu-theme) *::-webkit-scrollbar-track {
+  background: #1a1440;
+}
+
+html:has(body.trungthu-theme)::-webkit-scrollbar-thumb,
+body.trungthu-theme::-webkit-scrollbar-thumb,
+html:has(body.trungthu-theme) *::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #f5d76e 0%, #e85d04 55%, #9a031e 100%);
+  border-radius: 999px;
+  border: 2px solid #1a1440;
+  min-height: 40px;
+}
+
+html:has(body.trungthu-theme)::-webkit-scrollbar-thumb:hover,
+body.trungthu-theme::-webkit-scrollbar-thumb:hover,
+html:has(body.trungthu-theme) *::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #fff4d6 0%, #f5d76e 45%, #e85d04 100%);
+}
+
+html:has(body.trungthu-theme)::-webkit-scrollbar-corner,
+body.trungthu-theme::-webkit-scrollbar-corner {
+  background: #0b1026;
+}

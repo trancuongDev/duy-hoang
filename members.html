@@ -6,6 +6,7 @@
   <title>Quản lý học viên lớp - DHDT LMS</title>
   <link rel="icon" type="image/png" href="icons/icon-192.png"/>
   <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="config.js"></script>
   <style>
     *,*::before,*::after{box-sizing:border-box}
     body{margin:0;background:#f1f5f9;font-family:'Segoe UI',sans-serif;color:#1e293b}
@@ -193,10 +194,7 @@
 </div>
 
 <script>
-const db = supabase.createClient(
-  'https://gojpmogjretoxplydjvg.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdvanBtb2dqcmV0b3hwbHlkanZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0Nzg4ODEsImV4cCI6MjA5MzA1NDg4MX0.iLCNd2VRMiZoFp6_KclZlFsOenUNoM041tl1fobHKDA'
-);
+const db = DH_CFG.createDb();
 
 const _role = sessionStorage.getItem('dh_role');
 if (_role !== 'teacher' && _role !== 'assistant') location.href = 'login.html';

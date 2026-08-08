@@ -8,6 +8,7 @@
   <link rel="icon" type="image/png" href="icons/icon-192.png"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
   <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="config.js"></script>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:'Inter',sans-serif;background:#edf2f7;color:#0f172a;min-height:100vh;transition:background .25s,color .25s}
@@ -156,10 +157,7 @@ const _role = sessionStorage.getItem('dh_role');
 if (_role !== 'teacher' && _role !== 'assistant') location.href = 'login.html';
 
 // Supabase
-const db = supabase.createClient(
-  'https://gojpmogjretoxplydjvg.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdvanBtb2dqcmV0b3hwbHlkanZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0Nzg4ODEsImV4cCI6MjA5MzA1NDg4MX0.iLCNd2VRMiZoFp6_KclZlFsOenUNoM041tl1fobHKDA'
-);
+const db = DH_CFG.createDb();
 
 const params    = new URLSearchParams(location.search);
 const sessionId = parseInt(params.get('id'));

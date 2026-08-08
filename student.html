@@ -4,7 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="google-site-verification" content="sYwxmM0uBuqYK-IhlY67eC_hitCqZFuu1DtAPymm23I" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Học Sinh - DHDT LMS v1.4.9</title>
+  <title>Học Sinh - DHDT LMS v1.5.0</title>
   <meta http-equiv="X-Frame-Options" content="DENY"/>
   <link rel="icon" type="image/png" href="icons/icon-192.png"/>
   <link rel="apple-touch-icon" href="icons/icon-192.png"/>
@@ -16,6 +16,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
   <meta name="apple-mobile-web-app-title" content="Duy Ho�ng DTCT"/>
   <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="config.js"></script>
 </head>
 <body class="dashboard-page">
 
@@ -90,7 +91,7 @@
     <a href="index.html" style="display:flex;align-items:center;gap:.6rem;margin:.3rem .75rem .5rem;padding:.45rem .85rem;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:rgba(255,255,255,.5);font-size:.78rem;font-weight:600;transition:all .18s;text-decoration:none" onmouseover="this.style.background='rgba(255,255,255,.12)';this.style.color='rgba(255,255,255,.8)'" onmouseout="this.style.background='rgba(255,255,255,.06)';this.style.color='rgba(255,255,255,.5)'">
       <span style="font-size:.9rem">🌐</span><span class="slink-label">Về trang chủ</span>
     </a>
-    <div class="sidebar-version" style="padding:.6rem 1.25rem;font-size:.7rem;color:rgba(255,255,255,.3);font-weight:600;letter-spacing:.3px">v1.4.9</div>
+    <div class="sidebar-version" style="padding:.6rem 1.25rem;font-size:.7rem;color:rgba(255,255,255,.3);font-weight:600;letter-spacing:.3px">v1.5.0</div>
     <div class="sidebar-mini-reopen">
       <button id="sidebarMiniReopen" class="sidebar-mini-toggle" title="Mở rộng">▶</button>
     </div>
@@ -700,7 +701,7 @@
       <p>© Bản quyền thuộc về <b>DHDT LMS</b>. Toàn bộ nội dung trên website bao gồm video bài giảng, tài liệu học tập, đề luyện thi, hình ảnh, giao diện và hệ thống quản lý đều thuộc quyền sở hữu của chúng tôi và được pháp luật bảo hộ.</p>
       <p>Nghiêm cấm mọi hành vi sao chép, chỉnh sửa, phát tán, chia sẻ hoặc sử dụng dưới bất kỳ hình thức nào khi chưa có sự cho phép bằng văn bản từ chủ sở hữu.</p>
       <p>Mọi hành vi vi phạm bản quyền sẽ bị xử lý theo quy định của pháp luật hiện hành.</p>
-      <p style="margin-top:.5rem;color:#555;font-size:.72rem">Phiên bản <b style="color:#6366f1">v1.4.9</b></p>
+      <p style="margin-top:.5rem;color:#555;font-size:.72rem">Phiên bản <b style="color:#6366f1">v1.5.0</b></p>
     </footer>
   </div>
 
@@ -731,22 +732,19 @@
   <script src="student.js?v=1.3.5"></script>
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=1.5.1').catch(() => {});
+      navigator.serviceWorker.register('./sw.js?v=1.5.0b').catch(() => {});
       navigator.serviceWorker.addEventListener('message', e => {
         if (e.data?.type === 'SW_UPDATED') window.location.reload();
       });
       if (window.caches) {
         caches.keys().then(keys => Promise.all(
-          keys.filter(k => k !== 'DHDT-lms-v1.5.1').map(k => caches.delete(k))
+          keys.filter(k => k !== 'DHDT-lms-v1.5.0b').map(k => caches.delete(k))
         ));
       }
     }
   </script>
   <script>
-    const _db = supabase.createClient(
-      'https://gojpmogjretoxplydjvg.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdvanBtb2dqcmV0b3hwbHlkanZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0Nzg4ODEsImV4cCI6MjA5MzA1NDg4MX0.iLCNd2VRMiZoFp6_KclZlFsOenUNoM041tl1fobHKDA'
-    );
+    const _db = DH_CFG.createDb();
     const overlay = document.getElementById('securityOverlay');
     let lastLogTime = 0;
 

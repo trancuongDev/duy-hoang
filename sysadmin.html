@@ -7,6 +7,7 @@
   <link rel="icon" type="image/png" href="icons/icon-192.png"/>
   <link rel="stylesheet" href="style.css"/>
   <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="config.js"></script>
   <style>
     :root {
       --sys-blue: #3b82f6;
@@ -1108,10 +1109,7 @@
 </style>
 <script>
 // ══ Supabase ══
-const db = supabase.createClient(
-  'https://gojpmogjretoxplydjvg.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdvanBtb2dqcmV0b3hwbHlkanZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0Nzg4ODEsImV4cCI6MjA5MzA1NDg4MX0.iLCNd2VRMiZoFp6_KclZlFsOenUNoM041tl1fobHKDA'
-);
+const db = DH_CFG.createDb();
 
 // ══ Auth guard — chỉ teacher ══
 const _role = sessionStorage.getItem('dh_role');

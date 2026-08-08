@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="style.css"/>
   <!-- Supabase -->
   <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="config.js"></script>
   <!-- jsPDF + html2canvas để xuất PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -540,7 +541,7 @@
   <a href="login.html" class="slink slink-logout">
     <span class="slink-icon">🚪</span><span class="slink-label">Đăng xuất</span>
   </a>
-  <div class="sidebar-version" style="padding:.6rem 1.25rem;font-size:.7rem;color:rgba(255,255,255,.3);font-weight:600;letter-spacing:.3px">v1.4.9</div>
+  <div class="sidebar-version" style="padding:.6rem 1.25rem;font-size:.7rem;color:rgba(255,255,255,.3);font-weight:600;letter-spacing:.3px">v1.5.0</div>
   <div class="sidebar-mini-reopen">
     <button id="sidebarMiniReopen" class="sidebar-mini-toggle" title="Mở rộng">▶</button>
   </div>
@@ -997,9 +998,9 @@ document.addEventListener('DOMContentLoaded', () => {
 // ═══════════════════════════════════════════
 // CONFIG & STATE
 // ═══════════════════════════════════════════
-const SUPA_URL = 'https://gojpmogjretoxplydjvg.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdvanBtb2dqcmV0b3hwbHlkanZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0Nzg4ODEsImV4cCI6MjA5MzA1NDg4MX0.iLCNd2VRMiZoFp6_KclZlFsOenUNoM041tl1fobHKDA';
-const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+const SUPA_URL = DH_CFG.url;
+const SUPA_KEY = DH_CFG.key;
+const sb = DH_CFG.createDb();
 
 // ── Kiểm tra bảo trì ──────────────────────────────────────
 let _hwMaintenanceShown = false;
@@ -7063,9 +7064,9 @@ window.addEventListener('pagehide', function(e) {
   // Dùng sendBeacon để mark submitted ngay cả khi tab đóng
   if (doHWId && currentUser?.username) {
     try {
-      const url = `https://gojpmogjretoxplydjvg.supabase.co/rest/v1/exam_progress?homework_id=eq.${doHWId}&username=eq.${encodeURIComponent(currentUser.username)}`;
+      const url = `${DH_CFG.url}/rest/v1/exam_progress?homework_id=eq.${doHWId}&username=eq.${encodeURIComponent(currentUser.username)}`;
       const body = JSON.stringify({ status: 'submitted', updated_at: new Date().toISOString() });
-      navigator.sendBeacon && navigator.sendBeacon(url + '&apikey=' + 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdvanBtb2dqcmV0b3hwbHlkanZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0Nzg4ODEsImV4cCI6MjA5MzA1NDg4MX0.iLCNd2VRMiZoFp6_KclZlFsOenUNoM041tl1fobHKDA',
+      navigator.sendBeacon && navigator.sendBeacon(url + '&apikey=' + DH_CFG.key,
         new Blob([body], { type: 'application/json' }));
     } catch(e) {}
   }

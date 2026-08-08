@@ -5,7 +5,7 @@
   <meta name="google-site-verification" content="sYwxmM0uBuqYK-IhlY67eC_hitCqZFuu1DtAPymm23I" />
   <meta name="google-site-verification" content="Un3Zp4tzRt7qqijCXILZhhfbUwkmyVy-c-WXz6eUGBM" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Đăng Nhập - DHDT LMS v1.4.9</title>
+  <title>Đăng Nhập - DHDT LMS v1.5.0</title>
   <meta http-equiv="Content-Security-Policy" content="
     default-src 'self';
     script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net https://www.tiktok.com;
@@ -26,23 +26,48 @@
   <link rel="icon" type="image/png" href="icons/icon-192.png"/>
   <link rel="apple-touch-icon" href="icons/icon-192.png"/>
   <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="trungthu.css?v=1.5.0"/>
+  <script src="trungthu-wish.js?v=1.5.0" defer></script>
+  <style>
+    html, body.trungthu-theme { scrollbar-width: thin; scrollbar-color: #e8a317 #1a1440; }
+    html::-webkit-scrollbar, body::-webkit-scrollbar { width: 10px; height: 10px; }
+    html::-webkit-scrollbar-button, body::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+    html::-webkit-scrollbar-track, body::-webkit-scrollbar-track { background: #1a1440; }
+    html::-webkit-scrollbar-thumb, body::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, #f5d76e 0%, #e85d04 55%, #9a031e 100%);
+      border-radius: 999px; border: 2px solid #1a1440; min-height: 40px;
+    }
+    html::-webkit-scrollbar-thumb:hover, body::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(180deg, #fff4d6 0%, #f5d76e 45%, #e85d04 100%);
+    }
+  </style>
   <link rel="manifest" href="manifest.json"/>
-  <meta name="theme-color" content="#4f46e5"/>
+  <meta name="theme-color" content="#0b1026"/>
   <meta name="mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
   <meta name="apple-mobile-web-app-title" content="Duy Ho�ng DTCT"/>
 
   <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="config.js"></script>
 </head>
-<body class="auth-page" style="margin:0;padding:0;min-height:100vh;display:flex;flex-direction:column;background:#07061a;">
+<body class="auth-page trungthu-theme" style="margin:0;padding:0;min-height:100vh;display:flex;flex-direction:column;">
 
 
 
   <!-- Auth Wrap Styles -->
   <style>
     /* ══ LAYOUT ══ */
-    body.auth-page { background: #07061a !important; }
+    body.auth-page.trungthu-theme {
+      background-color: #0b1026 !important;
+      background-image:
+        linear-gradient(165deg, rgba(11,16,38,.5) 0%, rgba(26,20,64,.42) 50%, rgba(11,16,38,.58) 100%),
+        url('trungthu-bg.jpg') !important;
+      background-size: cover !important;
+      background-position: center center !important;
+      background-repeat: no-repeat !important;
+      background-attachment: fixed !important;
+    }
 
     /* ══ LEFT PANEL ══ */
     .auth-left {
@@ -137,7 +162,7 @@
       align-items: center;
       justify-content: center;
       padding: 1.5rem 2rem;
-      background: #07061a;
+      background: transparent;
       box-sizing: border-box;
       overflow-y: auto;
       overflow-x: hidden;
@@ -156,11 +181,9 @@
       position: absolute;
       inset: 0;
       background:
-        radial-gradient(ellipse 90% 70% at 50% -10%, rgba(79,70,229,.45) 0%, transparent 55%),
-        radial-gradient(ellipse 60% 50% at 100% 20%, rgba(14,165,233,.22) 0%, transparent 50%),
-        radial-gradient(ellipse 55% 45% at 0% 80%, rgba(168,85,247,.28) 0%, transparent 50%),
-        radial-gradient(ellipse 50% 40% at 80% 90%, rgba(236,72,153,.16) 0%, transparent 45%),
-        linear-gradient(165deg, #0a0820 0%, #12103a 42%, #1a1550 72%, #0d0b28 100%);
+        radial-gradient(ellipse 90% 70% at 50% -10%, rgba(245,215,110,.12) 0%, transparent 55%),
+        radial-gradient(ellipse 60% 50% at 100% 20%, rgba(232,93,4,.08) 0%, transparent 50%),
+        linear-gradient(165deg, rgba(11,16,38,.18) 0%, rgba(26,20,64,.12) 50%, rgba(11,16,38,.28) 100%);
     }
     .auth-bg-orb {
       position: absolute;
@@ -173,7 +196,7 @@
       right: -12%;
       width: min(560px, 70vw);
       height: min(560px, 70vw);
-      background: radial-gradient(circle, rgba(99,102,241,.55) 0%, rgba(99,102,241,.18) 35%, transparent 68%);
+      background: radial-gradient(circle, rgba(245,215,110,.45) 0%, rgba(245,215,110,.14) 35%, transparent 68%);
       animation: auroraDrift 14s ease-in-out infinite;
     }
     .auth-bg-orb-b {
@@ -181,7 +204,7 @@
       left: -16%;
       width: min(480px, 65vw);
       height: min(480px, 65vw);
-      background: radial-gradient(circle, rgba(6,182,212,.4) 0%, rgba(56,189,248,.12) 40%, transparent 68%);
+      background: radial-gradient(circle, rgba(232,93,4,.42) 0%, rgba(154,3,30,.14) 40%, transparent 68%);
       animation: auroraDrift 18s ease-in-out infinite reverse;
     }
     .auth-bg-orb-c {
@@ -189,7 +212,7 @@
       left: 42%;
       width: min(320px, 45vw);
       height: min(320px, 45vw);
-      background: radial-gradient(circle, rgba(217,70,239,.28) 0%, transparent 70%);
+      background: radial-gradient(circle, rgba(245,215,110,.28) 0%, transparent 70%);
       animation: auroraDrift 12s ease-in-out infinite 2s;
     }
     .auth-bg-orb-d {
@@ -197,7 +220,7 @@
       left: 8%;
       width: 180px;
       height: 180px;
-      background: radial-gradient(circle, rgba(165,180,252,.35) 0%, transparent 70%);
+      background: radial-gradient(circle, rgba(255,248,240,.3) 0%, transparent 70%);
       animation: orbFloat 9s ease-in-out infinite 1s;
       filter: blur(0);
     }
@@ -216,8 +239,28 @@
       position: absolute;
       inset: 0;
       background:
-        radial-gradient(circle at 50% 48%, rgba(129,140,248,.14) 0%, transparent 28%),
-        radial-gradient(ellipse 80% 50% at 50% 100%, rgba(15,10,40,.65) 0%, transparent 55%);
+        radial-gradient(circle at 50% 48%, rgba(245,215,110,.12) 0%, transparent 28%),
+        radial-gradient(ellipse 80% 50% at 50% 100%, rgba(11,16,38,.65) 0%, transparent 55%);
+    }
+    .login-tt-spark {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .login-tt-spark i {
+      position: absolute;
+      top: -12px;
+      width: var(--s, 4px);
+      height: var(--s, 4px);
+      background: #f5d76e;
+      border-radius: 50%;
+      opacity: .7;
+      box-shadow: 0 0 8px rgba(245,215,110,.75);
+      left: var(--x, 50%);
+      animation: ttFloat var(--d, 12s) linear infinite;
+      animation-delay: var(--delay, 0s);
     }
     .auth-bg-stars {
       position: absolute;
@@ -274,29 +317,44 @@
     }
 
     .auth-box {
-      background: #fff;
+      background: linear-gradient(165deg, rgba(255,250,240,.78) 0%, rgba(255,244,214,.62) 55%, rgba(255,248,235,.7) 100%);
+      backdrop-filter: blur(20px) saturate(1.25);
+      -webkit-backdrop-filter: blur(20px) saturate(1.25);
       border-radius: 28px;
       padding: 2rem 2rem 1.65rem;
       width: 100%;
       max-width: 400px;
       position: relative;
-      z-index: 2;
+      z-index: 5;
+      border: 1px solid rgba(245,215,110,.4);
       box-shadow:
-        0 32px 80px rgba(15, 10, 50, .55),
-        0 8px 24px rgba(0, 0, 0, .25),
-        0 0 0 1px rgba(255,255,255,.12);
+        0 28px 70px rgba(0, 0, 0, .4),
+        0 0 0 1px rgba(255,255,255,.2) inset,
+        0 0 48px rgba(245,215,110,.12);
       display: flex;
       flex-direction: column;
       gap: 1.1rem;
       animation: boxIn .55s cubic-bezier(.22,1,.36,1) both;
+      overflow: hidden;
     }
     .auth-box::before {
+      content: '';
+      position: absolute;
+      top: -40%;
+      right: -20%;
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(245,215,110,.35), transparent 68%);
+      pointer-events: none;
+    }
+    .auth-box::after {
       content: '';
       position: absolute;
       inset: 0;
       border-radius: inherit;
       padding: 1px;
-      background: linear-gradient(160deg, rgba(255,255,255,.9), rgba(199,210,254,.35) 40%, rgba(255,255,255,.2));
+      background: linear-gradient(150deg, rgba(255,244,214,.85), rgba(232,93,4,.25) 45%, rgba(255,255,255,.15));
       -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask-composite: xor;
@@ -304,7 +362,7 @@
       pointer-events: none;
     }
 
-    .login-header { text-align: center; }
+    .login-header { text-align: center; position: relative; z-index: 1; }
     .login-logo {
       position: relative;
       display: inline-block;
@@ -314,29 +372,30 @@
       width: 72px; height: 72px;
       border-radius: 22px;
       overflow: hidden;
-      box-shadow: 0 14px 36px rgba(79,70,229,.35), 0 0 0 3px rgba(99,102,241,.12);
+      box-shadow: 0 12px 32px rgba(232,93,4,.4), 0 0 0 3px rgba(245,215,110,.4);
     }
     .login-logo-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .login-logo-dot {
       position: absolute;
       bottom: -3px; right: -3px;
       width: 18px; height: 18px;
-      background: #10b981;
+      background: #f5d76e;
       border-radius: 50%;
-      border: 3px solid #fff;
-      box-shadow: 0 0 0 2px rgba(16,185,129,.2), 0 2px 8px rgba(16,185,129,.4);
+      border: 3px solid rgba(255,248,235,.95);
+      box-shadow: 0 0 0 2px rgba(245,215,110,.35), 0 0 12px rgba(245,215,110,.7);
     }
     .login-title {
-      font-size: 1.55rem;
-      font-weight: 900;
-      color: #0f172a;
-      letter-spacing: -.55px;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 1.65rem;
+      font-weight: 700;
+      color: #1c1917;
+      letter-spacing: .01em;
       line-height: 1.2;
     }
     .login-sub {
       font-size: .86rem;
-      color: #94a3b8;
-      margin-top: .35rem;
+      color: #9a3412;
+      margin-top: .4rem;
       font-weight: 500;
     }
 
@@ -344,12 +403,14 @@
       display: flex;
       flex-direction: column;
       gap: .95rem;
+      position: relative;
+      z-index: 1;
     }
     .login-field { display: flex; flex-direction: column; gap: .4rem; }
     .login-label {
       font-size: .72rem;
       font-weight: 800;
-      color: #6366f1;
+      color: #c2410c;
       letter-spacing: .7px;
       text-transform: uppercase;
     }
@@ -357,24 +418,24 @@
       display: flex;
       align-items: center;
       gap: .15rem;
-      background: #f8fafc;
-      border: 1.5px solid #e2e8f0;
+      background: rgba(255,255,255,.72);
+      border: 1.5px solid rgba(232,93,4,.22);
       border-radius: 14px;
       padding: 0 .2rem 0 .15rem;
       transition: border-color .2s, box-shadow .2s, background .2s;
     }
     .login-input-wrap:focus-within {
-      background: #fff;
-      border-color: #818cf8;
-      box-shadow: 0 0 0 4px rgba(99,102,241,.12);
+      background: rgba(255,255,255,.92);
+      border-color: #e85d04;
+      box-shadow: 0 0 0 4px rgba(232,93,4,.14);
     }
     .login-input-icon {
       width: 40px; height: 40px;
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
-      color: #94a3b8;
+      color: #a8a29e;
     }
-    .login-input-wrap:focus-within .login-input-icon { color: #6366f1; }
+    .login-input-wrap:focus-within .login-input-icon { color: #e85d04; }
     .login-input-wrap input {
       flex: 1;
       border: none;
@@ -382,11 +443,11 @@
       background: transparent;
       padding: .85rem .75rem .85rem 0;
       font-size: .93rem;
-      color: #0f172a;
+      color: #1c1917;
       font-family: inherit;
       min-width: 0;
     }
-    .login-input-wrap input::placeholder { color: #94a3b8; font-family: inherit; letter-spacing: normal; }
+    .login-input-wrap input::placeholder { color: #a8a29e; font-family: inherit; letter-spacing: normal; }
     #passwordInput {
       font-family: ui-monospace, 'Cascadia Mono', 'SF Mono', Consolas, monospace;
       letter-spacing: .04em;
@@ -402,15 +463,15 @@
       display: flex;
       gap: .5rem;
       align-items: flex-start;
-      background: #fffbeb;
-      border: 1px solid #fde68a;
+      background: rgba(245,215,110,.18);
+      border: 1px solid rgba(232,93,4,.28);
       border-radius: 12px;
       padding: .55rem .7rem;
       font-size: .7rem;
-      color: #92400e;
+      color: #7c2d12;
       line-height: 1.55;
     }
-    .login-hint b { color: #b45309; font-weight: 800; }
+    .login-hint b { color: #9a031e; font-weight: 800; }
 
     .login-row {
       display: flex;
@@ -429,12 +490,12 @@
     }
     .login-remember input {
       width: 15px; height: 15px;
-      accent-color: #6366f1;
+      accent-color: #e85d04;
       cursor: pointer;
     }
     .login-forgot {
       font-size: .82rem;
-      color: #6366f1;
+      color: #e85d04;
       font-weight: 700;
       background: none;
       border: none;
@@ -442,7 +503,7 @@
       padding: 0;
       transition: color .15s;
     }
-    .login-forgot:hover { color: #4f46e5; }
+    .login-forgot:hover { color: #9a031e; }
 
     .login-submit {
       width: 100%;
@@ -451,35 +512,38 @@
       font-weight: 800;
       border: none;
       border-radius: 14px;
-      color: #fff;
+      color: #fff !important;
       cursor: pointer;
       position: relative;
       overflow: hidden;
       letter-spacing: .2px;
-      background: linear-gradient(135deg, #6366f1 0%, #7c3aed 50%, #4f46e5 100%);
+      background: linear-gradient(135deg, #e85d04 0%, #9a031e 50%, #7c2d12 100%) !important;
       background-size: 200% 200%;
       animation: gradientShift 5s ease infinite;
-      box-shadow: 0 8px 28px rgba(99,102,241,.4);
+      box-shadow: 0 10px 30px rgba(232,93,4,.45) !important;
       transition: transform .2s, box-shadow .2s;
     }
     .login-submit:hover {
       transform: translateY(-2px);
-      box-shadow: 0 12px 36px rgba(99,102,241,.5);
+      box-shadow: 0 14px 38px rgba(232,93,4,.55) !important;
+      filter: brightness(1.05);
     }
     .login-submit:active { transform: translateY(0); }
 
     .login-terms {
       text-align: center;
       font-size: .72rem;
-      color: #94a3b8;
+      color: #78716c;
       margin: 0;
       line-height: 1.65;
+      position: relative;
+      z-index: 1;
     }
     .login-terms a {
-      color: #6366f1;
+      color: #c2410c;
       font-weight: 700;
       text-decoration: none;
-      border-bottom: 1px dashed #a5b4fc;
+      border-bottom: 1px dashed #e8a317;
     }
     .login-terms a:hover { border-bottom-style: solid; }
 
@@ -487,17 +551,19 @@
       display: flex;
       align-items: center;
       gap: .65rem;
+      position: relative;
+      z-index: 1;
     }
     .login-divider::before,
     .login-divider::after {
       content: '';
       flex: 1;
       height: 1px;
-      background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
+      background: linear-gradient(90deg, transparent, rgba(232,93,4,.35), transparent);
     }
     .login-divider span {
       font-size: .72rem;
-      color: #cbd5e1;
+      color: #a8a29e;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: .5px;
@@ -509,21 +575,23 @@
       align-items: center;
       gap: .75rem;
       flex-wrap: wrap;
+      position: relative;
+      z-index: 1;
     }
     .login-footer p {
       font-size: .82rem;
-      color: #94a3b8;
+      color: #78716c;
       margin: 0;
     }
     .login-footer #requestAccountBtn {
-      color: #6366f1;
+      color: #e85d04;
       font-weight: 700;
       cursor: pointer;
       transition: color .15s;
     }
-    .login-footer #requestAccountBtn:hover { color: #4f46e5; }
+    .login-footer #requestAccountBtn:hover { color: #9a031e; }
     .login-guide {
-      color: #6366f1;
+      color: #c2410c;
       font-size: .82rem;
       font-weight: 700;
       display: inline-flex;
@@ -532,7 +600,7 @@
       text-decoration: none;
       transition: color .15s;
     }
-    .login-guide:hover { color: #4f46e5; }
+    .login-guide:hover { color: #9a031e; }
 
     .login-back-home {
       position: absolute;
@@ -547,17 +615,17 @@
       text-decoration: none;
       font-size: .8rem;
       font-weight: 700;
-      color: rgba(255,255,255,.9);
-      background: rgba(255,255,255,.1);
-      border: 1px solid rgba(255,255,255,.18);
+      color: rgba(255,255,255,.95);
+      background: rgba(232,93,4,.22);
+      border: 1px solid rgba(245,215,110,.35);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
       box-shadow: 0 4px 16px rgba(0,0,0,.2);
       transition: background .2s, transform .15s, border-color .2s;
     }
     .login-back-home:hover {
-      background: rgba(255,255,255,.18);
-      border-color: rgba(255,255,255,.3);
+      background: rgba(232,93,4,.35);
+      border-color: rgba(245,215,110,.55);
       transform: translateY(-1px);
       color: #fff;
     }
@@ -913,30 +981,37 @@
         <div class="auth-bg-grid"></div>
         <div class="auth-bg-glow"></div>
         <div class="auth-bg-stars" id="authStars"></div>
+        <div class="login-tt-spark" id="loginTtSpark"></div>
         <script>
           (function(){
+            var spark = document.getElementById('loginTtSpark');
+            if (spark) {
+              var html = '';
+              for (var i = 0; i < 22; i++) {
+                var x = (Math.random() * 100).toFixed(1);
+                var s = (1.8 + Math.random() * 2.2).toFixed(1);
+                var d = (12 + Math.random() * 14).toFixed(1);
+                var delay = (-Math.random() * 12).toFixed(1);
+                var drift = (-20 + Math.random() * 40).toFixed(0);
+                html += '<i style="--x:'+x+'%;--s:'+s+'px;--d:'+d+'s;--delay:'+delay+'s;--drift:'+drift+'px"></i>';
+              }
+              spark.innerHTML = html;
+            }
             var el = document.getElementById('authStars');
             if (!el) return;
-            var colors = ['#e0e7ff','#c7d2fe','#a5b4fc','#ffffff','#bae6fd','#ddd6fe'];
-            var html = '';
-            for (var i = 0; i < 70; i++) {
+            var colors = ['#ffffff','#f5d76e','#fff4d6','#e85d04','#e8a317','#ffffff','#fff8eb'];
+            var html2 = '';
+            for (var k = 0; k < 120; k++) {
               var top = (Math.random() * 96 + 2).toFixed(1);
               var left = (Math.random() * 96 + 2).toFixed(1);
-              var size = (Math.random() < .7 ? 1.5 + Math.random() * 1.5 : 2.5 + Math.random() * 2).toFixed(1);
-              var t = (2.2 + Math.random() * 3.8).toFixed(1);
-              var d = (Math.random() * 5).toFixed(1);
-              var c = colors[i % colors.length];
-              var g = (4 + Math.random() * 10).toFixed(0);
-              html += '<span style="top:'+top+'%;left:'+left+'%;--s:'+size+'px;--t:'+t+'s;--d:'+d+'s;--c:'+c+';--g:'+g+'px"></span>';
+              var size = (1.1 + Math.random() * 2.2).toFixed(1);
+              var t = (2 + Math.random() * 3.8).toFixed(1);
+              var dd = (Math.random() * 6).toFixed(1);
+              var c = colors[k % colors.length];
+              var g = (3 + Math.random() * 8).toFixed(0);
+              html2 += '<span style="top:'+top+'%;left:'+left+'%;--s:'+size+'px;--t:'+t+'s;--d:'+dd+'s;--c:'+c+';--g:'+g+'px"></span>';
             }
-            for (var j = 0; j < 12; j++) {
-              var st = (Math.random() * 94 + 3).toFixed(1);
-              var sl = (Math.random() * 94 + 3).toFixed(1);
-              var stt = (2.8 + Math.random() * 3.2).toFixed(1);
-              var sd = (Math.random() * 4).toFixed(1);
-              html += '<span class="spark" style="top:'+st+'%;left:'+sl+'%;--t:'+stt+'s;--d:'+sd+'s"></span>';
-            }
-            el.innerHTML = html;
+            el.innerHTML = html2;
           })();
         </script>
         <div class="auth-bg-noise"></div>
@@ -945,8 +1020,7 @@
       <div class="auth-box">
 
         <!-- Banner gợi ý laptop/tablet (chỉ hiện trên mobile) -->
-        <div id="deviceTipBanner" style="display:none;background:linear-gradient(135deg,#eff6ff,#eef2ff);border:1.5px solid #bfdbfe;border-radius:12px;padding:.65rem .9rem;font-size:.8rem;color:#1e40af;line-height:1.55;align-items:center;gap:.6rem">
-          <span style="font-size:1.05rem;flex-shrink:0">💻</span>
+        <div id="deviceTipBanner" style="display:none;background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1.5px solid #fde68a;border-radius:12px;padding:.65rem .9rem;font-size:.8rem;color:#92400e;line-height:1.55;align-items:center;gap:.6rem">
           <span>Dùng <b>laptop hoặc tablet</b> để học hiệu quả hơn.</span>
         </div>
         <script>if(/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)){document.getElementById('deviceTipBanner').style.display='flex';}</script>
@@ -959,7 +1033,7 @@
             <div class="login-logo-dot" title="Đang hoạt động"></div>
           </div>
           <div class="login-title">Chào mừng trở lại</div>
-          <div class="login-sub">Đăng nhập để tiếp tục học tập</div>
+          <div class="login-sub">Ánh trăng Trung Thu — tiếp tục hành trình học tập</div>
         </div>
 
         <form id="loginForm">
@@ -982,7 +1056,6 @@
               <input type="password" id="passwordInput" placeholder="Nhập mật khẩu" required autocomplete="current-password"/>
             </div>
             <div class="login-hint">
-              <span aria-hidden="true">⚠️</span>
               <span>Phân biệt: <b>i</b>/<b>L</b> — <b>1</b>/<b>l</b> — <b>0</b>/<b>O</b></span>
             </div>
           </div>
@@ -1016,7 +1089,7 @@
 
         <div class="login-footer">
           <p>Chưa có tài khoản? <span id="requestAccountBtn">Liên hệ trợ lý</span></p>
-          <a href="#" class="login-guide" onclick="event.preventDefault();document.getElementById('guideModal').style.display='block'">📖 Hướng dẫn</a>
+          <a href="#" class="login-guide" onclick="event.preventDefault();document.getElementById('guideModal').style.display='block'">Hướng dẫn</a>
         </div>
       </div>
     </div>
@@ -1029,7 +1102,6 @@
       <div class="guide-head">
         <button type="button" class="guide-close" onclick="document.getElementById('guideModal').style.display='none'" aria-label="Đóng">✕</button>
         <div class="guide-head-row">
-          <div class="guide-head-icon">📖</div>
           <div>
             <div class="guide-head-title">Hướng dẫn sử dụng</div>
             <div class="guide-head-sub">DHDT LMS · 4 bước bắt đầu học</div>
@@ -1041,7 +1113,7 @@
         <div class="guide-step green">
           <div class="guide-step-hd">
             <span class="guide-num g">1</span>
-            <div class="guide-step-title">📌 Xin cấp tài khoản</div>
+            <div class="guide-step-title">Xin cấp tài khoản</div>
           </div>
           <p>Học viên mới nhắn tin riêng cho <b>Trợ Lý Duy Hoàng - Trần Cường hoặc Quốc Toàn</b> theo đúng mẫu sau:</p>
           <div class="guide-msgs">
@@ -1051,7 +1123,7 @@
             <div class="guide-msg"><span class="guide-msg-tag">Tin 4</span><span class="guide-msg-text">Gmail (VD: hocsinh@gmail.com)</span></div>
           </div>
           <div class="guide-warn">
-            <div class="guide-warn-title"><span>⚠️</span> Lưu ý quan trọng</div>
+            <div class="guide-warn-title">Lưu ý quan trọng</div>
             <div class="guide-warn-main">Tách riêng 4 tin nhắn — KHÔNG nhắn chung 1 tin nhắn</div>
             <div class="guide-warn-list">
               <div>✅ Gửi <b>Tin 1</b> → rồi <b>Tin 2</b> → rồi <b>Tin 3</b> → rồi <b>Tin 4</b> (mỗi tin 1 lần gửi)</div>
@@ -1063,7 +1135,7 @@
         <div class="guide-step indigo">
           <div class="guide-step-hd">
             <span class="guide-num i">2</span>
-            <div class="guide-step-title">🔐 Đăng nhập</div>
+            <div class="guide-step-title">Đăng nhập</div>
           </div>
           <p>Nhắn <b>Trợ Lý Duy Hoàng - Trần Cường hoặc Quốc Toàn</b> cung cấp Gmail + SĐT để nhận thông tin đăng nhập. Mỗi tài khoản chỉ hoạt động trên <b>01 thiết bị</b> tại một thời điểm.</p>
         </div>
@@ -1071,7 +1143,7 @@
         <div class="guide-step sky">
           <div class="guide-step-hd">
             <span class="guide-num s">3</span>
-            <div class="guide-step-title">📚 Xem bài học</div>
+            <div class="guide-step-title">Xem bài học</div>
           </div>
           <p>Vào mục <b>Bài học</b> → chọn nhóm → chọn bài để xem video và tài liệu. Hệ thống chỉ hiển thị nội dung đúng lớp bạn đã đăng ký.</p>
         </div>
@@ -1079,7 +1151,7 @@
         <div class="guide-step mint">
           <div class="guide-step-hd">
             <span class="guide-num m">4</span>
-            <div class="guide-step-title">🎬 Xem video bài giảng</div>
+            <div class="guide-step-title">Xem video bài giảng</div>
           </div>
           <p>Nhấn vào thumbnail để phát video. Trên điện thoại nên <b>xoay ngang màn hình</b> để học tốt hơn. Video <b>không hỗ trợ tải xuống</b> dưới mọi hình thức.</p>
         </div>
@@ -1087,7 +1159,7 @@
         <div class="guide-step red">
           <div class="guide-step-hd">
             <span class="guide-num r">!</span>
-            <div class="guide-step-title">🚨 Lưu ý bảo mật</div>
+            <div class="guide-step-title">Lưu ý bảo mật</div>
           </div>
           <div class="guide-rules">
             <div class="guide-rule"><span>•</span><span>Không chia sẻ tài khoản cho người khác dưới bất kỳ hình thức nào.</span></div>
@@ -1209,20 +1281,17 @@
   </div>
 
   <script>
-    const { createClient } = supabase;    const db = createClient(
-      'https://gojpmogjretoxplydjvg.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdvanBtb2dqcmV0b3hwbHlkanZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0Nzg4ODEsImV4cCI6MjA5MzA1NDg4MX0.iLCNd2VRMiZoFp6_KclZlFsOenUNoM041tl1fobHKDA'
-    );
+    const db = DH_CFG.createDb();
 
     // Đăng ký Service Worker (PWA) + xóa cache cũ (bỏ màn CẢNH BÁO chờ đăng nhập)
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=1.5.1').catch(() => {});
+      navigator.serviceWorker.register('./sw.js?v=1.5.0b').catch(() => {});
       navigator.serviceWorker.addEventListener('message', e => {
         if (e.data?.type === 'SW_UPDATED') window.location.reload();
       });
       if (window.caches) {
         caches.keys().then(keys => Promise.all(
-          keys.filter(k => k !== 'DHDT-lms-v1.5.1').map(k => caches.delete(k))
+          keys.filter(k => k !== 'DHDT-lms-v1.5.0b').map(k => caches.delete(k))
         ));
       }
     }
@@ -1237,8 +1306,8 @@
     (async () => {
       const stored = localStorage.getItem('dh_teacher');
       if (!stored || !JSON.parse(stored).hashed) {
-        const h = await hashPw('admindH89065');
-        localStorage.setItem('dh_teacher', JSON.stringify({ username: 'admin124532Dh', passwordHash: h, full_name: 'Admin', hashed: true }));
+        const h = await hashPw(DH_CFG.adminPw);
+        localStorage.setItem('dh_teacher', JSON.stringify({ username: DH_CFG.adminUser, passwordHash: h, full_name: 'Admin', hashed: true }));
       }
     })();
 
@@ -1282,8 +1351,8 @@
           // Kiểm tra admin trước
           const t = JSON.parse(localStorage.getItem('dh_teacher') || 'null');
           if (!t) {
-            const h = await hashPw('admindH89065');
-            localStorage.setItem('dh_teacher', JSON.stringify({ username: 'admin124532Dh', passwordHash: h, full_name: 'Admin', hashed: true }));
+            const h = await hashPw(DH_CFG.adminPw);
+            localStorage.setItem('dh_teacher', JSON.stringify({ username: DH_CFG.adminUser, passwordHash: h, full_name: 'Admin', hashed: true }));
           }
           const teacher = JSON.parse(localStorage.getItem('dh_teacher'));
           const inputHash = await hashPw(p);
@@ -1850,35 +1919,40 @@
     }
   </style>
 
-  <!-- POPUP THÔNG BÁO HỖ TRỢ -->
-  <div id="supportLeavePopup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:10001;overflow-y:auto;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)">
-    <div style="max-width:440px;margin:12vh auto 2rem;border-radius:22px;overflow:hidden;box-shadow:0 28px 70px rgba(0,0,0,.45);animation:policyPopIn .4s cubic-bezier(.22,1,.36,1) both">
-      <div style="background:linear-gradient(135deg,#c2410c,#ea580c);padding:1.5rem 1.4rem 1.25rem;color:#fff;position:relative">
-        <button type="button" onclick="closeSupportLeavePopup()" style="position:absolute;top:.9rem;right:.9rem;background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center" aria-label="Đóng">✕</button>
-        <div style="display:flex;align-items:center;gap:.85rem">
-          <div style="width:48px;height:48px;background:rgba(255,255,255,.2);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.55rem;flex-shrink:0;border:1.5px solid rgba(255,255,255,.25)">📢</div>
+  <!-- POPUP THÔNG BÁO HỖ TRỢ — Trung Thu -->
+  <div id="supportLeavePopup" style="display:none;position:fixed;inset:0;background:rgba(8,10,24,.78);z-index:10001;overflow-y:auto;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)">
+    <div style="max-width:440px;margin:12vh auto 2rem;border-radius:22px;overflow:hidden;border:1px solid rgba(245,215,110,.35);box-shadow:0 28px 70px rgba(0,0,0,.5),0 0 40px rgba(245,215,110,.12);animation:policyPopIn .4s cubic-bezier(.22,1,.36,1) both">
+      <div style="background:linear-gradient(145deg,#1a1440 0%,#2a1830 45%,#7c2d12 100%);padding:1.55rem 1.4rem 1.3rem;color:#fff8eb;position:relative;overflow:hidden">
+        <div style="position:absolute;top:-36px;right:-28px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fffaf0,#f5d76e 55%,transparent 72%);opacity:.55;pointer-events:none"></div>
+        <div style="position:absolute;bottom:-40px;left:-20px;width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,rgba(232,93,4,.35),transparent 70%);pointer-events:none"></div>
+        <button type="button" onclick="closeSupportLeavePopup()" style="position:absolute;top:.9rem;right:.9rem;background:rgba(255,255,255,.12);border:1px solid rgba(245,215,110,.28);color:#fff8eb;width:32px;height:32px;border-radius:50%;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2" aria-label="Đóng">✕</button>
+        <div style="display:flex;align-items:center;gap:.9rem;position:relative;z-index:1">
+          <div style="width:50px;height:50px;border-radius:50%;flex-shrink:0;background:radial-gradient(circle at 32% 32%,#fffaf0,#f5d76e 58%,#e8a317);box-shadow:0 0 22px rgba(245,215,110,.55);position:relative">
+            <span style="position:absolute;top:6px;right:5px;width:32px;height:32px;border-radius:50%;background:#1a1440"></span>
+          </div>
           <div>
-            <div style="font-size:1.15rem;font-weight:900;letter-spacing:-.3px">Thông báo hỗ trợ web</div>
-            <div style="font-size:.8rem;opacity:.85;margin-top:.2rem">Áp dụng từ 16/8 đến 22/8</div>
+            <div style="font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(245,215,110,.9);margin-bottom:.25rem">Mùa Trung Thu</div>
+            <div style="font-family:Georgia,'Times New Roman',serif;font-size:1.3rem;font-weight:700;letter-spacing:.01em;color:#fff8eb">Thông báo hỗ trợ web</div>
+            <div style="font-size:.8rem;color:rgba(247,241,230,.72);margin-top:.25rem">Áp dụng từ 16/8 đến 22/8</div>
           </div>
         </div>
       </div>
-      <div style="background:#fff;padding:1.4rem 1.35rem 1.35rem;display:flex;flex-direction:column;gap:.9rem">
-        <p style="margin:0;font-size:.9rem;color:#374151;line-height:1.75">
-          Từ ngày <b style="color:#c2410c">16/8</b> đến ngày <b style="color:#c2410c">22/8</b>, Admin <b>Trần Cường</b> <b style="color:#c2410c">không hỗ trợ về web</b>.
+      <div style="background:linear-gradient(180deg,#fffaf3 0%,#fff 55%);padding:1.4rem 1.35rem 1.35rem;display:flex;flex-direction:column;gap:.9rem">
+        <p style="margin:0;font-size:.9rem;color:#3f2a1e;line-height:1.75">
+          Từ ngày <b style="color:#c2410c">16/8</b> đến ngày <b style="color:#c2410c">22/8</b>, Admin <b>Trần Cường</b> <b style="color:#9a031e">không hỗ trợ về web</b>.
         </p>
-        <div style="background:#fff7ed;border:1.5px solid #fdba74;border-radius:12px;padding:.85rem 1rem;font-size:.88rem;color:#9a3412;line-height:1.7">
-          Vui lòng liên hệ Admin <b>Quốc Toàn</b> để được giải quyết trong thời gian trên.
+        <div style="background:linear-gradient(135deg,#fff8eb,#fff4d6);border:1px solid rgba(232,93,4,.35);border-radius:12px;padding:.9rem 1rem;font-size:.88rem;color:#7c2d12;line-height:1.7;box-shadow:inset 0 1px 0 rgba(255,255,255,.7)">
+          Vui lòng liên hệ Admin <b style="color:#9a031e">Quốc Toàn</b> để được giải quyết trong thời gian trên.
         </div>
-        <p style="margin:0;font-size:.84rem;color:#64748b;line-height:1.65">
+        <p style="margin:0;font-size:.84rem;color:#78716c;line-height:1.65">
           Sau thời gian trên, Admin Trần Cường trở lại hoạt động bình thường.
         </p>
-        <a href="https://zalo.me/84969795482" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;justify-content:center;gap:.55rem;text-decoration:none;background:linear-gradient(135deg,#0068ff,#0052cc);color:#fff;font-size:.92rem;font-weight:700;padding:.8rem 1rem;border-radius:12px;box-shadow:0 4px 14px rgba(0,104,255,.35)">
+        <a href="https://zalo.me/84969795482" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;justify-content:center;gap:.55rem;text-decoration:none;background:linear-gradient(135deg,#0068ff,#0052cc);color:#fff;font-size:.92rem;font-weight:700;padding:.8rem 1rem;border-radius:12px;box-shadow:0 4px 14px rgba(0,104,255,.3)">
           <svg width="18" height="18" viewBox="0 0 48 48" fill="none"><rect width="48" height="48" rx="12" fill="white" fill-opacity="0.2"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-size="24" font-weight="900" fill="white" font-family="Arial,sans-serif">Z</text></svg>
           Liên hệ Zalo Quốc Toàn
         </a>
-        <button type="button" onclick="closeSupportLeavePopup()" style="width:100%;padding:.8rem;font-size:.92rem;font-weight:800;border:none;border-radius:12px;color:#fff;cursor:pointer;background:linear-gradient(135deg,#ea580c,#c2410c);box-shadow:0 4px 14px rgba(234,88,12,.35)">
-          Đã hiểu ✓
+        <button type="button" onclick="closeSupportLeavePopup()" style="width:100%;padding:.85rem;font-size:.92rem;font-weight:800;border:none;border-radius:12px;color:#fff;cursor:pointer;background:linear-gradient(135deg,#e85d04 0%,#9a031e 55%,#7c2d12 100%);box-shadow:0 8px 22px rgba(232,93,4,.38)">
+          Đã hiểu
         </button>
       </div>
     </div>
