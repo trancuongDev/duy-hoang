@@ -14,8 +14,28 @@
 body.trungthu-theme {
   --tt-on: 1;
   background-color: #0b1026;
+}
+
+/* Trang chủ: bỏ lớp phủ tối cũ, dùng ảnh nền sáng riêng */
+body.trungthu-theme:not(.auth-page) {
+  background-image: none;
+}
+
+body.trungthu-theme:not(.auth-page)::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: url('trungthu-bg.jpg') center / cover no-repeat;
+  background-attachment: fixed;
+  filter: brightness(1.4) contrast(1.08) saturate(1.15);
+}
+
+/* Login / auth giữ nền riêng — vẫn có ảnh + phủ nhẹ */
+body.trungthu-theme.auth-page {
   background-image:
-    linear-gradient(165deg, rgba(11, 16, 38, .48) 0%, rgba(26, 20, 64, .42) 50%, rgba(11, 16, 38, .58) 100%),
+    linear-gradient(165deg, rgba(11, 16, 38, .35) 0%, rgba(26, 20, 64, .28) 50%, rgba(11, 16, 38, .42) 100%),
     url('trungthu-bg.jpg');
   background-size: cover;
   background-position: center center;
@@ -23,7 +43,7 @@ body.trungthu-theme {
   background-attachment: fixed;
 }
 
-/* Soft mist over photo */
+/* Lớp sáng nhẹ — không phủ tối nền */
 .tt-glow {
   position: fixed;
   inset: 0;
@@ -31,9 +51,9 @@ body.trungthu-theme {
   z-index: 0;
   overflow: hidden;
   background:
-    radial-gradient(ellipse 55% 42% at 82% 10%, rgba(255, 244, 214, .16) 0%, transparent 58%),
-    radial-gradient(ellipse 45% 38% at 12% 78%, rgba(232, 93, 4, .1) 0%, transparent 60%),
-    linear-gradient(180deg, rgba(11, 16, 38, .2) 0%, transparent 35%, rgba(11, 16, 38, .4) 100%);
+    radial-gradient(ellipse 60% 48% at 82% 12%, rgba(255, 244, 214, .22) 0%, transparent 62%),
+    radial-gradient(ellipse 48% 42% at 18% 72%, rgba(255, 180, 80, .12) 0%, transparent 65%),
+    linear-gradient(180deg, rgba(255, 244, 214, .04) 0%, transparent 45%, rgba(11, 16, 38, .1) 100%);
 }
 
 .tt-glow::after {

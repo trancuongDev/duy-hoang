@@ -9,8 +9,9 @@
   <link rel="icon" type="image/png" href="icons/icon-192.png"/>
   <link rel="apple-touch-icon" href="icons/icon-192.png"/>
   <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="css/trungthu-dashboard.css?v=1.5.2"/>
   <link rel="manifest" href="manifest.json"/>
-  <meta name="theme-color" content="#4f46e5"/>
+  <meta name="theme-color" content="#1a1440"/>
   <meta name="mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
@@ -18,7 +19,8 @@
   <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="config.js"></script>
 </head>
-<body class="dashboard-page">
+<body class="dashboard-page trungthu-dash">
+  <div class="tt-dash-spark" id="ttDashSpark" aria-hidden="true"></div>
 
   <!-- Chấm đỏ giám sát -->
   <div id="monitorDot" style="position:fixed;bottom:14px;right:14px;z-index:9999;display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.55);padding:5px 10px 5px 8px;border-radius:20px;pointer-events:none">
@@ -141,13 +143,17 @@
         @media (max-width: 768px) { #studentGreetingBanner { display: none !important; } }
       </style>
 
-      <!-- Hero banner -->
+      <!-- Hero banner Trung Thu -->
       <div id="heroBanner" style="background:linear-gradient(135deg,#0a0820 0%,#1e1b4b 40%,#312e81 75%,#1e3a5f 100%);border-radius:20px;padding:2rem;margin-bottom:1.5rem;position:relative;overflow:hidden;color:#fff">
+        <div class="tt-moon" aria-hidden="true"></div>
+        <div class="tt-lantern" aria-hidden="true"></div>
+        <div class="tt-lantern tt-lantern-2" aria-hidden="true"></div>
         <!-- Canvas sao -->
         <canvas id="mathUniverseCanvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;display:block;background:transparent;border:none;outline:none"></canvas>
         <!-- Ký hiệu toán học nổi -->
         <div id="mathSymbols" style="position:absolute;inset:0;pointer-events:none;z-index:1;overflow:hidden"></div>
         <div style="position:relative;z-index:2">
+          <div class="tt-hero-badge">Mùa Trung Thu</div>
           <div style="display:flex;align-items:center;gap:1.25rem;margin-bottom:1.25rem">
             <div id="homeAvatar" style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.15);backdrop-filter:blur(8px);border:2px solid rgba(255,255,255,.3);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:800;flex-shrink:0;box-shadow:0 4px 16px rgba(0,0,0,.2)"></div>
             <div>
@@ -170,6 +176,11 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <div class="tt-season-note" aria-hidden="false">
+        <span style="font-size:1.15rem;flex-shrink:0">🌕</span>
+        <span>Chúc bạn mùa Trung Thu ấm áp — học đều mỗi ngày dưới ánh trăng!</span>
       </div>
 
       <!-- Banner điện thoại -->
@@ -1302,9 +1313,9 @@
         for (let i = 0; i < starCount; i++) {
           stars.push({
             x: Math.random() * W, y: Math.random() * H,
-            r: Math.random() * 1.4 + 0.3, a: Math.random(),
+            r: Math.random() * 1.8 + 0.4, a: Math.random(),
             da: (Math.random() * 0.008 + 0.003) * (Math.random() < 0.5 ? 1 : -1),
-            color: ['#a5b4fc','#c4b5fd','#67e8f9','#fff','#fde68a'][Math.floor(Math.random()*5)]
+            color: ['#fff8eb','#f5d76e','#ffe27a','#fff','#fde68a','#c4b5fd'][Math.floor(Math.random()*6)]
           });
         }
       }
@@ -1313,12 +1324,19 @@
         stars.forEach(s => {
           s.a += s.da;
           if (s.a > 1) { s.a = 1; s.da *= -1; }
-          if (s.a < 0.1) { s.a = 0.1; s.da *= -1; }
+          if (s.a < 0.15) { s.a = 0.15; s.da *= -1; }
           ctx.beginPath();
           ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
           ctx.fillStyle = s.color;
           ctx.globalAlpha = s.a;
           ctx.fill();
+          if (s.r > 1.4) {
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.r * 2.2, 0, Math.PI * 2);
+            ctx.fillStyle = s.color;
+            ctx.globalAlpha = s.a * 0.18;
+            ctx.fill();
+          }
         });
         ctx.globalAlpha = 1;
         rafId = requestAnimationFrame(drawStars);
@@ -1327,7 +1345,7 @@
       window.addEventListener('resize', () => { resizeCanvas(); initStars(); });
 
       const SYMBOLS = ['∑','∫','π','√','∞','∂','Δ','α','β','γ','θ','λ','μ','σ','φ','ω','≈','≠','≤','≥','∈','∉','⊂','∩','∪','∀','∃','⊕','×','÷','²','³','!','%','±','∓','∝','∇','ℝ','ℤ','ℕ','ℚ','log','lim','sin','cos','tan','f(x)','x²','aₙ','Sₙ'];
-      const colors = ['#a5b4fc','#c4b5fd','#67e8f9','#fde68a','#6ee7b7','#f9a8d4'];
+      const colors = ['#f5d76e','#ffe27a','#fff8eb','#c4b5fd','#67e8f9','#f9a8d4'];
       for (let i = 0; i < 18; i++) {
         const span = document.createElement('span');
         const opacity = Math.random() * 0.35 + 0.18;
@@ -1344,11 +1362,24 @@
       }
     }
 
-    // Hero banner trang chủ
-    createMathUniverse('heroBanner', 'mathUniverseCanvas', 'mathSymbols', 120);
+    // Hero banner trang chủ — nhiều sao hơn mùa Trung Thu
+    createMathUniverse('heroBanner', 'mathUniverseCanvas', 'mathSymbols', 200);
     // Banner chi tiết bài học — khởi động khi mở
-    createMathUniverse('lessonDetailBanner', 'lessonBannerCanvas', 'lessonBannerSymbols', 60);
+    createMathUniverse('lessonDetailBanner', 'lessonBannerCanvas', 'lessonBannerSymbols', 80);
+
+    // Sao vàng rơi nhẹ trên dashboard
+    (function () {
+      var wrap = document.getElementById('ttDashSpark');
+      if (!wrap || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      var n = window.innerWidth < 700 ? 10 : 18;
+      var html = '';
+      for (var i = 0; i < n; i++) {
+        html += '<i style="--x:' + (Math.random() * 100) + '%;--d:' + (12 + Math.random() * 14) + 's;--delay:' + (-Math.random() * 16) + 's;--drift:' + (Math.random() * 40 - 20) + 'px;--s:' + (2 + Math.random() * 3) + 'px"></i>';
+      }
+      wrap.innerHTML = html;
+    })();
   </script>
+  <script src="trungthu-wish.js?v=1.5.2" defer></script>
 
 </body>
 

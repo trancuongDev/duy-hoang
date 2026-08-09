@@ -38,15 +38,162 @@ a{text-decoration:none;color:inherit}
 .particle{position:absolute;border-radius:50%;opacity:0;animation:pfloat linear infinite}
 @keyframes pfloat{0%{opacity:0;transform:translateY(100vh)}15%{opacity:.45}85%{opacity:.2}100%{opacity:0;transform:translateY(-5vh)}}
 
-nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:.85rem 2rem;display:flex;align-items:center;justify-content:space-between;background:transparent;backdrop-filter:none;border-bottom:none}
-.nav-brand{display:flex;align-items:center;gap:.65rem;font-weight:800;font-size:1.05rem;letter-spacing:.02em}
-.nav-brand img{width:32px;height:32px;border-radius:8px}
-.nav-links{display:flex;align-items:center;gap:.35rem}
-.nav-link{padding:.45rem .85rem;border-radius:8px;font-size:.85rem;font-weight:600;color:rgba(247,241,230,.62);transition:all .18s}
-.nav-link:hover{background:rgba(255,255,255,.07);color:#fff}
-.nav-btn{padding:.5rem 1.25rem;border-radius:10px;font-size:.88rem;font-weight:700;background:linear-gradient(135deg,#e85d04,#9a031e);color:#fff;border:none;cursor:pointer;transition:all .2s;box-shadow:0 4px 16px rgba(232,93,4,.35)}
-.nav-btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
-@media(max-width:640px){.nav-links .nav-link{display:none}}
+/* Sao rơi */
+#fallingStars{position:fixed;inset:0;pointer-events:none;z-index:1;overflow:hidden}
+.fall-star{
+  position:absolute;width:var(--s,3px);height:var(--s,3px);border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#fff8eb,#ffe27a 55%,#f5d76e);
+  box-shadow:0 0 10px rgba(255,226,122,.9),0 0 18px rgba(245,215,110,.45);
+  opacity:0;animation:starDrop var(--dur,9s) linear infinite;animation-delay:var(--delay,0s);
+}
+.fall-star.fall-star-lg{
+  box-shadow:0 0 12px rgba(255,226,122,1),0 0 22px rgba(245,215,110,.55);
+}
+@keyframes starDrop{
+  0%{opacity:0;transform:translate3d(0,-12px,0) scale(.4)}
+  10%{opacity:.95}
+  75%{opacity:.7}
+  100%{opacity:0;transform:translate3d(var(--drift,20px),108vh,0) scale(1.05)}
+}
+
+/* Đom đóm */
+#fireflies{position:fixed;inset:0;pointer-events:none;z-index:1;overflow:hidden}
+.firefly{
+  position:absolute;left:var(--x,50%);top:var(--y,50%);
+  width:var(--s,4px);height:var(--s,4px);border-radius:50%;
+  background:radial-gradient(circle,#fff8c4 0%,#f5d76e 40%,rgba(232,163,23,0) 72%);
+  box-shadow:0 0 8px rgba(255,226,122,.95),0 0 18px rgba(245,215,110,.55);
+  opacity:0;
+  animation:
+    fireflyGlow var(--glow,3.2s) ease-in-out infinite,
+    fireflyFloat var(--float,11s) ease-in-out infinite;
+  animation-delay:var(--delay,0s), var(--delay,0s);
+  will-change:transform,opacity;
+}
+@keyframes fireflyGlow{
+  0%,100%{opacity:.15;filter:brightness(.7)}
+  40%{opacity:.95;filter:brightness(1.25)}
+  55%{opacity:.35;filter:brightness(.85)}
+  70%{opacity:1;filter:brightness(1.35)}
+}
+@keyframes fireflyFloat{
+  0%{transform:translate3d(0,0,0) scale(.85)}
+  25%{transform:translate3d(var(--dx1,18px),var(--dy1,-22px),0) scale(1)}
+  50%{transform:translate3d(var(--dx2,-14px),var(--dy2,16px),0) scale(.9)}
+  75%{transform:translate3d(var(--dx3,22px),var(--dy3,-10px),0) scale(1.05)}
+  100%{transform:translate3d(0,0,0) scale(.85)}
+}
+@media (prefers-reduced-motion:reduce){
+  #fallingStars,#fireflies{display:none}
+}
+
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  padding:.75rem 1.35rem;
+  display:flex;align-items:center;justify-content:space-between;gap:1rem;
+  background:transparent;border-bottom:none;
+}
+.nav-brand{
+  display:flex;align-items:center;gap:.65rem;
+  font-weight:800;font-size:1.05rem;letter-spacing:.02em;
+  color:#fff8eb;
+  text-shadow:0 2px 10px rgba(0,0,0,.55);
+}
+.nav-brand img{width:32px;height:32px;border-radius:8px;box-shadow:0 0 0 1.5px rgba(245,215,110,.55)}
+.nav-right{display:flex;align-items:center;gap:.65rem}
+.nav-menu{display:flex;align-items:center;gap:.45rem}
+.nav-links{
+  display:flex;align-items:center;gap:.3rem;
+  max-width:0;
+  opacity:0;
+  overflow:hidden;
+  padding:0;
+  border-radius:999px;
+  background:rgba(12,16,34,.72);
+  border:1px solid transparent;
+  box-shadow:none;
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  transform:translateX(12px);
+  pointer-events:none;
+  transition:
+    max-width .45s cubic-bezier(.22,1,.36,1),
+    opacity .28s ease,
+    padding .35s ease,
+    border-color .25s ease,
+    box-shadow .3s ease,
+    transform .4s cubic-bezier(.22,1,.36,1);
+}
+.nav-menu.is-open .nav-links{
+  max-width:520px;
+  opacity:1;
+  padding:.28rem;
+  border-color:rgba(245,215,110,.4);
+  box-shadow:0 10px 28px rgba(0,0,0,.35);
+  transform:none;
+  pointer-events:auto;
+}
+.nav-link{
+  flex-shrink:0;
+  padding:.48rem .9rem;border-radius:999px;
+  font-size:.84rem;font-weight:700;
+  color:#fff8eb;white-space:nowrap;
+  opacity:0;transform:translateX(10px);
+  transition:background .18s ease,color .18s ease,opacity .3s ease,transform .35s cubic-bezier(.22,1,.36,1);
+}
+.nav-menu.is-open .nav-link{opacity:1;transform:none}
+.nav-menu.is-open .nav-link:nth-child(1){transition-delay:.05s}
+.nav-menu.is-open .nav-link:nth-child(2){transition-delay:.1s}
+.nav-menu.is-open .nav-link:nth-child(3){transition-delay:.15s}
+.nav-menu.is-open .nav-link:nth-child(4){transition-delay:.2s}
+.nav-link:hover{background:rgba(245,215,110,.22);color:#ffe27a}
+.nav-toggle{
+  width:44px;height:44px;border-radius:50%;
+  border:1.5px solid #ffe27a;
+  background:radial-gradient(circle at 35% 30%, #fff3bf, #f5d76e 55%, #e6b84a);
+  color:#1a1440;
+  cursor:pointer;padding:0;
+  display:grid;place-items:center;
+  box-shadow:0 0 16px rgba(255,216,77,.45),0 8px 20px rgba(0,0,0,.3);
+  transition:background .25s ease,color .25s ease,transform .25s ease,box-shadow .25s ease;
+}
+.nav-toggle:hover{transform:translateY(-1px);filter:brightness(1.05)}
+.nav-toggle-icon{width:20px;height:20px;display:block}
+.nav-bar{transition:transform .35s cubic-bezier(.34,1.3,.64,1),opacity .25s ease;transform-origin:center}
+.nav-menu.is-open .nav-toggle{
+  background:radial-gradient(circle at 35% 30%, #2a2058, #1a1440 70%);
+  color:#ffe27a;
+  box-shadow:0 0 18px rgba(255,226,122,.4),0 8px 20px rgba(0,0,0,.35);
+}
+.nav-menu.is-open .nav-bar-1{transform:translateY(5px) rotate(45deg)}
+.nav-menu.is-open .nav-bar-2{opacity:0;transform:scaleX(0)}
+.nav-menu.is-open .nav-bar-3{transform:translateY(-5px) rotate(-45deg)}
+.nav-btn{
+  padding:.55rem 1.2rem;border-radius:999px;
+  font-size:.86rem;font-weight:800;
+  background:linear-gradient(135deg,#ffb347,#e85d04 45%,#9a031e);
+  color:#fff;border:1px solid rgba(255,255,255,.22);
+  cursor:pointer;transition:transform .2s ease,filter .2s ease,box-shadow .2s ease;
+  box-shadow:0 4px 16px rgba(232,93,4,.45);
+  white-space:nowrap;
+}
+.nav-btn:hover{filter:brightness(1.08);transform:translateY(-1px);box-shadow:0 8px 20px rgba(232,93,4,.55)}
+@media(max-width:720px){
+  nav{padding:.65rem 1rem}
+  .nav-menu{position:relative}
+  .nav-links{
+    position:absolute;right:0;top:calc(100% + .55rem);
+    flex-direction:column;align-items:stretch;
+    max-width:none;width:min(220px,calc(100vw - 2rem));
+    transform:translateY(-8px) scale(.96);
+  }
+  .nav-menu.is-open .nav-links{
+    max-width:none;
+    transform:none;
+    padding:.45rem;
+  }
+  .nav-link{transform:translateY(6px);width:100%;text-align:left}
+  .nav-menu.is-open .nav-link{transform:none}
+}
 
 .hero{position:relative;z-index:2;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:6.5rem 1.5rem 3.5rem}
 .hero-brand{font-family:'Cormorant Garamond',Georgia,serif;font-size:clamp(3rem,9vw,5.6rem);font-weight:700;line-height:1;letter-spacing:.01em;margin-bottom:.85rem;animation:fadeUp .7s ease both;background:linear-gradient(135deg,#fff8eb 10%,#f5d76e 45%,#e8a317 90%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-shadow:none}
@@ -56,11 +203,43 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:.85rem 2rem;display:
 .hero-title{font-size:clamp(1.35rem,3.2vw,1.85rem);font-weight:600;line-height:1.35;letter-spacing:-.2px;margin-bottom:1.1rem;color:rgba(247,241,230,.88);animation:fadeUp .7s .12s ease both}
 .hero-title .gold{color:#f5d76e;font-weight:700}
 .hero-sub{font-size:1.02rem;color:rgba(247,241,230,.55);max-width:520px;line-height:1.75;margin-bottom:2.1rem;animation:fadeUp .7s .2s ease both}
-.hero-btns{display:flex;gap:.85rem;flex-wrap:wrap;justify-content:center;animation:fadeUp .7s .28s ease both}
-.btn-hero-primary{display:inline-flex;align-items:center;gap:.5rem;padding:.88rem 2rem;border-radius:12px;font-size:.98rem;font-weight:700;background:linear-gradient(135deg,#e85d04,#9a031e);color:#fff;box-shadow:0 10px 30px rgba(232,93,4,.4);transition:all .2s}
-.btn-hero-primary:hover{transform:translateY(-2px);box-shadow:0 14px 36px rgba(232,93,4,.5);filter:brightness(1.08)}
-.btn-hero-outline{display:inline-flex;align-items:center;gap:.5rem;padding:.88rem 2rem;border-radius:12px;font-size:.98rem;font-weight:600;border:1px solid rgba(245,215,110,.32);color:rgba(247,241,230,.9);background:rgba(255,255,255,.04);backdrop-filter:blur(8px);transition:all .2s}
-.btn-hero-outline:hover{border-color:rgba(245,215,110,.6);background:rgba(245,215,110,.08);transform:translateY(-2px)}
+.hero-btns{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;align-items:center;animation:fadeUp .7s .28s ease both}
+.btn-hero-primary,.btn-hero-outline{
+  position:relative;display:inline-flex;align-items:center;justify-content:center;gap:.55rem;
+  min-width:11.5rem;padding:1rem 1.85rem;border-radius:999px;font-size:.95rem;font-weight:700;
+  letter-spacing:.01em;text-decoration:none;overflow:hidden;
+  transition:transform .25s cubic-bezier(.22,1,.36,1),box-shadow .25s ease,background .25s ease,border-color .25s ease,color .25s ease;
+}
+.btn-hero-primary{
+  color:#1a1440;border:1px solid rgba(255,244,214,.55);
+  background:linear-gradient(135deg,#fff8eb 0%,#f5d76e 42%,#e8a317 100%);
+  box-shadow:0 12px 32px rgba(232,93,4,.35),0 0 0 1px rgba(255,255,255,.12) inset;
+}
+.btn-hero-primary::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(110deg,transparent 35%,rgba(255,255,255,.45) 50%,transparent 65%);
+  transform:translateX(-120%);transition:transform .55s ease;pointer-events:none;
+}
+.btn-hero-primary:hover{
+  transform:translateY(-3px);
+  box-shadow:0 16px 40px rgba(245,215,110,.45),0 0 0 1px rgba(255,255,255,.18) inset;
+  filter:brightness(1.04);
+}
+.btn-hero-primary:hover::after{transform:translateX(120%)}
+.btn-hero-primary:active{transform:translateY(-1px)}
+.btn-hero-outline{
+  color:#fff8eb;border:1.5px solid rgba(245,215,110,.45);
+  background:rgba(11,16,38,.35);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  box-shadow:0 8px 24px rgba(0,0,0,.25);
+}
+.btn-hero-outline:hover{
+  color:#1a1440;border-color:#f5d76e;
+  background:linear-gradient(135deg,rgba(255,248,235,.95),rgba(245,215,110,.92));
+  transform:translateY(-3px);
+  box-shadow:0 14px 34px rgba(245,215,110,.28);
+}
+.btn-hero-outline:active{transform:translateY(-1px)}
+.btn-hero-primary svg,.btn-hero-outline svg{width:18px;height:18px;flex-shrink:0}
 </style>
 <style>
 /* ══ STATS STRIP ══ */
@@ -112,6 +291,8 @@ footer b{color:rgba(255,255,255,.5)}
 
 <div class="tt-glow" aria-hidden="true"></div>
 <div id="particles"></div>
+<div id="fallingStars" aria-hidden="true"></div>
+<div id="fireflies" aria-hidden="true"></div>
 <div class="tt-spark" id="ttSpark" aria-hidden="true"></div>
 <!-- NAV -->
 <nav>
@@ -119,14 +300,48 @@ footer b{color:rgba(255,255,255,.5)}
     <img src="icons/icon-192.png" alt="DHDT"/>
     DHDT LMS
   </div>
-  <div class="nav-links">
-    <a class="nav-link" href="index.html">Trang chủ</a>
-    <a class="nav-link" href="#features">Tính năng</a>
-    <a class="nav-link" href="honor.html">Vinh danh</a>
-    <a class="nav-link" href="policy.html">Chính sách</a>
+  <div class="nav-right">
+    <div class="nav-menu" id="navMenu">
+      <div class="nav-links" id="navLinks">
+        <a class="nav-link" href="index.html">Trang chủ</a>
+        <a class="nav-link" href="#features">Tính năng</a>
+        <a class="nav-link" href="honor.html">Vinh danh</a>
+        <a class="nav-link" href="policy.html">Chính sách</a>
+      </div>
+      <button type="button" class="nav-toggle" id="navToggle" aria-label="Mở menu" aria-expanded="false" aria-controls="navLinks" title="Menu">
+        <svg class="nav-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" aria-hidden="true">
+          <path class="nav-bar nav-bar-1" d="M5 7h14"/>
+          <path class="nav-bar nav-bar-2" d="M5 12h14"/>
+          <path class="nav-bar nav-bar-3" d="M5 17h14"/>
+        </svg>
+      </button>
+    </div>
     <a class="nav-btn" href="login.html">Đăng nhập</a>
   </div>
 </nav>
+<script>
+(function(){
+  var menu = document.getElementById('navMenu');
+  var btn = document.getElementById('navToggle');
+  if (!menu || !btn) return;
+  function setOpen(open){
+    menu.classList.toggle('is-open', open);
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    btn.setAttribute('aria-label', open ? 'Đóng menu' : 'Mở menu');
+    btn.title = open ? 'Đóng' : 'Menu';
+  }
+  btn.addEventListener('click', function(e){
+    e.stopPropagation();
+    setOpen(!menu.classList.contains('is-open'));
+  });
+  document.addEventListener('click', function(e){
+    if (menu.classList.contains('is-open') && !menu.contains(e.target)) setOpen(false);
+  });
+  menu.querySelectorAll('.nav-link').forEach(function(a){
+    a.addEventListener('click', function(){ setOpen(false); });
+  });
+})();
+</script>
 
 <!-- HERO -->
 <section class="hero">
@@ -140,8 +355,14 @@ footer b{color:rgba(255,255,255,.5)}
     đồng hành cùng bạn trên hành trình luyện thi.
   </p>
   <div class="hero-btns">
-    <a class="btn-hero-primary" href="login.html">Đăng nhập ngay</a>
-    <a class="btn-hero-outline" href="honor.html">Bảng vinh danh</a>
+    <a class="btn-hero-primary" href="login.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+      Đăng nhập ngay
+    </a>
+    <a class="btn-hero-outline" href="honor.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M5 4H3a2 2 0 0 0 2 4"/><path d="M19 4h2a2 2 0 0 1-2 4"/></svg>
+      Bảng vinh danh
+    </a>
   </div>
 
   <!-- Mũi tên chỉ xuống -->
@@ -166,34 +387,158 @@ footer b{color:rgba(255,255,255,.5)}
 </div>
 
 <!-- ABOUT TEACHER -->
-<div style="position:relative;z-index:2;max-width:900px;margin:0 auto 0;padding:0 1.5rem" class="reveal">
-  <div style="background:linear-gradient(135deg,rgba(255,255,255,.05),rgba(255,255,255,.02));border:1px solid rgba(245,215,110,.16);border-radius:22px;overflow:hidden;display:flex;align-items:stretch;flex-wrap:wrap">
-    <div style="flex:0 0 340px;min-height:320px;position:relative;overflow:hidden">
-      <img src="teacher.jpg" alt="Thầy Duy Hoàng" style="width:100%;height:100%;object-fit:cover;object-position:center top;display:block;filter:brightness(.9)"/>
-      <div style="position:absolute;inset:0;background:linear-gradient(to right,transparent 60%,rgba(11,16,38,.95))"></div>
-      <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(11,16,38,.7) 0%,transparent 40%)"></div>
-      <div style="position:absolute;top:1rem;left:1rem;display:flex;align-items:center;gap:.45rem;background:rgba(11,16,38,.55);backdrop-filter:blur(8px);border:1px solid rgba(245,215,110,.22);border-radius:999px;padding:.32rem .8rem;font-size:.72rem;font-weight:600;color:#f7f1e6;letter-spacing:.02em">
-        <span style="width:6px;height:6px;background:#f5d76e;border-radius:50%;box-shadow:0 0 8px rgba(245,215,110,.8);flex-shrink:0"></span>
-        Đang giảng dạy
-      </div>
+<style>
+  .about-wrap{position:relative;z-index:2;max-width:960px;margin:0 auto;padding:0 1.5rem}
+  .about-panel{
+    position:relative;overflow:hidden;border-radius:26px;
+    display:flex;align-items:stretch;flex-wrap:wrap;
+    background:
+      radial-gradient(ellipse 55% 70% at 92% 10%, rgba(255,226,122,.22), transparent 55%),
+      radial-gradient(ellipse 40% 50% at 8% 90%, rgba(232,93,4,.14), transparent 55%),
+      linear-gradient(145deg, rgba(18,14,46,.72), rgba(26,20,64,.55) 55%, rgba(42,24,48,.5));
+    border:1px solid rgba(245,215,110,.38);
+    box-shadow:0 20px 50px rgba(0,0,0,.35), 0 0 0 1px rgba(255,255,255,.04) inset;
+    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  }
+  .about-panel::before{
+    content:"";position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.55;
+    background-image:
+      radial-gradient(1.5px 1.5px at 12% 22%, rgba(255,248,235,.9), transparent),
+      radial-gradient(1.5px 1.5px at 28% 68%, rgba(245,215,110,.85), transparent),
+      radial-gradient(1.2px 1.2px at 70% 30%, rgba(255,255,255,.75), transparent),
+      radial-gradient(1.8px 1.8px at 84% 62%, rgba(255,226,122,.9), transparent),
+      radial-gradient(1.2px 1.2px at 55% 78%, rgba(255,255,255,.65), transparent),
+      radial-gradient(1.4px 1.4px at 40% 18%, rgba(245,215,110,.7), transparent);
+  }
+  .about-moon{
+    position:absolute;top:1.1rem;right:1.2rem;width:56px;height:56px;border-radius:50%;
+    background:radial-gradient(circle at 32% 28%, #fff8eb, #f5d76e 52%, #e8a317);
+    box-shadow:0 0 28px rgba(245,215,110,.55), 0 0 60px rgba(245,215,110,.2);
+    z-index:1;pointer-events:none;animation:aboutMoon 4.5s ease-in-out infinite;
+  }
+  @keyframes aboutMoon{0%,100%{transform:scale(1);opacity:.9}50%{transform:scale(1.06);opacity:1}}
+  .about-lantern{
+    position:absolute;right:5.5rem;top:1.35rem;width:16px;height:26px;z-index:1;pointer-events:none;
+    border-radius:4px 4px 7px 7px;
+    background:linear-gradient(180deg,#ffb703,#e85d04 58%,#9a031e);
+    box-shadow:0 0 16px rgba(232,93,4,.55);
+    animation:aboutLantern 3s ease-in-out infinite;
+  }
+  .about-lantern::before{content:"";position:absolute;top:-7px;left:50%;width:2px;height:7px;margin-left:-1px;background:rgba(255,230,170,.85)}
+  .about-lantern-2{right:7.2rem;top:2.1rem;transform:scale(.78);animation-delay:.7s}
+  @keyframes aboutLantern{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(7deg)}}
+  .about-lantern-2{animation-name:aboutLantern2}
+  @keyframes aboutLantern2{0%,100%{transform:scale(.78) rotate(6deg)}50%{transform:scale(.78) rotate(-6deg)}}
+  .about-media{
+    flex:0 0 360px;min-height:360px;position:relative;overflow:hidden;z-index:1;
+  }
+  .about-media img{
+    width:100%;height:100%;object-fit:cover;object-position:center top;display:block;
+    filter:brightness(1.08) contrast(1.05) saturate(1.05);
+    transition:transform .6s ease;
+  }
+  .about-panel:hover .about-media img{transform:scale(1.03)}
+  .about-media-shade{
+    position:absolute;inset:0;pointer-events:none;
+    background:
+      linear-gradient(90deg, transparent 45%, rgba(18,14,46,.88) 100%),
+      linear-gradient(180deg, transparent 55%, rgba(18,14,46,.55) 100%);
+  }
+  .about-live{
+    position:absolute;top:1rem;left:1rem;z-index:2;
+    display:inline-flex;align-items:center;gap:.45rem;
+    padding:.38rem .85rem;border-radius:999px;
+    font-size:.74rem;font-weight:700;color:#fff8eb;letter-spacing:.02em;
+    background:rgba(12,16,34,.62);border:1px solid rgba(245,215,110,.4);
+    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    box-shadow:0 8px 20px rgba(0,0,0,.25);
+  }
+  .about-live i{
+    width:7px;height:7px;border-radius:50%;background:#f5d76e;flex-shrink:0;
+    box-shadow:0 0 0 0 rgba(245,215,110,.7);animation:aboutPulse 1.6s ease-out infinite;
+  }
+  @keyframes aboutPulse{0%{box-shadow:0 0 0 0 rgba(245,215,110,.65)}70%{box-shadow:0 0 0 8px rgba(245,215,110,0)}100%{box-shadow:0 0 0 0 rgba(245,215,110,0)}}
+  .about-body{
+    flex:1;min-width:280px;padding:2.4rem 2.2rem 2.2rem;
+    display:flex;flex-direction:column;justify-content:center;gap:1.15rem;position:relative;z-index:2;
+  }
+  .about-kicker{
+    display:inline-flex;align-items:center;gap:.4rem;width:fit-content;
+    font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#f5d76e;
+  }
+  .about-kicker::before{content:"";width:18px;height:1.5px;background:linear-gradient(90deg,#f5d76e,transparent)}
+  .about-name{
+    font-family:'Cormorant Garamond',Georgia,serif;
+    font-size:clamp(2rem,4vw,2.55rem);font-weight:700;line-height:1.1;letter-spacing:.01em;
+    background:linear-gradient(135deg,#fff8eb 10%,#f5d76e 55%,#e8a317);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+    margin:0 0 .35rem;
+  }
+  .about-role{margin:0;font-size:.92rem;color:rgba(247,241,230,.62);line-height:1.55}
+  .about-points{display:flex;flex-direction:column;gap:.55rem;margin:.15rem 0 .2rem}
+  .about-point{
+    display:flex;align-items:flex-start;gap:.7rem;
+    padding:.15rem 0;
+    font-size:.9rem;color:rgba(247,241,230,.78);line-height:1.55;
+  }
+  .about-point b{color:#ffe27a;font-weight:700}
+  .about-point-ico{
+    width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:.45rem;
+    background:radial-gradient(circle at 35% 30%, #fff8eb, #f5d76e 60%, #e8a317);
+    box-shadow:0 0 10px rgba(245,215,110,.55);
+  }
+  .about-cta{
+    display:inline-flex;align-items:center;gap:.5rem;width:fit-content;
+    margin-top:.25rem;padding:.85rem 1.45rem;border-radius:999px;
+    font-size:.92rem;font-weight:800;color:#1a1440;text-decoration:none;
+    background:linear-gradient(135deg,#fff8eb,#f5d76e 45%,#e8a317);
+    border:1px solid rgba(255,244,214,.55);
+    box-shadow:0 12px 28px rgba(232,93,4,.32);
+    transition:transform .22s ease,box-shadow .22s ease,filter .22s ease;
+  }
+  .about-cta:hover{transform:translateY(-2px);filter:brightness(1.04);box-shadow:0 16px 34px rgba(232,93,4,.42)}
+  .about-cta svg{width:18px;height:18px}
+  @media(max-width:720px){
+    .about-media{flex:1 1 100%;min-height:260px}
+    .about-body{padding:1.6rem 1.35rem 1.7rem}
+    .about-moon{width:42px;height:42px;top:.85rem;right:.9rem}
+    .about-lantern,.about-lantern-2{display:none}
+    .about-media-shade{background:linear-gradient(180deg,transparent 40%,rgba(18,14,46,.75) 100%)}
+  }
+</style>
+
+<div class="about-wrap reveal">
+  <div class="about-panel">
+    <div class="about-moon" aria-hidden="true"></div>
+    <div class="about-lantern" aria-hidden="true"></div>
+    <div class="about-lantern about-lantern-2" aria-hidden="true"></div>
+    <div class="about-media">
+      <img src="teacher.jpg" alt="Thầy Duy Hoàng"/>
+      <div class="about-media-shade"></div>
+      <div class="about-live"><i aria-hidden="true"></i>Đang giảng dạy</div>
     </div>
-    <div style="flex:1;min-width:260px;padding:2.25rem 2rem;display:flex;flex-direction:column;justify-content:center;gap:1rem">
+    <div class="about-body">
       <div>
-        <h2 style="font-family:'Cormorant Garamond',Georgia,serif;font-size:2rem;font-weight:700;line-height:1.15;margin-bottom:.35rem">Anh Duy Hoàng</h2>
-        <p style="font-size:.85rem;color:rgba(247,241,230,.48);line-height:1.55">Giáo viên Toán — đồng hành luyện thi THPT &amp; VSAT</p>
+        <div class="about-kicker">Giáo viên đồng hành</div>
+        <h2 class="about-name">Anh Duy Hoàng</h2>
+        <p class="about-role">Giáo viên Toán — đồng hành luyện thi THPT &amp; VSAT</p>
       </div>
-      <div style="display:flex;flex-direction:column;gap:.5rem">
-        <div style="padding:.7rem .9rem;background:rgba(255,255,255,.04);border-radius:10px;border:1px solid rgba(255,255,255,.07)">
-          <span style="font-size:.86rem;color:rgba(247,241,230,.72);line-height:1.55">Học viên đạt <b style="color:#f5d76e;font-weight:700">điểm 10</b> THPT Quốc Gia &amp; <b style="color:#f5d76e;font-weight:700">150 điểm</b> VSAT Toán</span>
+      <div class="about-points">
+        <div class="about-point">
+          <span class="about-point-ico" aria-hidden="true"></span>
+          <span>Học viên đạt <b>điểm 10</b> THPT Quốc Gia &amp; <b>150 điểm</b> VSAT Toán</span>
         </div>
-        <div style="padding:.7rem .9rem;background:rgba(255,255,255,.04);border-radius:10px;border:1px solid rgba(255,255,255,.07)">
-          <span style="font-size:.86rem;color:rgba(247,241,230,.72);line-height:1.55">Hơn <b style="color:#f5d76e;font-weight:700">3000+ học viên</b> tin tưởng trên khắp cả nước</span>
+        <div class="about-point">
+          <span class="about-point-ico" aria-hidden="true"></span>
+          <span>Hơn <b>3000+ học viên</b> tin tưởng trên khắp cả nước</span>
         </div>
-        <div style="padding:.7rem .9rem;background:rgba(255,255,255,.04);border-radius:10px;border:1px solid rgba(255,255,255,.07)">
-          <span style="font-size:.86rem;color:rgba(247,241,230,.72);line-height:1.55">Phương pháp <b style="color:#f5d76e;font-weight:700">trực quan, dễ hiểu</b> — học mọi lúc mọi nơi</span>
+        <div class="about-point">
+          <span class="about-point-ico" aria-hidden="true"></span>
+          <span>Phương pháp <b>trực quan, dễ hiểu</b> — học mọi lúc mọi nơi</span>
         </div>
       </div>
-      <a href="login.html" class="tt-btn-primary" style="display:inline-flex;align-items:center;padding:.7rem 1.5rem;border-radius:11px;color:#fff;font-size:.9rem;font-weight:700;width:fit-content;transition:all .2s" onmouseover="this.style.filter='brightness(1.08)'" onmouseout="this.style.filter=''">
+      <a href="login.html" class="about-cta">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
         Đăng nhập ngay
       </a>
     </div>
@@ -327,57 +672,192 @@ CITY_DATA.forEach(d => {
   </div>
 </div>
 
-<!-- FLOATING SOCIAL BUTTONS -->
+<!-- FLOATING CONTACT SPEED-DIAL -->
 <style>
   .fab-wrap {
+    --fab-size: 56px;
+    --fab-item: 48px;
+    --fab-r: 110px;
     position: fixed;
-    bottom: 1.75rem;
-    right: 1.25rem;
+    bottom: 5.5rem;
+    right: 1.2rem;
     z-index: 9999;
-    display: flex;
-    flex-direction: column;
-    gap: .6rem;
-    align-items: flex-end;
+    width: var(--fab-size);
+    height: var(--fab-size);
   }
+  .fab-main {
+    position: relative;
+    z-index: 3;
+    width: var(--fab-size);
+    height: var(--fab-size);
+    border-radius: 50%;
+    border: 2px solid #ffe27a;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    color: #1a1440;
+    background: radial-gradient(circle at 35% 30%, #fff3bf, #ffd84d 50%, #f0c020);
+    box-shadow:
+      0 0 18px rgba(255, 216, 77, .55),
+      0 12px 28px rgba(0,0,0,.4);
+    transition: background .3s ease, color .3s ease, border-color .3s ease, box-shadow .3s ease;
+  }
+  .fab-main-icon {
+    width: 22px;
+    height: 22px;
+    display: block;
+    transition: transform .5s cubic-bezier(.34,1.45,.64,1);
+  }
+  .fab-wrap.is-open .fab-main {
+    color: #ffe27a;
+    background: radial-gradient(circle at 35% 30%, #3a2d72, #1a1440 70%);
+    border-color: #ffe27a;
+    box-shadow:
+      0 0 22px rgba(255, 226, 122, .5),
+      0 12px 28px rgba(0,0,0,.45),
+      0 0 0 4px rgba(255, 226, 122, .22);
+  }
+  .fab-wrap.is-open .fab-main-icon { transform: rotate(225deg); }
+
   .fab-item {
-    display: flex;
-    align-items: center;
-    gap: 0;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: var(--fab-item);
+    height: var(--fab-item);
+    margin: calc(var(--fab-item) / -2) 0 0 calc(var(--fab-item) / -2);
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
     text-decoration: none;
-    border-radius: 50px;
-    padding: .55rem;
-    box-shadow: 0 4px 16px rgba(0,0,0,.2);
-    transition: box-shadow .2s, padding .2s;
-    overflow: hidden;
-    white-space: nowrap;
+    border: 2px solid #fff;
+    box-shadow:
+      0 0 14px rgba(255,255,255,.28),
+      0 10px 22px rgba(0,0,0,.4);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: rotate(0deg) translateY(0) scale(.2);
+    transition:
+      transform .5s cubic-bezier(.22,1.35,.36,1),
+      opacity .3s ease,
+      visibility .3s,
+      box-shadow .2s ease,
+      filter .2s ease;
   }
-  .fab-item svg { flex-shrink: 0; display: block; }
-  .fab-label {
-    font-size: .78rem;
-    font-weight: 700;
+  .fab-item svg { width: 18px; height: 18px; fill: #fff; display: block; }
+  .fab-zalo-letter {
+    font-size: .95rem;
+    font-weight: 800;
     color: #fff;
-    width: 0;
-    overflow: hidden;
-    transition: width .25s cubic-bezier(.34,1.56,.64,1), margin .25s;
-    letter-spacing: .2px;
-    margin-left: 0;
+    line-height: 1;
+    text-shadow: 0 1px 2px rgba(0,0,0,.25);
   }
-  .fab-item:hover { padding: .55rem 1rem .55rem .6rem; box-shadow: 0 8px 28px rgba(0,0,0,.28); }
-  .fab-item:hover .fab-label { width: 70px; margin-left: .5rem; }
-  .fab-item-fb { background: #1877f2; }
-  .fab-item-tt { background: #010101; }
+  .fab-item-zc,
+  .fab-item-zt { background: linear-gradient(145deg, #4a9bff, #0068ff); }
+  .fab-item-fb { background: linear-gradient(145deg, #4a9bff, #1877f2); }
+  .fab-item-tt { background: linear-gradient(145deg, #3a3a3a, #111); border-color: #ffe27a; }
+
+  .fab-wrap.is-open .fab-item {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+  /* Xoay bung hình cung phía trên-trái, cách đều */
+  .fab-wrap.is-open .fab-item-zc {
+    transform: rotate(-15deg) translateY(calc(var(--fab-r) * -1)) rotate(15deg) scale(1);
+    transition-delay: .05s;
+  }
+  .fab-wrap.is-open .fab-item-zt {
+    transform: rotate(-45deg) translateY(calc(var(--fab-r) * -1)) rotate(45deg) scale(1);
+    transition-delay: .12s;
+  }
+  .fab-wrap.is-open .fab-item-fb {
+    transform: rotate(-75deg) translateY(calc(var(--fab-r) * -1)) rotate(75deg) scale(1);
+    transition-delay: .19s;
+  }
+  .fab-wrap.is-open .fab-item-tt {
+    transform: rotate(-105deg) translateY(calc(var(--fab-r) * -1)) rotate(105deg) scale(1);
+    transition-delay: .26s;
+  }
+  .fab-item:hover {
+    filter: brightness(1.12);
+    box-shadow:
+      0 0 18px rgba(255, 226, 122, .55),
+      0 14px 28px rgba(0,0,0,.45),
+      0 0 0 3px rgba(255, 226, 122, .45);
+  }
+  .fab-tip {
+    position: absolute;
+    right: calc(100% + 8px);
+    top: 50%;
+    transform: translateY(-50%);
+    white-space: nowrap;
+    font-size: .68rem;
+    font-weight: 700;
+    color: #1a1440;
+    background: #ffe27a;
+    border: 1px solid #fff3bf;
+    padding: .28rem .55rem;
+    border-radius: 8px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .15s ease;
+    box-shadow: 0 6px 16px rgba(0,0,0,.3);
+  }
+  .fab-item:hover .fab-tip { opacity: 1; }
+  @media (max-width: 640px) {
+    .fab-wrap {
+      --fab-size: 52px;
+      --fab-item: 44px;
+      --fab-r: 100px;
+      bottom: 4.8rem;
+      right: .95rem;
+    }
+  }
 </style>
 
-<div class="fab-wrap">
-  <a href="https://www.facebook.com/duyhoangdaytoan" target="_blank" rel="noopener noreferrer" class="fab-item fab-item-fb" aria-label="Facebook">
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878V14.89h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"/></svg>
-    <span class="fab-label">Facebook</span>
+<div class="fab-wrap" id="fabWrap">
+  <a href="https://zalo.me/84869573231" target="_blank" rel="noopener noreferrer" class="fab-item fab-item-zc" aria-label="Zalo Trần Cường" title="Zalo Trần Cường">
+    <span class="fab-zalo-letter" aria-hidden="true">C</span>
+    <span class="fab-tip">Zalo Trần Cường</span>
   </a>
-  <a href="https://www.tiktok.com/@duyhoangdaytoan" target="_blank" rel="noopener noreferrer" class="fab-item fab-item-tt" aria-label="TikTok">
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.76a4.85 4.85 0 01-1.01-.07z"/></svg>
-    <span class="fab-label">TikTok</span>
+  <a href="https://zalo.me/84969795482" target="_blank" rel="noopener noreferrer" class="fab-item fab-item-zt" aria-label="Zalo Quốc Toàn" title="Zalo Quốc Toàn">
+    <span class="fab-zalo-letter" aria-hidden="true">T</span>
+    <span class="fab-tip">Zalo Quốc Toàn</span>
   </a>
+  <a href="https://www.facebook.com/duyhoangdaytoan" target="_blank" rel="noopener noreferrer" class="fab-item fab-item-fb" aria-label="Facebook" title="Facebook">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878V14.89h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"/></svg>
+    <span class="fab-tip">Facebook</span>
+  </a>
+  <a href="https://www.tiktok.com/@duyhoangdaytoan" target="_blank" rel="noopener noreferrer" class="fab-item fab-item-tt" aria-label="TikTok" title="TikTok">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.76a4.85 4.85 0 01-1.01-.07z"/></svg>
+    <span class="fab-tip">TikTok</span>
+  </a>
+  <button type="button" class="fab-main" id="fabToggle" aria-label="Liên hệ" aria-expanded="false" title="Liên hệ">
+    <svg class="fab-main-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+      <path d="M12 5v14M5 12h14"/>
+    </svg>
+  </button>
 </div>
+<script>
+(function(){
+  var wrap = document.getElementById('fabWrap');
+  var btn = document.getElementById('fabToggle');
+  if (!wrap || !btn) return;
+  function setOpen(open){
+    wrap.classList.toggle('is-open', open);
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    btn.setAttribute('aria-label', open ? 'Đóng' : 'Liên hệ');
+    btn.title = open ? 'Đóng' : 'Liên hệ';
+  }
+  btn.addEventListener('click', function(){ setOpen(!wrap.classList.contains('is-open')); });
+  document.addEventListener('click', function(e){
+    if (wrap.classList.contains('is-open') && !wrap.contains(e.target)) setOpen(false);
+  });
+})();
+</script>
 
 <!-- FOOTER LỚN -->
 <style>
@@ -622,6 +1102,49 @@ CITY_DATA.forEach(d => {
       p.style.cssText = `width:${sz}px;height:${sz}px;background:${cols[i%cols.length]};left:${Math.random()*100}%;animation-duration:${12+Math.random()*14}s;animation-delay:${Math.random()*10}s`;
       wrap.appendChild(p);
     }
+  }
+
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Sao vàng rơi từ trên xuống
+  const fall = document.getElementById('fallingStars');
+  if (fall && !reduceMotion) {
+    let html = '';
+    const dropN = window.innerWidth < 700 ? 36 : 58;
+    for (let i = 0; i < dropN; i++) {
+      const left = (Math.random() * 100).toFixed(1);
+      const dur = (5.5 + Math.random() * 7.5).toFixed(1);
+      const delay = (-Math.random() * 12).toFixed(1);
+      const big = Math.random() > 0.7;
+      const s = (big ? 3.2 + Math.random() * 2.8 : 2 + Math.random() * 2.2).toFixed(1);
+      const drift = (-30 + Math.random() * 60).toFixed(0);
+      const cls = big ? 'fall-star fall-star-lg' : 'fall-star';
+      html += `<span class="${cls}" style="left:${left}%;top:-3%;--dur:${dur}s;--delay:${delay}s;--s:${s}px;--drift:${drift}px"></span>`;
+    }
+    fall.innerHTML = html;
+  }
+
+  // Đom đóm bay lơ lửng
+  const flies = document.getElementById('fireflies');
+  if (flies && !reduceMotion) {
+    let html = '';
+    const n = window.innerWidth < 700 ? 18 : 32;
+    for (let i = 0; i < n; i++) {
+      const x = (Math.random() * 100).toFixed(1);
+      const y = (15 + Math.random() * 75).toFixed(1);
+      const s = (3 + Math.random() * 4).toFixed(1);
+      const glow = (2.2 + Math.random() * 2.8).toFixed(1);
+      const float = (8 + Math.random() * 10).toFixed(1);
+      const delay = (-Math.random() * 8).toFixed(1);
+      const dx1 = (-30 + Math.random() * 60).toFixed(0);
+      const dy1 = (-36 + Math.random() * 50).toFixed(0);
+      const dx2 = (-36 + Math.random() * 70).toFixed(0);
+      const dy2 = (-30 + Math.random() * 55).toFixed(0);
+      const dx3 = (-28 + Math.random() * 56).toFixed(0);
+      const dy3 = (-40 + Math.random() * 60).toFixed(0);
+      html += `<span class="firefly" style="--x:${x}%;--y:${y}%;--s:${s}px;--glow:${glow}s;--float:${float}s;--delay:${delay}s;--dx1:${dx1}px;--dy1:${dy1}px;--dx2:${dx2}px;--dy2:${dy2}px;--dx3:${dx3}px;--dy3:${dy3}px"></span>`;
+    }
+    flies.innerHTML = html;
   }
 })();
 

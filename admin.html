@@ -7,6 +7,7 @@
   <link rel="icon" type="image/png" href="icons/icon-192.png"/>
   <link rel="apple-touch-icon" href="icons/icon-192.png"/>
   <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="css/trungthu-dashboard.css?v=1.5.2"/>
   <link rel="manifest" href="manifest.json"/>
   <meta name="theme-color" content="#4f46e5"/>
   <meta name="mobile-web-app-capable" content="yes"/>
@@ -30,7 +31,8 @@
     #toolsDropdownBtn:hover { border-color: var(--primary); color: var(--primary); }
   </style>
 </head>
-<body class="dashboard-page">
+<body class="dashboard-page trungthu-dash">
+  <div class="tt-dash-spark" id="ttDashSpark" aria-hidden="true"></div>
 
   <!-- TOAST NOTIFICATION -->
   <div id="adminToast" style="position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(80px);background:#1e293b;color:#fff;padding:.7rem 1.4rem;border-radius:12px;font-size:.88rem;font-weight:600;z-index:99999;opacity:0;transition:all .3s;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,.25);white-space:nowrap;max-width:90vw;text-align:center"></div>
@@ -1861,5 +1863,18 @@
     <span class="cp-dot"></span>
     <span><b>v1.5.0</b></span>
   </div>
+  <script>
+    (function () {
+      var wrap = document.getElementById('ttDashSpark');
+      if (!wrap || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      var n = window.innerWidth < 700 ? 10 : 16;
+      var html = '';
+      for (var i = 0; i < n; i++) {
+        html += '<i style="--x:' + (Math.random() * 100) + '%;--d:' + (12 + Math.random() * 14) + 's;--delay:' + (-Math.random() * 16) + 's;--drift:' + (Math.random() * 40 - 20) + 'px;--s:' + (2 + Math.random() * 3) + 'px"></i>';
+      }
+      wrap.innerHTML = html;
+    })();
+  </script>
+  <script src="trungthu-wish.js?v=1.5.2" defer></script>
 
 </body>
