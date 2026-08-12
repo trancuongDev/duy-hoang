@@ -684,7 +684,7 @@ function renderGroupClassTags(selectedClasses) {
   if (!container) return;
   container.innerHTML = '';
   if (!selectedClasses.length) {
-    container.innerHTML = '<span style="color:var(--muted);font-size:.8rem">Tất cả lớp (không giới hạn)</span>';
+    container.innerHTML = '<span style="color:#b45309;font-size:.8rem">Chưa chọn lớp — học sinh sẽ không thấy nhóm này</span>';
     return;
   }
   selectedClasses.forEach(cls => {

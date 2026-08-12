@@ -75,19 +75,26 @@ function parseClassList(raw) {
     .filter(Boolean);
 }
 
+function normalizeClassName(c) {
+  return String(c || '').trim().toLowerCase();
+}
+
+/** Chỉ hiện khi đã gán lớp VÀ lớp khớp học sinh */
+function classesIntersect(rawClassName, studentClasses) {
+  const lessonClasses = parseClassList(rawClassName).map(normalizeClassName);
+  if (!lessonClasses.length) return false; // chưa gán lớp → không hiện
+  const mine = (studentClasses || []).map(normalizeClassName);
+  if (!mine.length) return false;
+  return mine.some(cls => lessonClasses.includes(cls));
+}
+
 function lessonMatchesStudentClasses(lesson, classes) {
   // Ưu tiên 1: nếu có allowed_usernames → chỉ học sinh trong danh sách mới thấy
   if (lesson?.allowed_usernames) {
     const allowed = lesson.allowed_usernames.split(',').map(u => u.trim()).filter(Boolean);
     return allowed.includes(currentUser);
   }
-  // Mặc định: kiểm tra theo lớp
-  const lessonClasses = (lesson?.class_name || '')
-    .split(',')
-    .map(c => c.trim())
-    .filter(Boolean);
-  if (!lessonClasses.length) return false; // null/empty = không gán lớp → không hiện cho ai
-  return classes.some(cls => lessonClasses.includes(cls));
+  return classesIntersect(lesson?.class_name, classes);
 }
 
 // Kiểm tra nhóm bài học có visible với học sinh hiện tại không
@@ -96,9 +103,7 @@ function groupMatchesStudent(g) {
     const allowed = g.allowed_usernames.split(',').map(u => u.trim()).filter(Boolean);
     return allowed.includes(currentUser);
   }
-  if (!g?.class_name) return false;
-  const gc = g.class_name.split(',').map(c => c.trim()).filter(Boolean);
-  return myClasses.some(mc => gc.includes(mc));
+  return classesIntersect(g?.class_name, myClasses);
 }
 
 
@@ -110,16 +115,17 @@ function debounce(fn, ms) {
 async function loadMe() {
   const { data } = await db.from('students').select('id, class_name, student_code, expiry_date, created_at, username, active').eq('username', currentUser).single();
   myClass = data?.class_name || '';
-  // Load tất cả lớp từ student_classes
+  // Load tất cả lớp: gộp students.class_name + student_classes (không bỏ sót)
   if (data?.id) {
     const { data: scData } = await db.from('student_classes').select('class_name').eq('student_id', data.id);
-    myClasses = (scData||[]).length > 0
-      ? (scData||[]).flatMap(sc => parseClassList(sc.class_name))
-      : parseClassList(myClass);
+    myClasses = [
+      ...parseClassList(myClass),
+      ...(scData || []).flatMap(sc => parseClassList(sc.class_name))
+    ];
   } else {
     myClasses = parseClassList(myClass);
   }
-  myClasses = [...new Set(myClasses)];
+  myClasses = [...new Set(myClasses.filter(Boolean))];
   myClass = myClasses[0] || ''; // giữ tương thích chỗ cũ dùng myClass
   sessionStorage.setItem('dh_code', data?.student_code || '');
 
@@ -556,10 +562,11 @@ function renderLessonListFromCache() {
 
   function buildGroupCard(g, depth, colorIdx) {
     const c = colors[colorIdx % colors.length];
-    // Nhóm con: filter theo lớp học viên hoặc gán riêng học sinh này
+    // Nhóm con: hiện nếu khớp lớp/HS, HOẶC có bài đã lọc thuộc nhóm đó
     const children = (normalizedGroups||[]).filter(x => {
       if (x.parent_id !== g.id) return false;
-      return groupMatchesStudent(x);
+      if (groupMatchesStudent(x)) return true;
+      return getLessonsForGroup(x.id, x.name).length > 0;
     });
     const directLessons = getLessonsForGroup(g.id, g.name);
     // Bỏ qua nhóm không có nội dung gì
@@ -633,10 +640,26 @@ function renderLessonListFromCache() {
   // Bài học không thuộc nhóm nào (và chưa được render trong nhóm)
   const ungrouped = filtered.filter(l => !assignedLessonIds.has(l.id));
 
-  // Render nhóm gốc — hiển thị nhóm theo lớp học viên HOẶC được gán riêng
+  // Render nhóm gốc — hiện nếu nhóm/nhóm con khớp lớp, hoặc có bài đã lọc trong cây nhóm
+  function collectTreeIds(rootId) {
+    const ids = new Set([rootId]);
+    let grew = true;
+    while (grew) {
+      grew = false;
+      (normalizedGroups || []).forEach(x => {
+        if (x.parent_id != null && ids.has(x.parent_id) && !ids.has(x.id)) {
+          ids.add(x.id);
+          grew = true;
+        }
+      });
+    }
+    return ids;
+  }
   const roots = (normalizedGroups||[]).filter(g => {
     if (g.parent_id) return false; // chỉ lấy root
-    return groupMatchesStudent(g);
+    const treeIds = collectTreeIds(g.id);
+    if ((normalizedGroups || []).some(x => treeIds.has(x.id) && groupMatchesStudent(x))) return true;
+    return filtered.some(l => l.group_id != null && treeIds.has(l.group_id));
   });
   const seenRootIds = new Set();
   roots.forEach((g, gi) => {
@@ -1615,11 +1638,10 @@ db.channel('student-new-lesson')
       const allowed = lesson.allowed_usernames.split(',').map(u=>u.trim()).filter(Boolean);
       if (!allowed.includes(currentUser)) return;
       showNewLessonToast(lesson.name, true); // gán riêng
-    } else if (lesson.class_name) {
-      if (!myClasses.some(mc => lesson.class_name.split(',').map(c=>c.trim()).includes(mc))) return;
+    } else if (lesson.class_name && classesIntersect(lesson.class_name, myClasses)) {
       showNewLessonToast(lesson.name, false);
     } else {
-      return; // không gán lớp và không gán riêng → bỏ qua
+      return; // chưa gán lớp hoặc không khớp lớp học sinh
     }
     _scheduleLessonReload();
   })

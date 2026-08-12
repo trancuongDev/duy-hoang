@@ -102,6 +102,7 @@ nav{
 .nav-brand img{width:32px;height:32px;border-radius:8px;box-shadow:0 0 0 1.5px rgba(245,215,110,.55)}
 .nav-right{display:flex;align-items:center;gap:.65rem}
 .nav-menu{display:flex;align-items:center;gap:.45rem}
+.nav-combo{display:flex;align-items:center;gap:.45rem}
 .nav-links{
   display:flex;align-items:center;gap:.3rem;
   max-width:0;
@@ -178,20 +179,78 @@ nav{
 }
 .nav-btn:hover{filter:brightness(1.08);transform:translateY(-1px);box-shadow:0 8px 20px rgba(232,93,4,.55)}
 @media(max-width:720px){
-  nav{padding:.65rem 1rem}
-  .nav-menu{position:relative}
+  nav{padding:.65rem .85rem;gap:.5rem}
+  .nav-brand{font-size:.95rem;min-width:0}
+  .nav-brand span,.nav-brand{max-width:42vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .nav-right{gap:0}
+  .nav-menu{position:static;gap:0}
+  /* Gộp menu + Đăng nhập thành 1 viên */
+  .nav-combo{
+    gap:0;
+    align-items:stretch;
+    border-radius:999px;
+    overflow:hidden;
+    border:1.5px solid #ffe27a;
+    box-shadow:0 8px 22px rgba(0,0,0,.32),0 0 14px rgba(255,216,77,.28);
+    background:linear-gradient(135deg,#fff3bf,#f5d76e 40%,#e8a317);
+  }
+  .nav-toggle{
+    width:42px;height:40px;
+    border:none;border-radius:0;
+    box-shadow:none;
+    background:transparent;
+    color:#1a1440;
+  }
+  .nav-toggle:hover{transform:none;filter:none}
+  .nav-menu.is-open .nav-toggle{
+    background:rgba(26,20,64,.88);
+    color:#ffe27a;
+    box-shadow:none;
+  }
+  .nav-btn{
+    display:inline-flex;align-items:center;
+    height:40px;padding:0 .95rem;
+    border:none;border-radius:0;border-left:1px solid rgba(26,20,64,.18);
+    box-shadow:none;
+    font-size:.8rem;
+    background:linear-gradient(135deg,#ffb347,#e85d04 50%,#9a031e);
+  }
+  .nav-btn:hover{transform:none;filter:brightness(1.06);box-shadow:none}
   .nav-links{
-    position:absolute;right:0;top:calc(100% + .55rem);
-    flex-direction:column;align-items:stretch;
-    max-width:none;width:min(220px,calc(100vw - 2rem));
-    transform:translateY(-8px) scale(.96);
+    position:fixed;
+    left:.85rem;right:.85rem;
+    top:3.7rem;
+    flex-direction:column;align-items:stretch;gap:.15rem;
+    max-width:none;width:auto;
+    border-radius:16px;
+    background:rgba(18,22,48,.42);
+    border:1px solid rgba(245,215,110,.35);
+    box-shadow:0 16px 40px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.1);
+    backdrop-filter:blur(16px) saturate(1.15);
+    -webkit-backdrop-filter:blur(16px) saturate(1.15);
+    transform:translateY(-10px);
+    padding:0;
+    overflow:hidden;
   }
   .nav-menu.is-open .nav-links{
     max-width:none;
     transform:none;
-    padding:.45rem;
+    padding:.4rem;
+    border-color:rgba(245,215,110,.4);
+    background:rgba(18,22,48,.38);
   }
-  .nav-link{transform:translateY(6px);width:100%;text-align:left}
+  .nav-link{
+    transform:translateY(6px);
+    width:100%;
+    text-align:left;
+    border-radius:12px;
+    padding:.75rem .9rem;
+    font-size:.9rem;
+  }
+  .nav-link:hover,.nav-link:active{
+    background:rgba(245,215,110,.16);
+    color:#ffe27a;
+  }
   .nav-menu.is-open .nav-link{transform:none}
 }
 
@@ -308,15 +367,17 @@ footer b{color:rgba(255,255,255,.5)}
         <a class="nav-link" href="honor.html">Vinh danh</a>
         <a class="nav-link" href="policy.html">Chính sách</a>
       </div>
-      <button type="button" class="nav-toggle" id="navToggle" aria-label="Mở menu" aria-expanded="false" aria-controls="navLinks" title="Menu">
-        <svg class="nav-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" aria-hidden="true">
-          <path class="nav-bar nav-bar-1" d="M5 7h14"/>
-          <path class="nav-bar nav-bar-2" d="M5 12h14"/>
-          <path class="nav-bar nav-bar-3" d="M5 17h14"/>
-        </svg>
-      </button>
+      <div class="nav-combo">
+        <button type="button" class="nav-toggle" id="navToggle" aria-label="Mở menu" aria-expanded="false" aria-controls="navLinks" title="Menu">
+          <svg class="nav-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" aria-hidden="true">
+            <path class="nav-bar nav-bar-1" d="M5 7h14"/>
+            <path class="nav-bar nav-bar-2" d="M5 12h14"/>
+            <path class="nav-bar nav-bar-3" d="M5 17h14"/>
+          </svg>
+        </button>
+        <a class="nav-btn" href="login.html">Đăng nhập</a>
+      </div>
     </div>
-    <a class="nav-btn" href="login.html">Đăng nhập</a>
   </div>
 </nav>
 <script>

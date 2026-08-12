@@ -585,41 +585,164 @@ img { display: block; max-width: 100%; }
   75% { transform: translateX(4px); }
 }
 
-/* ===== Mobile: glass over art ===== */
+/* ===== Mobile: form gọn trên bầu trời ===== */
 @media (max-width: 860px) {
+  .shell {
+    min-height: 100dvh;
+    align-content: center;
+    padding: max(14px, env(safe-area-inset-top)) 14px max(20px, env(safe-area-inset-bottom));
+  }
+
   .login-card {
     grid-template-columns: 1fr;
     min-height: auto;
     background: transparent;
     box-shadow: none;
     overflow: visible;
+    width: min(400px, 100%);
   }
 
+  /* Ẩn panel cắt giấy — trên ĐT dễ rối, giữ bầu trời + sao */
   .art-pane {
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    border-radius: 0;
+    display: none;
   }
-
-  .art-img { opacity: 0.95; }
-  .wave { display: none; }
 
   .form-pane {
     position: relative;
     z-index: 2;
-    margin: 48px auto;
-    width: min(420px, 100%);
-    border-radius: 24px;
-    background: rgba(255, 252, 246, 0.88);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.55);
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
-    padding: 28px 22px 24px;
+    margin: 0 auto;
+    width: 100%;
+    border-radius: 22px;
+    background: rgba(255, 253, 249, 0.9);
+    backdrop-filter: blur(18px) saturate(1.1);
+    -webkit-backdrop-filter: blur(18px) saturate(1.1);
+    border: 1px solid rgba(245, 215, 110, 0.35);
+    box-shadow:
+      0 18px 48px rgba(0, 0, 0, 0.32),
+      inset 0 1px 0 rgba(255, 255, 255, 0.65);
+    padding: 18px 16px 16px;
   }
 
-  .moon-glow { top: 6%; right: 8%; width: 120px; height: 120px; }
+  .back-home {
+    margin-bottom: 6px;
+    font-size: 0.78rem;
+  }
+
+  .device-tip {
+    margin-bottom: 8px;
+    padding: 0.4rem 0.65rem;
+    font-size: 0.72rem;
+    border-radius: 10px;
+  }
+
+  .brand {
+    margin-bottom: 14px;
+  }
+
+  .logo {
+    width: 54px;
+    height: 54px;
+    margin-bottom: 10px;
+    border-radius: 14px;
+    animation: none;
+    box-shadow: 0 0 0 3px rgba(240, 180, 41, 0.18), 0 8px 20px rgba(0, 0, 0, 0.12);
+  }
+
+  .logo::after {
+    width: 10px;
+    height: 10px;
+    right: -2px;
+    bottom: -2px;
+  }
+
+  .form-pane h1 {
+    font-size: 1.35rem;
+    margin-bottom: 4px;
+    line-height: 1.2;
+  }
+
+  .tagline {
+    font-size: 0.8rem;
+    line-height: 1.4;
+    max-width: 28ch;
+    margin: 0 auto;
+  }
+
+  .ver-pill {
+    margin-top: 8px;
+    font-size: 0.72rem;
+    padding: 0.2rem 0.55rem;
+  }
+
+  .form {
+    gap: 10px;
+  }
+
+  .input-wrap {
+    height: 46px;
+    padding: 0 12px;
+  }
+
+  .hint {
+    font-size: 0.72rem;
+    padding: 0.4rem 0.65rem;
+  }
+
+  .row-between {
+    gap: 8px;
+  }
+
+  .remember,
+  .link {
+    font-size: 0.8rem;
+  }
+
+  .btn-login {
+    height: 48px;
+    font-size: 0.95rem;
+    margin-top: 2px;
+    box-shadow: 0 10px 22px rgba(194, 65, 12, 0.32);
+  }
+
+  .legal {
+    font-size: 0.7rem;
+    line-height: 1.45;
+  }
+
+  .footer-links {
+    margin-top: 12px;
+    padding-top: 12px;
+    gap: 8px;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .footer-links .link {
+    font-size: 0.78rem;
+  }
+
+  .moon-glow {
+    top: 8%;
+    right: 6%;
+    width: 140px;
+    height: 140px;
+    opacity: 0.85;
+  }
+}
+
+@media (max-width: 400px) {
+  .form-pane {
+    padding: 16px 14px 14px;
+    border-radius: 18px;
+  }
+
+  .form-pane h1 {
+    font-size: 1.25rem;
+  }
+
+  .tagline {
+    font-size: 0.76rem;
+  }
 }
 
 /* ===== DHDT auth integration ===== */
