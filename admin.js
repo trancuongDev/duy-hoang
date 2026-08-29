@@ -391,6 +391,7 @@ function showPage(name) {
   if (name === 'groups')         renderZaloGroupsAdmin();
   if (name === 'guide')          adminRenderGuide();
   if (name === 'attendance-admin') { populateAttAdminClassFilter(); loadAttAdminSessions(); }
+  if (name === 'feedback-admin')   { populateFbAdminFilters(); loadFbAdminSessions(); }
 }
 document.querySelectorAll('.slink[data-page]').forEach(l => {
   l.addEventListener('click', e => { e.preventDefault(); showPage(l.dataset.page); document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebarBackdrop').classList.remove('show'); });
@@ -3444,10 +3445,11 @@ document.getElementById('clearAlertsBtn').addEventListener('click', async ()=>{
 });
 
 // ---- Init ----
-const _validPages = ['overview','lessons','lesson-groups','create-student','students','classes','security','devices','access-stats','login-history','announcements','files','library','groups','schedule','profile','attendance-admin'];
+const _validPages = ['overview','lessons','lesson-groups','create-student','students','classes','security','devices','access-stats','login-history','announcements','files','library','groups','schedule','profile','attendance-admin','feedback-admin'];
 const _savedPage = sessionStorage.getItem('dh_page');
 populateClassFilters().then(() => {
-  showPage(_validPages.includes(_savedPage) ? _savedPage : 'overview');
+  const fromHash = location.hash === '#feedback-admin' ? 'feedback-admin' : null;
+  showPage(_validPages.includes(fromHash) ? fromHash : (_validPages.includes(_savedPage) ? _savedPage : 'overview'));
   refreshLibBadge().catch(() => {});
   refreshZgBadge().catch(() => {});
 });
@@ -6982,6 +6984,13 @@ const _ADMIN_GUIDE_DATA = [
     'Chọn lớp, giờ bắt đầu/kết thúc, môn học',
     'Học sinh xem lịch trong trang của mình',
   ]},
+  { cat:'system', icon:'💡', title:'Góp ý buổi học', steps:[
+    'Sidebar → <b>Góp ý buổi học → Mở góp ý buổi mới</b>',
+    'Có thể lấy sẵn từ buổi điểm danh, hoặc nhập tiêu đề / lớp / ngày',
+    'Học viên vào mục Góp ý, đánh giá sao + tốc độ + mức hiểu bài + viết ý kiến',
+    'Bấm <b>Tổng hợp</b> để xem điểm TB, biểu đồ, danh sách góp ý, học viên chưa gửi',
+    'Ghi chú điều chỉnh buổi sau ngay trong chi tiết — xuất CSV nếu cần',
+  ]},
   { cat:'system', icon:'⚙️', title:'Quản trị hệ thống', steps:[
     'Cuối sidebar → <b>⚙️ Quản trị hệ thống</b> (chỉ Teacher)',
     'Xem thống kê tổng quan, học sinh online, nhật ký trợ lý',
@@ -8261,3 +8270,323 @@ document.getElementById('zgAdminList')?.addEventListener('click', async e => {
     }, { title: 'Xóa nhóm', icon: '💬', okText: 'Xóa' });
   }
 });
+
+// ════════════════════════════════════════════════════════════════
+// GÓP Ý BUỔI HỌC — ADMIN
+// ════════════════════════════════════════════════════════════════
+let _fbAdminEditId = null;
+let _fbAdminAttId = null;
+let _fbDetailId = null;
+let _fbDetailReplies = [];
+
+const FB_PACE_A = { slow: 'Chậm', ok: 'Vừa', fast: 'Nhanh' };
+const FB_UND_A  = { low: 'Chưa rõ', ok: 'Tạm ổn', high: 'Nắm chắc' };
+
+function _fbEsc(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function _fbDateA(d) {
+  if (!d) return '';
+  return new Date(d + 'T00:00:00').toLocaleDateString('vi-VN', { weekday:'short', day:'2-digit', month:'2-digit', year:'numeric' });
+}
+
+async function populateFbAdminFilters() {
+  const { data: classes } = await db.from('classes').select('name').order('name');
+  const opts = (classes || []).map(c => `<option value="${_fbEsc(c.name)}">${_fbEsc(c.name)}</option>`).join('');
+  const sel1 = document.getElementById('fbAdminFilterClass');
+  const sel2 = document.getElementById('fbAdminClass');
+  if (sel1) sel1.innerHTML = '<option value="">Tất cả lớp</option>' + opts;
+  if (sel2) sel2.innerHTML = '<option value="">-- Chọn lớp --</option>' + opts;
+  const dateEl = document.getElementById('fbAdminDate');
+  if (dateEl && !dateEl.value) dateEl.value = new Date().toISOString().split('T')[0];
+  await _loadFbAttOptions();
+}
+
+async function _loadFbAttOptions() {
+  const sel = document.getElementById('fbFromAtt');
+  if (!sel) return;
+  const { data } = await db.from('attendance_sessions').select('id,title,class_name,session_date')
+    .order('session_date', { ascending: false }).limit(40);
+  sel.innerHTML = '<option value="">-- Không, nhập tay --</option>' +
+    (data || []).map(s => `<option value="${s.id}" data-title="${_fbEsc(s.title)}" data-class="${_fbEsc(s.class_name)}" data-date="${s.session_date}">${_fbEsc(s.session_date)} · ${_fbEsc(s.class_name)} · ${_fbEsc(s.title)}</option>`).join('');
+}
+
+function fillFbFromAttendance() {
+  const sel = document.getElementById('fbFromAtt');
+  const opt = sel?.selectedOptions[0];
+  if (!opt || !opt.value) { _fbAdminAttId = null; return; }
+  _fbAdminAttId = Number(opt.value);
+  document.getElementById('fbAdminTitle').value = 'Góp ý — ' + (opt.dataset.title || '');
+  document.getElementById('fbAdminClass').value = opt.dataset.class || '';
+  document.getElementById('fbAdminDate').value = opt.dataset.date || '';
+}
+
+async function loadFbAdminSessions() {
+  const listEl = document.getElementById('fbAdminSessionList');
+  if (!listEl) return;
+  listEl.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted)">⏳ Đang tải...</div>';
+  const filterClass = document.getElementById('fbAdminFilterClass')?.value || '';
+  const filterDate  = document.getElementById('fbAdminFilterDate')?.value || '';
+  let query = db.from('session_feedback').select('*').order('session_date', { ascending: false }).order('created_at', { ascending: false });
+  if (filterClass) query = query.eq('class_name', filterClass);
+  if (filterDate)  query = query.eq('session_date', filterDate);
+  const { data: sessions, error } = await query;
+  if (error) {
+    const hint = (error.message || '').includes('does not exist') || (error.message || '').includes('schema cache')
+      ? 'Chưa chạy SQL. Mở Supabase SQL Editor, chạy file supabase_session_feedback.sql rồi tải lại trang.'
+      : error.message;
+    listEl.innerHTML = `<div style="color:#ef4444;padding:1rem">${_fbEsc(hint)}</div>`;
+    return;
+  }
+  if (!sessions?.length) {
+    listEl.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted)">Chưa có form góp ý nào.<br/><small>Nhấn "Mở góp ý buổi mới" sau mỗi buổi học.</small></div>';
+    _updateFbAdminStats([], []);
+    return;
+  }
+  const ids = sessions.map(s => s.id);
+  const { data: replies } = await db.from('session_feedback_replies').select('feedback_id,rating').in('feedback_id', ids);
+  const recMap = {};
+  (replies || []).forEach(r => {
+    if (!recMap[r.feedback_id]) recMap[r.feedback_id] = { n: 0, sum: 0 };
+    recMap[r.feedback_id].n++;
+    recMap[r.feedback_id].sum += Number(r.rating) || 0;
+  });
+  _updateFbAdminStats(sessions, replies || []);
+  const badge = document.getElementById('fbNavBadge');
+  if (badge) {
+    const openN = sessions.filter(s => s.is_open).length;
+    badge.style.display = openN ? '' : 'none';
+    badge.textContent = openN || '';
+  }
+  listEl.innerHTML = sessions.map(s => {
+    const rec = recMap[s.id] || { n: 0, sum: 0 };
+    const avg = rec.n ? (rec.sum / rec.n).toFixed(1) : '—';
+    return `
+      <div class="att-session-row ${s.is_open ? 'open' : ''}">
+        <div style="width:46px;height:46px;border-radius:13px;background:${s.is_open?'#fef3c7':'var(--primary-light,#eef2ff)'};display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0">${s.is_open?'💡':'📋'}</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:.3rem">
+            <span style="font-weight:800;font-size:.93rem">${_fbEsc(s.title)}</span>
+            <span class="att-pill ${s.is_open ? 'att-pill-open' : 'att-pill-closed'}">${s.is_open ? '● Đang mở' : '● Đã đóng'}</span>
+          </div>
+          <div style="font-size:.76rem;color:var(--muted);display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:.45rem">
+            <span>📅 ${_fbEsc(_fbDateA(s.session_date))}</span>
+            <span>📚 ${_fbEsc(s.class_name)}</span>
+          </div>
+          <div style="display:flex;gap:.4rem;flex-wrap:wrap">
+            <span class="att-mini-stat" style="background:#fffbeb;color:#92400e">★ ${avg}/5</span>
+            <span class="att-mini-stat" style="background:#eef2ff;color:var(--primary)">✉️ ${rec.n} góp ý</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:.4rem;flex-wrap:wrap;flex-shrink:0;align-items:center">
+          <button class="att-action-btn" style="background:linear-gradient(135deg,#78350f,#b45309);color:#fff" onclick="viewFbDetail(${s.id})">Tổng hợp</button>
+          <button class="att-action-btn" style="background:${s.is_open?'#fee2e2':'#d1fae5'};color:${s.is_open?'#b91c1c':'#15803d'}" onclick="toggleFbSession(${s.id},${!s.is_open})">${s.is_open?'Đóng':'Mở lại'}</button>
+          <button class="att-action-btn" style="background:#fef3c7;color:#92400e" onclick="editFbSession(${s.id})">Sửa</button>
+          <button class="att-action-btn" style="background:#fee2e2;color:#b91c1c" onclick="deleteFbSession(${s.id})">Xóa</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function _updateFbAdminStats(sessions, replies) {
+  const el = id => document.getElementById(id);
+  if (el('fbStatTotal'))   el('fbStatTotal').textContent = sessions.length;
+  if (el('fbStatOpen'))    el('fbStatOpen').textContent = sessions.filter(s => s.is_open).length;
+  if (el('fbStatReplies')) el('fbStatReplies').textContent = replies.length;
+  const rated = replies.filter(r => r.rating);
+  const avg = rated.length ? (rated.reduce((a, r) => a + Number(r.rating), 0) / rated.length).toFixed(1) : '—';
+  if (el('fbStatAvg')) el('fbStatAvg').textContent = avg;
+}
+
+async function openFbAdminCreateModal() {
+  _fbAdminEditId = null;
+  _fbAdminAttId = null;
+  document.getElementById('fbAdminModalTitle').textContent = 'Mở góp ý buổi học';
+  document.getElementById('fbAdminTitle').value = '';
+  document.getElementById('fbAdminClass').value = '';
+  document.getElementById('fbAdminDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('fbAdminPrompt').value = 'Buổi học hôm nay thế nào? Góp ý để thầy/cô điều chỉnh buổi sau. Không ảnh hưởng điểm số.';
+  document.getElementById('fbAdminIsOpen').checked = true;
+  document.getElementById('fbFromAtt').value = '';
+  document.getElementById('fbAdminModalError').style.display = 'none';
+  document.getElementById('fbAdminSaveText').textContent = 'Lưu form góp ý';
+  await _loadFbAttOptions();
+  document.getElementById('fbAdminModal').style.display = '';
+}
+
+async function editFbSession(id) {
+  const { data: s, error } = await db.from('session_feedback').select('*').eq('id', id).single();
+  if (error || !s) { showToast('Không tải được buổi', false); return; }
+  _fbAdminEditId = s.id;
+  _fbAdminAttId = s.attendance_id || null;
+  document.getElementById('fbAdminModalTitle').textContent = 'Sửa form góp ý';
+  document.getElementById('fbAdminTitle').value = s.title || '';
+  document.getElementById('fbAdminClass').value = s.class_name || '';
+  document.getElementById('fbAdminDate').value = s.session_date || '';
+  document.getElementById('fbAdminPrompt').value = s.prompt || '';
+  document.getElementById('fbAdminIsOpen').checked = s.is_open !== false;
+  document.getElementById('fbFromAtt').value = s.attendance_id || '';
+  document.getElementById('fbAdminModalError').style.display = 'none';
+  document.getElementById('fbAdminSaveText').textContent = 'Cập nhật';
+  document.getElementById('fbAdminModal').style.display = '';
+}
+
+async function saveFbAdminSession() {
+  const title = document.getElementById('fbAdminTitle').value.trim();
+  const cls   = document.getElementById('fbAdminClass').value;
+  const date  = document.getElementById('fbAdminDate').value;
+  const prompt = document.getElementById('fbAdminPrompt').value.trim();
+  const isOpen = document.getElementById('fbAdminIsOpen').checked;
+  const errEl = document.getElementById('fbAdminModalError');
+  if (!title) { errEl.textContent = 'Nhập tiêu đề'; errEl.style.display = ''; return; }
+  if (!cls)   { errEl.textContent = 'Chọn lớp';     errEl.style.display = ''; return; }
+  if (!date)  { errEl.textContent = 'Chọn ngày';    errEl.style.display = ''; return; }
+  errEl.style.display = 'none';
+  const btn = document.getElementById('fbAdminSaveText');
+  btn.textContent = 'Đang lưu...';
+  const payload = {
+    title, class_name: cls, session_date: date,
+    prompt: prompt || null,
+    attendance_id: _fbAdminAttId || (document.getElementById('fbFromAtt').value ? Number(document.getElementById('fbFromAtt').value) : null),
+    is_open: isOpen,
+    created_by: sessionStorage.getItem('dh_user') || 'admin'
+  };
+  let error;
+  if (_fbAdminEditId) {
+    ({ error } = await db.from('session_feedback').update(payload).eq('id', _fbAdminEditId));
+  } else {
+    ({ error } = await db.from('session_feedback').insert(payload));
+  }
+  if (error) { errEl.textContent = 'Lỗi: ' + error.message; errEl.style.display = ''; btn.textContent = 'Lưu form góp ý'; return; }
+  document.getElementById('fbAdminModal').style.display = 'none';
+  showToast(_fbAdminEditId ? 'Đã cập nhật form góp ý' : 'Đã mở form góp ý — học viên thấy trên trang Góp ý');
+  loadFbAdminSessions();
+}
+
+async function toggleFbSession(id, isOpen) {
+  const { error } = await db.from('session_feedback').update({ is_open: isOpen }).eq('id', id);
+  if (error) { showToast(error.message, false); return; }
+  showToast(isOpen ? 'Đã mở lại góp ý' : 'Đã đóng góp ý');
+  loadFbAdminSessions();
+}
+
+async function deleteFbSession(id) {
+  showConfirm('Xóa form này? Toàn bộ góp ý của học viên cũng sẽ mất.', async () => {
+    const { error } = await db.from('session_feedback').delete().eq('id', id);
+    if (error) { showToast(error.message, false); return; }
+    showToast('Đã xóa form góp ý');
+    loadFbAdminSessions();
+  }, { title: 'Xóa góp ý', icon: '💡', okText: 'Xóa' });
+}
+
+function _fbBar(label, n, total, color) {
+  const pct = total ? Math.round(n / total * 100) : 0;
+  return `<div style="margin-bottom:.45rem">
+    <div style="display:flex;justify-content:space-between;font-size:.75rem;font-weight:700;margin-bottom:.2rem"><span>${label}</span><span>${n} (${pct}%)</span></div>
+    <div style="height:8px;background:var(--bg);border-radius:99px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${color};border-radius:99px"></div></div>
+  </div>`;
+}
+
+async function viewFbDetail(id) {
+  _fbDetailId = id;
+  document.getElementById('fbDetailTitle').textContent = 'Đang tải...';
+  document.getElementById('fbDetailSub').textContent = '';
+  document.getElementById('fbDetailStats').innerHTML = '';
+  document.getElementById('fbDetailBars').innerHTML = '';
+  document.getElementById('fbDetailList').innerHTML = '';
+  document.getElementById('fbDetailMissing').textContent = '';
+  document.getElementById('fbDetailModal').style.display = '';
+
+  const { data: s } = await db.from('session_feedback').select('*').eq('id', id).single();
+  if (!s) { document.getElementById('fbDetailTitle').textContent = 'Không tìm thấy'; return; }
+  document.getElementById('fbDetailTitle').textContent = s.title;
+  document.getElementById('fbDetailSub').textContent = `${_fbDateA(s.session_date)} · ${s.class_name}`;
+  document.getElementById('fbAdminNote').value = s.admin_note || '';
+
+  const { data: replies } = await db.from('session_feedback_replies').select('*').eq('feedback_id', id).order('created_at', { ascending: false });
+  _fbDetailReplies = replies || [];
+  const n = _fbDetailReplies.length;
+  const avg = n ? (_fbDetailReplies.reduce((a, r) => a + (Number(r.rating) || 0), 0) / n).toFixed(1) : '—';
+  const paceN = { slow: 0, ok: 0, fast: 0 };
+  const undN  = { low: 0, ok: 0, high: 0 };
+  _fbDetailReplies.forEach(r => {
+    if (paceN[r.pace] != null) paceN[r.pace]++;
+    if (undN[r.understood] != null) undN[r.understood]++;
+  });
+
+  const { count: classCount } = await db.from('student_classes').select('student_id', { count: 'exact', head: true }).eq('class_name', s.class_name);
+  const totalHs = classCount || 0;
+  const pct = totalHs ? Math.round(n / totalHs * 100) : 0;
+
+  const cell = (v, l) => `<div style="padding:.85rem 1rem;text-align:center;border-right:1px solid var(--border)"><div style="font-size:1.25rem;font-weight:900">${v}</div><div style="font-size:.68rem;color:var(--muted);font-weight:700;margin-top:.15rem">${l}</div></div>`;
+  document.getElementById('fbDetailStats').innerHTML =
+    cell(avg, 'Điểm TB') + cell(n, 'Đã gửi') + cell(totalHs || '—', 'Sĩ số lớp') + cell((totalHs ? pct : '—') + (totalHs ? '%' : ''), 'Tỷ lệ phản hồi');
+
+  document.getElementById('fbDetailBars').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem">
+      <div>
+        <div style="font-size:.78rem;font-weight:800;margin-bottom:.5rem">Tốc độ giảng</div>
+        ${_fbBar('Chậm — cần nhanh hơn', paceN.slow, n, '#6366f1')}
+        ${_fbBar('Vừa phải', paceN.ok, n, '#10b981')}
+        ${_fbBar('Nhanh — cần chậm lại', paceN.fast, n, '#f59e0b')}
+      </div>
+      <div>
+        <div style="font-size:.78rem;font-weight:800;margin-bottom:.5rem">Mức nắm bài</div>
+        ${_fbBar('Chưa rõ', undN.low, n, '#ef4444')}
+        ${_fbBar('Tạm ổn', undN.ok, n, '#f59e0b')}
+        ${_fbBar('Nắm chắc', undN.high, n, '#10b981')}
+      </div>
+    </div>`;
+
+  if (!_fbDetailReplies.length) {
+    document.getElementById('fbDetailList').innerHTML = '<div style="color:var(--muted);padding:.75rem 0">Chưa có góp ý nào.</div>';
+  } else {
+    document.getElementById('fbDetailList').innerHTML = _fbDetailReplies.map(r => `
+      <div style="border:1.5px solid var(--border);border-radius:12px;padding:.85rem 1rem;margin-bottom:.55rem">
+        <div style="display:flex;justify-content:space-between;gap:.5rem;flex-wrap:wrap;margin-bottom:.35rem">
+          <b style="font-size:.88rem">${_fbEsc(r.student_name || r.username)}</b>
+          <span style="font-size:.75rem;color:#b45309;font-weight:800">${'★'.repeat(r.rating||0)}${'☆'.repeat(5-(r.rating||0))}</span>
+        </div>
+        <div style="font-size:.72rem;color:var(--muted);margin-bottom:.4rem">Tempo: ${FB_PACE_A[r.pace]||'—'} · Hiểu: ${FB_UND_A[r.understood]||'—'} · ${r.created_at ? new Date(r.created_at).toLocaleString('vi-VN') : ''}</div>
+        ${r.want_review ? `<div style="font-size:.8rem;margin-bottom:.3rem"><b>Ôn lại:</b> ${_fbEsc(r.want_review)}</div>` : ''}
+        <div style="font-size:.85rem;line-height:1.6">${_fbEsc(r.comment)}</div>
+      </div>`).join('');
+  }
+
+  const repliedUsers = new Set(_fbDetailReplies.map(r => (r.username || '').toLowerCase()));
+  const { data: sc } = await db.from('student_classes').select('student_id').eq('class_name', s.class_name);
+  const ids = [...new Set((sc || []).map(x => x.student_id))];
+  let missing = [];
+  if (ids.length) {
+    const { data: sts } = await db.from('students').select('username,full_name').in('id', ids);
+    missing = (sts || []).filter(st => !repliedUsers.has((st.username || '').toLowerCase()));
+  }
+  document.getElementById('fbDetailMissing').innerHTML = missing.length
+    ? missing.map(st => `<span style="display:inline-block;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:.2rem .55rem;margin:.15rem .2rem 0 0;font-size:.78rem">${_fbEsc(st.full_name || st.username)}</span>`).join('')
+    : (n ? 'Mọi học viên trong lớp đã gửi (theo danh sách lớp).' : 'Chưa có ai gửi.');
+}
+
+async function saveFbAdminNote() {
+  if (!_fbDetailId) return;
+  const note = document.getElementById('fbAdminNote').value.trim();
+  const { error } = await db.from('session_feedback').update({ admin_note: note || null }).eq('id', _fbDetailId);
+  if (error) { showToast(error.message, false); return; }
+  showToast('Đã lưu ghi chú điều chỉnh buổi sau');
+}
+
+function exportFbCSV() {
+  if (!_fbDetailReplies.length) { showToast('Chưa có góp ý để xuất', false); return; }
+  const rows = [['Họ tên', 'Tài khoản', 'Sao', 'Tốc độ', 'Nắm bài', 'Ôn lại', 'Góp ý', 'Thời gian']];
+  _fbDetailReplies.forEach(r => rows.push([
+    r.student_name || '', r.username || '', r.rating || '',
+    FB_PACE_A[r.pace] || r.pace || '', FB_UND_A[r.understood] || r.understood || '',
+    r.want_review || '', (r.comment || '').replace(/"/g, '""'),
+    r.created_at ? new Date(r.created_at).toLocaleString('vi-VN') : ''
+  ]));
+  const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `gop_y_${_fbDetailId}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+}

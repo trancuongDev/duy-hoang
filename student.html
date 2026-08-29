@@ -89,6 +89,9 @@
       <a href="#" class="slink" data-page="attendance" data-label="Điểm danh">
         <span class="slink-icon">✅</span><span class="slink-label">Điểm danh</span>
       </a>
+      <a href="#" class="slink" data-page="feedback" data-label="Góp ý">
+        <span class="slink-icon">💡</span><span class="slink-label">Góp ý buổi học</span><span id="sidebarFbDot" style="display:none;width:8px;height:8px;background:#ef4444;border-radius:50%;margin-left:auto;flex-shrink:0"></span>
+      </a>
       <a href="#" class="slink" data-page="profile" data-label="Hồ sơ">
         <span class="slink-icon">👤</span><span class="slink-label">Hồ sơ</span>
       </a>
@@ -207,6 +210,9 @@
       <!-- Tiếp tục bài đang học dở -->
       <div id="homeContinueLesson" style="display:none;margin-bottom:1.25rem"></div>
 
+      <!-- Góp ý buổi học đang mở -->
+      <div id="homeFeedbackBanner" style="display:none;margin-bottom:1.25rem"></div>
+
       <!-- Bài học mới nhất -->
       <div class="overview-panel" style="margin-bottom:1.25rem">
         <div class="panel-header">
@@ -276,6 +282,14 @@
               </div>
               <span style="margin-left:auto;color:#1d4ed8;font-weight:700">→</span>
             </a>
+            <div style="display:flex;align-items:center;gap:.75rem;padding:.65rem .75rem;background:#fef3c7;border-radius:10px;cursor:pointer;transition:transform .15s" onclick="showPage('feedback')" onmouseover="this.style.transform='translateX(3px)'" onmouseout="this.style.transform=''">
+              <span style="font-size:1.3rem">💡</span>
+              <div>
+                <div style="font-weight:700;font-size:.85rem">Góp ý buổi học</div>
+                <div style="font-size:.75rem;color:var(--muted)">Đánh giá buổi học để thầy điều chỉnh buổi sau</div>
+              </div>
+              <span style="margin-left:auto;color:#b45309;font-weight:700">→</span>
+            </div>
             <div style="display:flex;align-items:center;gap:.75rem;padding:.65rem .75rem;background:#d1fae5;border-radius:10px">
               <span style="font-size:1.3rem">📞</span>
               <div>
@@ -390,6 +404,11 @@
         <div style="background:#fef3c7;border-radius:12px;padding:1rem 1.25rem">
           <div style="font-weight:800;font-size:.95rem;color:#92400e;margin-bottom:.5rem">📄 Tài liệu học tập</div>
           <p style="font-size:.88rem;line-height:1.7;color:var(--text)">Nhấn vào tài liệu để xem trực tiếp trên trình duyệt. Một số tài liệu hỗ trợ tải xuống. Tài liệu chỉ dành cho học viên đã đăng ký và <b>không được phép chia sẻ</b> ra ngoài.</p>
+        </div>
+
+        <div style="background:#fef3c7;border-radius:12px;padding:1rem 1.25rem">
+          <div style="font-weight:800;font-size:.95rem;color:#92400e;margin-bottom:.5rem">💡 Góp ý buổi học</div>
+          <p style="font-size:.88rem;line-height:1.7;color:var(--text)">Sau mỗi buổi, giáo viên mở form góp ý. Vào mục <b>Góp ý buổi học</b> → chọn buổi đang mở → đánh giá tốc độ, mức hiểu bài và viết góp ý. Không ảnh hưởng điểm số — dùng để điều chỉnh buổi sau.</p>
         </div>
 
         <!-- Bao mat -->
@@ -656,6 +675,81 @@
       </div>
     </div>
 
+    <!-- GÓP Ý BUỔI HỌC -->
+    <section class="page" id="pageFeedback">
+      <style>
+        .fb-card{background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:1.1rem 1.25rem;margin-bottom:.85rem;transition:border-color .2s,box-shadow .2s}
+        .fb-card:hover{border-color:#fcd34d;box-shadow:0 6px 20px rgba(245,158,11,.1)}
+        .fb-card.open{border-color:#f59e0b;background:linear-gradient(135deg,#fffbeb,var(--card))}
+        .fb-star{font-size:1.55rem;cursor:pointer;opacity:.35;transition:opacity .15s,transform .15s;user-select:none;line-height:1}
+        .fb-star.on{opacity:1;transform:scale(1.08)}
+        .fb-opt{flex:1;min-width:90px;border:1.5px solid var(--border);background:var(--card);color:var(--text);border-radius:10px;padding:.55rem .4rem;font-size:.78rem;font-weight:700;cursor:pointer;text-align:center}
+        .fb-opt.on{border-color:#d97706;background:#fffbeb;color:#92400e}
+      </style>
+      <div style="background:linear-gradient(135deg,#78350f,#b45309);border-radius:18px;padding:1.2rem 1.4rem;margin-bottom:1.15rem;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap">
+        <div>
+          <div style="font-size:1.15rem;font-weight:900;letter-spacing:-.3px">💡 Góp ý buổi học</div>
+          <div style="font-size:.78rem;opacity:.75;margin-top:.2rem">Mỗi buổi thầy/cô mở form — bạn bấm vào, gửi ý kiến để điều chỉnh buổi sau. Không ảnh hưởng điểm số.</div>
+        </div>
+      </div>
+      <div id="fbOpenSection" style="display:none;margin-bottom:1.25rem">
+        <div style="font-size:.78rem;font-weight:800;color:#b45309;margin-bottom:.55rem;letter-spacing:.3px;text-transform:uppercase">Đang mở — hãy góp ý</div>
+        <div id="fbOpenList"></div>
+      </div>
+      <div style="font-size:.78rem;font-weight:800;color:var(--muted);margin-bottom:.55rem;letter-spacing:.3px;text-transform:uppercase">Tất cả buổi</div>
+      <div id="fbHistoryList"><div style="text-align:center;padding:2.5rem;color:var(--muted)">⏳ Đang tải...</div></div>
+
+      <div id="fbModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;overflow-y:auto;backdrop-filter:blur(6px);padding:1rem">
+        <div style="max-width:520px;margin:1.5rem auto;background:var(--card);border-radius:20px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.3)">
+          <div style="background:linear-gradient(135deg,#78350f,#b45309);padding:1.15rem 1.35rem;color:#fff;display:flex;align-items:flex-start;justify-content:space-between;gap:.75rem">
+            <div>
+              <div style="font-weight:900;font-size:.98rem" id="fbModalTitle">Góp ý buổi học</div>
+              <div style="font-size:.76rem;opacity:.75;margin-top:.2rem" id="fbModalSub"></div>
+            </div>
+            <button type="button" onclick="closeFbModal()" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;flex-shrink:0">✕</button>
+          </div>
+          <div style="padding:1.25rem 1.35rem;display:flex;flex-direction:column;gap:1rem">
+            <p id="fbModalPrompt" style="font-size:.85rem;line-height:1.65;color:var(--text);margin:0;background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:.75rem .9rem"></p>
+            <div>
+              <div style="font-size:.78rem;font-weight:700;color:var(--muted);margin-bottom:.4rem">Mức hài lòng buổi học <span style="color:#ef4444">*</span></div>
+              <div id="fbStarRow" style="display:flex;gap:.35rem"></div>
+              <div id="fbStarLabel" style="font-size:.75rem;color:#b45309;font-weight:700;margin-top:.3rem"></div>
+            </div>
+            <div>
+              <div style="font-size:.78rem;font-weight:700;color:var(--muted);margin-bottom:.4rem">Tốc độ giảng <span style="color:#ef4444">*</span></div>
+              <div style="display:flex;gap:.45rem;flex-wrap:wrap">
+                <button type="button" class="fb-opt" data-fbpace="slow" onclick="setFbPace('slow')">Chậm — cần nhanh hơn</button>
+                <button type="button" class="fb-opt" data-fbpace="ok" onclick="setFbPace('ok')">Vừa phải</button>
+                <button type="button" class="fb-opt" data-fbpace="fast" onclick="setFbPace('fast')">Nhanh — cần chậm lại</button>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:.78rem;font-weight:700;color:var(--muted);margin-bottom:.4rem">Bạn nắm bài đến đâu <span style="color:#ef4444">*</span></div>
+              <div style="display:flex;gap:.45rem;flex-wrap:wrap">
+                <button type="button" class="fb-opt" data-fbund="low" onclick="setFbUnderstood('low')">Chưa rõ</button>
+                <button type="button" class="fb-opt" data-fbund="ok" onclick="setFbUnderstood('ok')">Tạm ổn</button>
+                <button type="button" class="fb-opt" data-fbund="high" onclick="setFbUnderstood('high')">Nắm chắc</button>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:.78rem;font-weight:700;color:var(--muted);margin-bottom:.35rem">Phần muốn ôn lại buổi sau</div>
+              <input id="fbWantReview" maxlength="200" placeholder="VD: bất đẳng thức, xác suất..."
+                style="width:100%;padding:.7rem .85rem;border:1.5px solid var(--border);border-radius:10px;font-size:.88rem;background:var(--card);color:var(--text);box-sizing:border-box;outline:none"/>
+            </div>
+            <div>
+              <div style="font-size:.78rem;font-weight:700;color:var(--muted);margin-bottom:.35rem">Góp ý cho buổi sau <span style="color:#ef4444">*</span></div>
+              <textarea id="fbComment" rows="4" maxlength="800" placeholder="Buổi này nên giữ / nên đổi điều gì? Viết thật lòng, thầy/cô đọc hết."
+                style="width:100%;padding:.7rem .85rem;border:1.5px solid var(--border);border-radius:10px;font-size:.88rem;background:var(--card);color:var(--text);resize:vertical;box-sizing:border-box;font-family:inherit;outline:none"></textarea>
+            </div>
+            <div id="fbModalError" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:.55rem .85rem;font-size:.82rem;color:#b91c1c"></div>
+            <button type="button" id="fbSubmitBtn" onclick="submitStudentFeedback()" style="width:100%;padding:.8rem;font-size:.9rem;font-weight:800;background:linear-gradient(135deg,#78350f,#b45309);color:#fff;border:none;border-radius:12px;cursor:pointer">
+              <span id="fbSubmitText">Gửi góp ý</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- HỒ SƠ -->
     <section class="page" id="pageProfile">
 
@@ -760,7 +854,7 @@
     </div>
   </div>
 
-  <script src="student.js?v=1.3.7"></script>
+  <script src="student.js?v=1.5.3"></script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js?v=1.5.0b').catch(() => {});

@@ -310,11 +310,12 @@ function showPage(pg) {
   const el = document.getElementById('page' + (map[pg] || pg.charAt(0).toUpperCase()+pg.slice(1)));
   if (el) el.classList.add('active');
   document.querySelectorAll(`[data-page="${pg}"]`).forEach(l => l.classList.add('active'));
-  if (pg === 'home')          renderHome();
+  if (pg === 'home')          { renderHome(); renderHomeFeedbackBanner(); }
   if (pg === 'lessons')       renderLessonList();
   if (pg === 'notifications') renderNotifications();
   if (pg === 'schedule')      renderStudentSchedule();
   if (pg === 'attendance')    loadAttendance();
+  if (pg === 'feedback')      loadStudentFeedback();
 }
 document.querySelectorAll('.slink[data-page]').forEach(l => {
   l.addEventListener('click', e => { e.preventDefault(); showPage(l.dataset.page); document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebarBackdrop').classList.remove('show'); });
@@ -1300,6 +1301,7 @@ document.getElementById('viewerRotateBtn')?.addEventListener('click', () => {
 
 loadMe().then(async () => {
   await loadLessonProgress();
+  if (location.hash === '#feedback') sessionStorage.setItem('st_page', 'feedback');
   const savedPage = sessionStorage.getItem('st_page') || 'home';
   const savedLesson = sessionStorage.getItem('st_lesson_id');
   if (savedPage === 'lessons' && savedLesson) {
@@ -1314,6 +1316,7 @@ loadMe().then(async () => {
     showPage(savedPage);
   }
   checkNewNotifications(true);
+  refreshFbBadge();
 });
 
 // ── Helper hiện màn hình bị đăng xuất do thiết bị mới ──
@@ -2476,4 +2479,234 @@ document.getElementById('attModal')?.addEventListener('click', e => {
   if (e.target === document.getElementById('attModal')) {
     document.getElementById('attModal').style.display = 'none';
   }
+});
+
+// ════════════════════════════════════════════════════════════════
+// GÓP Ý BUỔI HỌC
+// ════════════════════════════════════════════════════════════════
+const FB_STAR_LABEL = ['', 'Chưa ổn', 'Tạm được', 'Ổn', 'Hài lòng', 'Rất tốt'];
+const FB_PACE = { slow: 'Chậm', ok: 'Vừa', fast: 'Nhanh' };
+const FB_UND  = { low: 'Chưa rõ', ok: 'Tạm ổn', high: 'Nắm chắc' };
+
+let _fbFormId = null;
+let _fbRating = 0;
+let _fbPace = '';
+let _fbUnderstood = '';
+let _fbCanEdit = true;
+
+function _fbDate(d) {
+  if (!d) return '';
+  return new Date(d + 'T00:00:00').toLocaleDateString('vi-VN', { weekday:'short', day:'2-digit', month:'2-digit', year:'numeric' });
+}
+
+async function _fetchMyFeedback() {
+  const classes = myClasses.length ? myClasses : ['__none__'];
+  const { data: sessions, error } = await db
+    .from('session_feedback')
+    .select('*')
+    .in('class_name', classes)
+    .order('session_date', { ascending: false })
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  const list = sessions || [];
+  const ids = list.map(s => s.id);
+  let replies = [];
+  if (ids.length) {
+    const { data } = await db.from('session_feedback_replies')
+      .select('*').eq('username', currentUser).in('feedback_id', ids);
+    replies = data || [];
+  }
+  const replyMap = Object.fromEntries(replies.map(r => [r.feedback_id, r]));
+  return { list, replyMap };
+}
+
+async function refreshFbBadge() {
+  const dot = document.getElementById('sidebarFbDot');
+  if (!dot) return;
+  try {
+    const { list, replyMap } = await _fetchMyFeedback();
+    const pending = list.filter(s => s.is_open && !replyMap[s.id]).length;
+    dot.style.display = pending ? '' : 'none';
+  } catch { dot.style.display = 'none'; }
+}
+
+async function renderHomeFeedbackBanner() {
+  const box = document.getElementById('homeFeedbackBanner');
+  if (!box) return;
+  try {
+    const { list, replyMap } = await _fetchMyFeedback();
+    const pending = list.filter(s => s.is_open && !replyMap[s.id]);
+    if (!pending.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
+    const first = pending[0];
+    box.style.display = '';
+    box.innerHTML = `
+      <div onclick="showPage('feedback')" style="background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1.5px solid #f59e0b;border-radius:14px;padding:1rem 1.2rem;cursor:pointer">
+        <div style="font-weight:800;font-size:.9rem;color:#92400e;margin-bottom:.35rem">💡 Có ${pending.length} buổi đang chờ góp ý</div>
+        <div style="font-size:.82rem;color:#78350f;line-height:1.55">Mới nhất: <b>${escHtml(first.title)}</b> — ${escHtml(_fbDate(first.session_date))}. Bấm để gửi ý kiến cho buổi sau.</div>
+      </div>`;
+  } catch { box.style.display = 'none'; }
+}
+
+async function loadStudentFeedback() {
+  const openEl = document.getElementById('fbOpenSection');
+  const openList = document.getElementById('fbOpenList');
+  const histEl = document.getElementById('fbHistoryList');
+  if (!histEl) return;
+  histEl.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted);font-size:.85rem">⏳ Đang tải...</div>';
+  try {
+    const { list, replyMap } = await _fetchMyFeedback();
+    if (!list.length) {
+      if (openEl) openEl.style.display = 'none';
+      histEl.innerHTML = '<div style="text-align:center;padding:2.5rem;color:var(--muted)">📭 Chưa có buổi góp ý nào.<br/><small>Khi giáo viên mở form sau buổi học, buổi sẽ hiện ở đây.</small></div>';
+      refreshFbBadge();
+      return;
+    }
+    const pending = list.filter(s => s.is_open && !replyMap[s.id]);
+    if (openEl && openList) {
+      if (pending.length) {
+        openEl.style.display = '';
+        openList.innerHTML = pending.map(s => _fbCard(s, replyMap[s.id], true)).join('');
+      } else openEl.style.display = 'none';
+    }
+    histEl.innerHTML = list.map(s => _fbCard(s, replyMap[s.id], false)).join('');
+    refreshFbBadge();
+  } catch (e) {
+    const msg = (e.message || '').includes('schema cache') || (e.message || '').includes('does not exist')
+      ? 'Chưa chạy SQL góp ý. Admin hãy chạy file supabase_session_feedback.sql trên Supabase.'
+      : ('Lỗi: ' + e.message);
+    histEl.innerHTML = `<div style="text-align:center;padding:2rem;color:#b91c1c;font-size:.85rem">${escHtml(msg)}</div>`;
+  }
+}
+
+function _fbCard(s, rec, compact) {
+  const done = !!rec;
+  const canOpen = s.is_open;
+  const btn = canOpen
+    ? `<button type="button" onclick="openFbForm(${s.id})" style="border:none;border-radius:10px;padding:.45rem .9rem;font-size:.8rem;font-weight:800;cursor:pointer;background:linear-gradient(135deg,#78350f,#b45309);color:#fff">${done ? 'Sửa góp ý' : 'Góp ý ngay'}</button>`
+    : (done
+      ? `<span style="font-size:.75rem;font-weight:700;color:#15803d;background:#dcfce7;padding:.25rem .65rem;border-radius:20px">Đã gửi</span>`
+      : `<span style="font-size:.75rem;font-weight:700;color:var(--muted);background:var(--bg);padding:.25rem .65rem;border-radius:20px">Đã đóng</span>`);
+  const stars = rec?.rating ? '★'.repeat(rec.rating) + '☆'.repeat(5 - rec.rating) : '';
+  return `
+    <div class="fb-card ${canOpen && !done ? 'open' : ''}">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.75rem;flex-wrap:wrap">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:800;font-size:.93rem;margin-bottom:.25rem">${escHtml(s.title)}</div>
+          <div style="font-size:.76rem;color:var(--muted);display:flex;gap:.55rem;flex-wrap:wrap">
+            <span>📅 ${escHtml(_fbDate(s.session_date))}</span>
+            <span>📚 ${escHtml(s.class_name)}</span>
+            ${s.is_open ? '<span style="color:#b45309;font-weight:700">● Đang mở</span>' : '<span>● Đã đóng</span>'}
+          </div>
+          ${done && !compact ? `<div style="margin-top:.45rem;font-size:.78rem;color:var(--text)">Đánh giá: <b style="color:#b45309">${stars}</b> · Tempo: ${escHtml(FB_PACE[rec.pace]||'—')} · Hiểu bài: ${escHtml(FB_UND[rec.understood]||'—')}</div>` : ''}
+        </div>
+        ${btn}
+      </div>
+    </div>`;
+}
+
+async function openFbForm(id) {
+  try {
+    const { list, replyMap } = await _fetchMyFeedback();
+    const s = list.find(x => x.id === id);
+    if (!s) return;
+    const rec = replyMap[id];
+    _fbFormId = id;
+    _fbCanEdit = !!s.is_open;
+    _fbRating = rec?.rating || 0;
+    _fbPace = rec?.pace || '';
+    _fbUnderstood = rec?.understood || '';
+    document.getElementById('fbModalTitle').textContent = s.title;
+    document.getElementById('fbModalSub').textContent = `${_fbDate(s.session_date)} · ${s.class_name}`;
+    document.getElementById('fbModalPrompt').textContent = s.prompt || 'Buổi học hôm nay thế nào? Góp ý để thầy/cô điều chỉnh buổi sau. Không ảnh hưởng điểm số.';
+    document.getElementById('fbWantReview').value = rec?.want_review || '';
+    document.getElementById('fbComment').value = rec?.comment || '';
+    document.getElementById('fbModalError').style.display = 'none';
+    document.getElementById('fbSubmitBtn').style.display = _fbCanEdit ? '' : 'none';
+    document.getElementById('fbWantReview').disabled = !_fbCanEdit;
+    document.getElementById('fbComment').disabled = !_fbCanEdit;
+    _renderFbStars();
+    _syncFbOpts();
+    document.getElementById('fbModal').style.display = '';
+  } catch (e) {
+    _showAttToast('Không mở được form: ' + e.message, false);
+  }
+}
+
+function closeFbModal() {
+  document.getElementById('fbModal').style.display = 'none';
+  _fbFormId = null;
+}
+
+function _renderFbStars() {
+  const row = document.getElementById('fbStarRow');
+  if (!row) return;
+  row.innerHTML = [1,2,3,4,5].map(n =>
+    `<span class="fb-star ${_fbRating>=n?'on':''}" onclick="setFbRating(${n})">★</span>`
+  ).join('');
+  document.getElementById('fbStarLabel').textContent = _fbRating ? FB_STAR_LABEL[_fbRating] : 'Chọn số sao';
+}
+
+function setFbRating(n) {
+  if (!_fbCanEdit) return;
+  _fbRating = n;
+  _renderFbStars();
+}
+function setFbPace(v) {
+  if (!_fbCanEdit) return;
+  _fbPace = v;
+  _syncFbOpts();
+}
+function setFbUnderstood(v) {
+  if (!_fbCanEdit) return;
+  _fbUnderstood = v;
+  _syncFbOpts();
+}
+function _syncFbOpts() {
+  document.querySelectorAll('[data-fbpace]').forEach(b => b.classList.toggle('on', b.dataset.fbpace === _fbPace));
+  document.querySelectorAll('[data-fbund]').forEach(b => b.classList.toggle('on', b.dataset.fbund === _fbUnderstood));
+}
+
+async function submitStudentFeedback() {
+  const err = document.getElementById('fbModalError');
+  const showErr = m => { err.textContent = m; err.style.display = ''; };
+  err.style.display = 'none';
+  if (!_fbFormId) return;
+  if (!_fbCanEdit) { showErr('Buổi này đã đóng góp ý.'); return; }
+  if (!_fbRating) { showErr('Hãy chọn mức hài lòng (1–5 sao).'); return; }
+  if (!_fbPace) { showErr('Hãy chọn tốc độ giảng.'); return; }
+  if (!_fbUnderstood) { showErr('Hãy chọn mức nắm bài.'); return; }
+  const comment = (document.getElementById('fbComment').value || '').trim();
+  if (comment.length < 8) { showErr('Góp ý cần ít nhất 8 ký tự — viết cụ thể để thầy/cô điều chỉnh được.'); return; }
+  const want = (document.getElementById('fbWantReview').value || '').trim();
+  const btn = document.getElementById('fbSubmitText');
+  btn.textContent = 'Đang gửi...';
+  try {
+    const { data: sess } = await db.from('session_feedback').select('is_open').eq('id', _fbFormId).single();
+    if (!sess?.is_open) { showErr('Buổi này đã đóng góp ý.'); btn.textContent = 'Gửi góp ý'; return; }
+    const payload = {
+      feedback_id: _fbFormId,
+      username: currentUser,
+      student_name: currentName,
+      class_name: myClass || (myClasses[0] || ''),
+      rating: _fbRating,
+      pace: _fbPace,
+      understood: _fbUnderstood,
+      want_review: want || null,
+      comment,
+      updated_at: new Date().toISOString()
+    };
+    const { error } = await db.from('session_feedback_replies').upsert(payload, { onConflict: 'feedback_id,username' });
+    if (error) throw error;
+    closeFbModal();
+    _showAttToast('Đã gửi góp ý — cảm ơn bạn!', true);
+    await loadStudentFeedback();
+    renderHomeFeedbackBanner();
+  } catch (e) {
+    showErr('Lỗi: ' + e.message);
+  }
+  btn.textContent = 'Gửi góp ý';
+}
+
+document.getElementById('fbModal')?.addEventListener('click', e => {
+  if (e.target === document.getElementById('fbModal')) closeFbModal();
 });

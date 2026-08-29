@@ -1315,7 +1315,7 @@ function renderSidebarNav() {
       </div>`;
   } else {
     // Học sinh
-    const links = [['student.html','🏠','Trang chủ'],['homework.html','📝','Bài Tập'],['library.html','🏛️','Thư viện số'],['groups.html','💬','Nhóm trao đổi'],['student.html','🔔','Thông báo']];
+    const links = [['student.html','🏠','Trang chủ'],['homework.html','📝','Bài Tập'],['library.html','🏛️','Thư viện số'],['groups.html','💬','Nhóm trao đổi'],['student.html#feedback','💡','Góp ý'],['student.html','🔔','Thông báo']];
     nav.innerHTML = links.map(([href,icon,label]) =>
       `<a href="${href}" class="slink${href==='homework.html'?' active':''}" data-label="${label}">
         <span class="slink-icon">${icon}</span><span class="slink-label">${label}</span>

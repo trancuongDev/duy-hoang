@@ -177,6 +177,7 @@
       <a href="#" class="slink" data-page="groups" data-label="Nhóm trao đổi"><span class="slink-icon">💬</span><span class="slink-label">Nhóm trao đổi <span id="zgNavBadge" class="nav-badge" style="display:none"></span></span></a>
       <a href="#" class="slink" data-page="schedule" data-label="Lịch học"><span class="slink-icon">📅</span><span class="slink-label">Lịch học</span></a>
       <a href="#" class="slink" data-page="attendance-admin" data-label="Điểm danh"><span class="slink-icon">✅</span><span class="slink-label">Điểm danh</span></a>
+      <a href="#" class="slink" data-page="feedback-admin" data-label="Góp ý"><span class="slink-icon">💡</span><span class="slink-label">Góp ý buổi học <span id="fbNavBadge" class="nav-badge" style="display:none"></span></span></a>
       <a href="#" class="slink" data-page="profile" data-label="Hồ sơ"><span class="slink-icon"></span><span class="slink-label">Hồ sơ</span></a>
       <a href="#" class="slink" data-page="guide" data-label="Hướng dẫn"><span class="slink-icon">📖</span><span class="slink-label">Hướng dẫn sử dụng</span></a>
     </nav>
@@ -894,6 +895,104 @@
         </div>
         <div style="display:flex;border-bottom:1px solid var(--border)" id="attDetailStats"></div>
         <div style="padding:1rem 1.25rem;max-height:58vh;overflow-y:auto" id="attDetailList"></div>
+      </div>
+    </div>
+
+    <!-- PAGE: GÓP Ý BUỔI HỌC -->
+    <section class="page" id="pageFeedbackAdmin">
+      <div style="background:linear-gradient(135deg,#78350f,#b45309);border-radius:18px;padding:1.4rem 1.6rem;margin-bottom:1.5rem;color:#fff;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem">
+        <div>
+          <div style="font-size:1.25rem;font-weight:900;letter-spacing:-.3px;display:flex;align-items:center;gap:.5rem">
+            <span style="width:34px;height:34px;background:rgba(255,255,255,.15);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0">💡</span>
+            Góp ý buổi học
+          </div>
+          <div style="font-size:.8rem;opacity:.75;margin-top:.3rem">Tạo form sau mỗi buổi — học viên gửi ý kiến, bạn xem tổng hợp để điều chỉnh buổi sau</div>
+        </div>
+        <button type="button" onclick="openFbAdminCreateModal()" style="display:inline-flex;align-items:center;gap:.45rem;background:#fff;color:#78350f;border:none;border-radius:11px;padding:.6rem 1.25rem;font-size:.86rem;font-weight:800;cursor:pointer">➕ Mở góp ý buổi mới</button>
+      </div>
+      <div class="att-stat-strip">
+        <div class="att-stat-item"><div class="att-stat-icon" style="background:#fffbeb">📋</div><div><div class="att-stat-num" id="fbStatTotal" style="color:#b45309">0</div><div class="att-stat-lbl">Tổng buổi</div></div></div>
+        <div class="att-stat-item"><div class="att-stat-icon" style="background:#d1fae5">🟢</div><div><div class="att-stat-num" id="fbStatOpen" style="color:#16a34a">0</div><div class="att-stat-lbl">Đang mở</div></div></div>
+        <div class="att-stat-item"><div class="att-stat-icon" style="background:#eef2ff">✉️</div><div><div class="att-stat-num" id="fbStatReplies" style="color:var(--primary)">0</div><div class="att-stat-lbl">Lượt góp ý</div></div></div>
+        <div class="att-stat-item"><div class="att-stat-icon" style="background:#fef3c7">★</div><div><div class="att-stat-num" id="fbStatAvg" style="color:#d97706">—</div><div class="att-stat-lbl">Điểm TB (1–5)</div></div></div>
+      </div>
+      <div class="att-filter-bar">
+        <span style="font-size:.76rem;font-weight:700;color:var(--muted);white-space:nowrap">Lọc:</span>
+        <select id="fbAdminFilterClass"><option value="">Tất cả lớp</option></select>
+        <input type="date" id="fbAdminFilterDate"/>
+        <button class="btn-primary" style="padding:.45rem 1rem;font-size:.84rem" onclick="loadFbAdminSessions()">Áp dụng</button>
+        <button class="btn-outline" style="padding:.45rem 1rem;font-size:.84rem" onclick="document.getElementById('fbAdminFilterDate').value='';loadFbAdminSessions()">Xóa lọc</button>
+      </div>
+      <div id="fbAdminSessionList"><div style="text-align:center;padding:3rem;color:var(--muted)">⏳ Đang tải...</div></div>
+    </section>
+
+    <div id="fbAdminModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;overflow-y:auto;backdrop-filter:blur(6px);padding:1rem">
+      <div style="max-width:520px;margin:1.75rem auto;background:var(--card);border-radius:20px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.3)">
+        <div style="background:linear-gradient(135deg,#78350f,#b45309);padding:1.25rem 1.5rem;color:#fff;display:flex;align-items:center;justify-content:space-between">
+          <span style="font-weight:900;font-size:.95rem" id="fbAdminModalTitle">Mở góp ý buổi học</span>
+          <button type="button" onclick="document.getElementById('fbAdminModal').style.display='none'" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer">✕</button>
+        </div>
+        <div style="padding:1.4rem;display:flex;flex-direction:column;gap:.85rem">
+          <div>
+            <label style="font-size:.74rem;font-weight:700;color:var(--muted);display:block;margin-bottom:.3rem">Lấy từ buổi điểm danh (tuỳ chọn)</label>
+            <select id="fbFromAtt" onchange="fillFbFromAttendance()" style="width:100%;padding:.7rem .85rem;border:1.5px solid var(--border);border-radius:10px;font-size:.88rem;background:var(--card);color:var(--text)">
+              <option value="">-- Không, nhập tay --</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:.74rem;font-weight:700;color:var(--muted);display:block;margin-bottom:.3rem">Tiêu đề <span style="color:var(--danger)">*</span></label>
+            <input type="text" id="fbAdminTitle" placeholder="VD: Góp ý buổi 15/01 — Phương trình bậc 2" style="width:100%;padding:.7rem .85rem;border:1.5px solid var(--border);border-radius:10px;font-size:.88rem;background:var(--card);color:var(--text);box-sizing:border-box"/>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem">
+            <div>
+              <label style="font-size:.74rem;font-weight:700;color:var(--muted);display:block;margin-bottom:.3rem">Lớp <span style="color:var(--danger)">*</span></label>
+              <select id="fbAdminClass" style="width:100%;padding:.7rem .85rem;border:1.5px solid var(--border);border-radius:10px;font-size:.88rem;background:var(--card);color:var(--text)"><option value="">-- Chọn lớp --</option></select>
+            </div>
+            <div>
+              <label style="font-size:.74rem;font-weight:700;color:var(--muted);display:block;margin-bottom:.3rem">Ngày buổi học <span style="color:var(--danger)">*</span></label>
+              <input type="date" id="fbAdminDate" style="width:100%;padding:.7rem .85rem;border:1.5px solid var(--border);border-radius:10px;font-size:.88rem;background:var(--card);color:var(--text);box-sizing:border-box"/>
+            </div>
+          </div>
+          <div>
+            <label style="font-size:.74rem;font-weight:700;color:var(--muted);display:block;margin-bottom:.3rem">Câu hỏi gửi học viên</label>
+            <textarea id="fbAdminPrompt" rows="3" placeholder="Buổi học hôm nay thế nào? Góp ý để thầy/cô điều chỉnh buổi sau." style="width:100%;padding:.7rem .85rem;border:1.5px solid var(--border);border-radius:10px;font-size:.88rem;background:var(--card);color:var(--text);resize:vertical;box-sizing:border-box;font-family:inherit"></textarea>
+          </div>
+          <label style="display:flex;align-items:center;gap:.55rem;cursor:pointer;font-size:.85rem;font-weight:600;background:#fffbeb;padding:.6rem .85rem;border-radius:10px">
+            <input type="checkbox" id="fbAdminIsOpen" checked style="accent-color:#b45309;width:15px;height:15px"/>Mở ngay để học viên góp ý
+          </label>
+          <div id="fbAdminModalError" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:.55rem .85rem;font-size:.82rem;color:#b91c1c"></div>
+          <button type="button" onclick="saveFbAdminSession()" style="width:100%;padding:.8rem;font-size:.9rem;font-weight:800;background:linear-gradient(135deg,#78350f,#b45309);color:#fff;border:none;border-radius:12px;cursor:pointer">
+            <span id="fbAdminSaveText">Lưu form góp ý</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="fbDetailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9100;overflow-y:auto;backdrop-filter:blur(6px);padding:1rem">
+      <div style="max-width:760px;margin:1.5rem auto;background:var(--card);border-radius:20px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.3)">
+        <div style="background:linear-gradient(135deg,#78350f,#b45309);padding:1.25rem 1.5rem;color:#fff;display:flex;align-items:flex-start;justify-content:space-between;gap:.75rem">
+          <div>
+            <div style="font-weight:900;font-size:.98rem" id="fbDetailTitle">Tổng hợp góp ý</div>
+            <div style="font-size:.75rem;opacity:.75;margin-top:.2rem" id="fbDetailSub"></div>
+          </div>
+          <div style="display:flex;gap:.45rem;flex-shrink:0">
+            <button type="button" onclick="exportFbCSV()" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;padding:.35rem .8rem;border-radius:8px;font-size:.76rem;font-weight:700;cursor:pointer">CSV</button>
+            <button type="button" onclick="document.getElementById('fbDetailModal').style.display='none'" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer">✕</button>
+          </div>
+        </div>
+        <div id="fbDetailStats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-bottom:1px solid var(--border)"></div>
+        <div style="padding:1.15rem 1.35rem;max-height:62vh;overflow-y:auto">
+          <div id="fbDetailBars" style="margin-bottom:1.1rem"></div>
+          <div style="font-size:.78rem;font-weight:800;color:var(--muted);margin-bottom:.45rem;text-transform:uppercase">Góp ý chi tiết</div>
+          <div id="fbDetailList"></div>
+          <div style="font-size:.78rem;font-weight:800;color:var(--muted);margin:1.1rem 0 .45rem;text-transform:uppercase">Chưa gửi</div>
+          <div id="fbDetailMissing" style="font-size:.82rem;color:var(--muted)"></div>
+          <div style="margin-top:1.15rem">
+            <div style="font-size:.78rem;font-weight:800;color:var(--muted);margin-bottom:.4rem;text-transform:uppercase">Ghi chú điều chỉnh buổi sau</div>
+            <textarea id="fbAdminNote" rows="3" placeholder="VD: Buổi sau chậm lại phần xác suất, thêm 2 bài vận dụng..." style="width:100%;padding:.7rem .85rem;border:1.5px solid var(--border);border-radius:10px;font-size:.86rem;background:var(--bg);color:var(--text);resize:vertical;box-sizing:border-box;font-family:inherit"></textarea>
+            <button type="button" class="btn-primary" style="margin-top:.55rem;padding:.45rem 1rem;font-size:.84rem" onclick="saveFbAdminNote()">Lưu ghi chú</button>
+          </div>
+        </div>
       </div>
     </div>
 
