@@ -29,6 +29,119 @@
     /* Dropdown công cụ */
     #toolsDropdownMenu button:hover { background: var(--bg) !important; }
     #toolsDropdownBtn:hover { border-color: var(--primary); color: var(--primary); }
+
+    /* ── Thư viện số (admin) ── */
+    .lib-admin-hero{
+      position:relative;overflow:hidden;border-radius:20px;padding:1.45rem 1.5rem 1.3rem;margin-bottom:1.15rem;color:#fff;
+      background:
+        radial-gradient(ellipse 50% 80% at 92% 10%, rgba(255,226,122,.28), transparent 55%),
+        linear-gradient(135deg,#0b1026 0%,#1a1440 42%,#312e81 100%);
+      border:1px solid rgba(245,215,110,.32);
+      box-shadow:0 14px 36px rgba(26,20,64,.18);
+    }
+    .lib-admin-hero h1{margin:0 0 .3rem;font-size:1.45rem;font-weight:800;letter-spacing:-.3px}
+    .lib-admin-hero p{margin:0;font-size:.86rem;line-height:1.65;color:rgba(255,255,255,.72);max-width:560px}
+    .lib-admin-hero a{
+      display:inline-flex;align-items:center;gap:.35rem;margin-top:.9rem;padding:.48rem .9rem;border-radius:999px;
+      background:linear-gradient(135deg,#fff8eb,#f5d76e);color:#1a1440;font-size:.78rem;font-weight:800;text-decoration:none
+    }
+    .lib-admin-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:.7rem;margin-bottom:1rem}
+    .lib-stat{
+      background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:.85rem 1rem;
+      box-shadow:var(--shadow)
+    }
+    .lib-stat b{display:block;font-size:1.35rem;font-weight:800;letter-spacing:-.4px;line-height:1.1}
+    .lib-stat span{font-size:.75rem;font-weight:700;color:var(--muted)}
+    .lib-admin-tabs{
+      display:flex;gap:.4rem;flex-wrap:wrap;padding:.35rem;background:var(--card);border:1.5px solid var(--border);
+      border-radius:14px;margin-bottom:1.15rem;width:fit-content;max-width:100%
+    }
+    .lib-admin-tab{
+      border:none;background:transparent;color:var(--muted);border-radius:10px;padding:.5rem .95rem;
+      font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit
+    }
+    .lib-admin-tab.active{
+      background:linear-gradient(135deg,#1a1440,#4338ca);color:#fff8eb;box-shadow:0 6px 16px rgba(67,56,202,.28)
+    }
+    .lib-sheet{
+      background:var(--card);border:1.5px solid var(--border);border-radius:20px;overflow:hidden;
+      box-shadow:0 10px 32px rgba(15,23,42,.07)
+    }
+    .lib-sheet-head{
+      padding:1.1rem 1.35rem 1rem;border-bottom:1px solid var(--border);
+      background:linear-gradient(180deg, rgba(245,215,110,.12), transparent)
+    }
+    .lib-sheet-head h3{margin:0 0 .2rem;font-size:1.12rem;font-weight:800}
+    .lib-sheet-head p{margin:0;font-size:.8rem;color:var(--muted);line-height:1.5}
+    .lib-sheet-body{padding:1.25rem 1.35rem 1.4rem}
+    .lib-form-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:1.25rem;align-items:start}
+    .lib-fields{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}
+    .lib-field{display:flex;flex-direction:column;gap:.32rem}
+    .lib-field.full{grid-column:1/-1}
+    .lib-field label{font-size:.75rem;font-weight:800;color:var(--muted);letter-spacing:.02em}
+    .lib-field input,
+    .lib-field select,
+    .lib-field textarea{
+      width:100%;padding:.7rem .85rem;border:1.5px solid var(--border);border-radius:12px;
+      background:var(--bg);color:var(--text);font-size:.9rem;outline:none;font-family:inherit;transition:border-color .15s,box-shadow .15s
+    }
+    .lib-field textarea{resize:vertical;min-height:88px}
+    .lib-field input:focus,
+    .lib-field select:focus,
+    .lib-field textarea:focus{
+      border-color:#e8a317;box-shadow:0 0 0 4px rgba(245,215,110,.28);background:var(--card)
+    }
+    .lib-ico-row,.lib-color-row{display:flex;flex-wrap:wrap;gap:.35rem}
+    .lib-ico-btn,.lib-color-btn{
+      width:36px;height:36px;border-radius:10px;border:1.5px solid var(--border);background:var(--card);
+      cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.05rem
+    }
+    .lib-ico-btn.active,.lib-color-btn.active{
+      border-color:#e8a317;box-shadow:0 0 0 3px rgba(245,215,110,.35)
+    }
+    .lib-preview{
+      position:sticky;top:88px;background:
+        radial-gradient(ellipse 80% 50% at 100% 0%, rgba(245,215,110,.16), transparent 55%),
+        var(--bg);
+      border:1.5px dashed rgba(232,163,23,.45);border-radius:18px;padding:1rem
+    }
+    .lib-preview-kicker{font-size:.7rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#b45309;margin-bottom:.7rem}
+    .lib-preview-card{
+      background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:1.05rem 1.1rem;box-shadow:var(--shadow)
+    }
+    .lib-preview-top{display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem;margin-bottom:.6rem}
+    .lib-preview-ico{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3rem}
+    .lib-preview-src{font-size:.62rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#92400e;background:#fef3c7;border-radius:999px;padding:.2rem .5rem}
+    .lib-preview-card h4{margin:0 0 .35rem;font-size:.95rem;font-weight:800}
+    .lib-preview-card p{margin:0;font-size:.8rem;color:var(--muted);line-height:1.55}
+    .lib-gold-btn{
+      display:inline-flex;align-items:center;gap:.45rem;border:none;cursor:pointer;font-family:inherit;
+      background:linear-gradient(135deg,#1a1440,#4338ca);color:#fff8eb;border-radius:12px;
+      padding:.75rem 1.2rem;font-size:.9rem;font-weight:800;box-shadow:0 8px 20px rgba(67,56,202,.28)
+    }
+    .lib-card{
+      background:var(--card);border:1.5px solid var(--border);border-radius:18px;padding:1.1rem 1.2rem;margin-bottom:.75rem;
+      box-shadow:var(--shadow)
+    }
+    .lib-who-admin{
+      display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;
+      margin:.15rem 0 .7rem;padding:.5rem .7rem;border-radius:10px;
+      background:#eef2ff;border:1px solid #c7d2fe;font-size:.8rem;color:#3730a3;font-weight:600
+    }
+    .lib-who-admin b{font-weight:800;color:#1e1b4b}
+    .lib-who-admin .lib-who-kicker{
+      font-size:.68rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#4338ca
+    }
+    body.dark-mode .lib-who-admin{background:#1e1b4b;border-color:#4338ca;color:#c7d2fe}
+    body.dark-mode .lib-who-admin b{color:#e0e7ff}
+    .lib-empty{
+      text-align:center;padding:2.4rem 1rem;background:var(--card);border:1.5px dashed var(--border);border-radius:18px;color:var(--muted)
+    }
+    @media (max-width:860px){
+      .lib-admin-stats{grid-template-columns:1fr 1fr}
+      .lib-form-grid,.lib-fields{grid-template-columns:1fr}
+      .lib-preview{position:static}
+    }
   </style>
 </head>
 <body class="dashboard-page trungthu-dash">
@@ -60,6 +173,8 @@
       <a href="#" class="slink" data-page="announcements" data-label="Thông báo"><span class="slink-icon">📢</span><span class="slink-label">Thông báo</span></a>
       <a href="homework.html" class="slink" data-label="Bài Tập"><span class="slink-icon">📝</span><span class="slink-label">Bài Tập</span></a>
       <a href="#" class="slink" data-page="files" data-label="Lưu trữ"><span class="slink-icon">🗂️</span><span class="slink-label">Lưu trữ tài liệu</span></a>
+      <a href="#" class="slink" data-page="library" data-label="Thư viện số"><span class="slink-icon">🏛️</span><span class="slink-label">Thư viện số <span id="libNavBadge" class="nav-badge" style="display:none"></span></span></a>
+      <a href="#" class="slink" data-page="groups" data-label="Nhóm trao đổi"><span class="slink-icon">💬</span><span class="slink-label">Nhóm trao đổi <span id="zgNavBadge" class="nav-badge" style="display:none"></span></span></a>
       <a href="#" class="slink" data-page="schedule" data-label="Lịch học"><span class="slink-icon">📅</span><span class="slink-label">Lịch học</span></a>
       <a href="#" class="slink" data-page="attendance-admin" data-label="Điểm danh"><span class="slink-icon">✅</span><span class="slink-label">Điểm danh</span></a>
       <a href="#" class="slink" data-page="profile" data-label="Hồ sơ"><span class="slink-icon"></span><span class="slink-label">Hồ sơ</span></a>
@@ -149,6 +264,8 @@
       </div>
       <!-- Thông báo lớp hết hạn / sắp hết hạn -->
       <div id="classExpiryNotices" style="margin-top:1rem"></div>
+      <div id="libPendingOverview" style="margin-top:1rem"></div>
+      <div id="zgPendingOverview" style="margin-top:1rem"></div>
 
       <!-- Nhắc nhở hết hạn -->
       <div id="expiryReminderPanel" class="overview-panel" style="margin-top:1rem">
@@ -859,6 +976,70 @@
 
       <!-- Nội dung file manager -->
       <div id="fileManagerContent"></div>
+    </section>
+
+    <!-- PAGE: THƯ VIỆN SỐ -->
+    <section class="page" id="pageLibrary">
+      <div class="lib-admin-hero">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap">
+          <div>
+            <div style="display:inline-flex;align-items:center;gap:.4rem;background:rgba(245,215,110,.14);border:1px solid rgba(245,215,110,.35);border-radius:999px;padding:.28rem .75rem;font-size:.72rem;font-weight:700;color:#f5d76e;margin-bottom:.7rem">Quản lý học liệu</div>
+            <h1>Thư viện số</h1>
+            <p>Nhận đề xuất từ học sinh, kiểm tra nguồn rồi thêm vào thư viện. Học sinh thấy ngay trên trang của mình.</p>
+          </div>
+          <a href="library.html" target="_blank" rel="noopener">Xem trang học sinh ↗</a>
+        </div>
+      </div>
+      <div class="lib-admin-stats" id="libAdminStats"></div>
+      <div class="lib-admin-tabs" id="libAdminTabs">
+        <button type="button" class="lib-admin-tab active" data-libtab="pending">Chờ duyệt</button>
+        <button type="button" class="lib-admin-tab" data-libtab="approved">Đã thêm</button>
+        <button type="button" class="lib-admin-tab" data-libtab="rejected">Từ chối / gỡ</button>
+        <button type="button" class="lib-admin-tab" data-libtab="reports">Báo cáo <span id="libReportTabBadge" class="nav-badge" style="display:none;margin-left:.25rem"></span></button>
+        <button type="button" class="lib-admin-tab" data-libtab="manual">Thêm thủ công</button>
+      </div>
+      <div id="libAdminList"></div>
+      <div id="libAdminManual" style="display:none"></div>
+    </section>
+
+    <!-- PAGE: NHÓM TRAO ĐỔI ZALO -->
+    <section class="page" id="pageGroups">
+      <div class="lib-admin-hero">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap">
+          <div>
+            <div style="display:inline-flex;align-items:center;gap:.4rem;background:rgba(0,168,255,.16);border:1px solid rgba(106,196,255,.4);border-radius:999px;padding:.28rem .75rem;font-size:.72rem;font-weight:700;color:#7dd3fc;margin-bottom:.7rem">Zalo lớp học</div>
+            <h1>Nhóm trao đổi</h1>
+            <p>Tạo nhóm, dán link mời Zalo. Học sinh có thể đề xuất mở nhóm — bạn nhận ngay và bấm <b>Mở nhóm</b>.</p>
+          </div>
+          <a href="groups.html" target="_blank" rel="noopener">Xem trang học sinh ↗</a>
+        </div>
+      </div>
+      <div id="zgPendingList"></div>
+      <div class="lib-sheet" style="margin-bottom:1.15rem">
+        <div class="lib-sheet-head">
+          <h3 id="zgFormTitle">Tạo nhóm mới</h3>
+          <p>Trên Zalo: Quản lý nhóm → Liên kết tham gia / Mời bạn → copy link <b>zalo.me</b>.</p>
+        </div>
+        <div class="lib-sheet-body">
+          <div class="lib-fields">
+            <div class="lib-field full"><label>Tên nhóm</label><input id="zgName" placeholder="VD: Toán 12A — Nhóm trao đổi"/></div>
+            <div class="lib-field full"><label>Link Zalo</label><input id="zgUrl" placeholder="https://zalo.me/g/..."/></div>
+            <div class="lib-field"><label>Lớp</label><select id="zgClass"><option value="">Tất cả lớp</option></select></div>
+            <div class="lib-field"><label>Mô tả</label><input id="zgDesc" placeholder="Nhóm hỏi bài, thông báo lớp..."/></div>
+            <div class="lib-field full">
+              <label>Icon</label>
+              <input type="hidden" id="zgIcon" value="💬"/>
+              <div class="lib-ico-row" id="zgIconRow"></div>
+            </div>
+          </div>
+          <div style="display:flex;gap:.5rem;margin-top:1rem;flex-wrap:wrap;align-items:center">
+            <button type="button" class="lib-gold-btn" id="zgSaveBtn">Lưu nhóm</button>
+            <button type="button" class="btn-outline" id="zgResetBtn" style="display:none">Hủy sửa</button>
+            <span id="zgFormMsg" style="font-size:.82rem;font-weight:600"></span>
+          </div>
+        </div>
+      </div>
+      <div id="zgAdminList"></div>
     </section>
 
     <!-- PAGE: HƯỚNG DẪN SỬ DỤNG -->

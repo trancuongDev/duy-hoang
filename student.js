@@ -61,6 +61,10 @@ if (sessionStorage.getItem('dh_role') !== 'student') location.href = 'login.html
 const currentUser = sessionStorage.getItem('dh_user');
 const currentName = sessionStorage.getItem('dh_name') || currentUser;
 
+function escHtml(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
 document.getElementById('studentName').textContent  = currentName;
 document.getElementById('welcomeTitle').textContent = `Xin chào, ${currentName}! 👋`;
 document.getElementById('profileName').textContent  = currentName;
@@ -336,14 +340,17 @@ async function renderHome() {
   const [{ data: allRecentLessons }, { data: anns }, { data: allGroupsHome }] = await Promise.all([
     db.from('lessons').select('id,name,class_name,allowed_usernames,group_id').order('group_name',{ascending:true}).order('sort_order',{ascending:true}).order('created_at',{ascending:true}).limit(200),
     db.from('announcements').select('*').order('created_at',{ascending:false}).limit(200),
-    db.from('lesson_groups').select('id,class_name,allowed_usernames')
+    db.from('lesson_groups').select('id,class_name,allowed_usernames'),
+    loadLessonProgress()
   ]);
   const groupMapHome = Object.fromEntries((allGroupsHome||[]).map(g => [g.id, g]));
-  const list = (allRecentLessons || []).filter(l => {
+  const accessible = (allRecentLessons || []).filter(l => {
     if (lessonMatchesStudentClasses(l, myClasses)) return true;
     if (l.group_id && groupMapHome[l.group_id]) return groupMatchesStudent(groupMapHome[l.group_id]);
     return false;
-  }).slice(0, 4);
+  });
+  paintContinueBanner('homeContinueLesson', accessible, false);
+  const list = accessible.slice(0, 4);
 
   // Thông báo
   const annSection = document.getElementById('announcementSection');
@@ -404,14 +411,15 @@ async function renderHome() {
         <div style="position:absolute;top:-18px;right:-18px;width:72px;height:72px;background:rgba(255,255,255,.1);border-radius:50%"></div>
         <div style="position:absolute;bottom:-12px;left:30%;width:48px;height:48px;background:rgba(255,255,255,.08);border-radius:50%"></div>
         <div style="width:38px;height:38px;background:rgba(255,255,255,.18);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;margin-bottom:.6rem;position:relative">${c.icon}</div>
-        <div style="color:#fff;font-weight:800;font-size:.92rem;line-height:1.35;position:relative;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${l.name}</div>
+        <div style="color:#fff;font-weight:800;font-size:.92rem;line-height:1.35;position:relative;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${escHtml(l.name)}</div>
+        ${lessonProgressBadgeHtml(l.id, true)}
       </div>
       <div style="padding:.75rem 1rem;display:flex;align-items:center;justify-content:space-between">
         <div style="display:flex;gap:.6rem">
           <span style="display:flex;align-items:center;gap:.3rem;background:${c.light};color:var(--text);font-size:.75rem;font-weight:700;padding:.25rem .6rem;border-radius:8px">🎬 ${vc}</span>
           <span style="display:flex;align-items:center;gap:.3rem;background:${c.light};color:var(--text);font-size:.75rem;font-weight:700;padding:.25rem .6rem;border-radius:8px">📄 ${dc}</span>
         </div>
-        <span style="font-size:.8rem;color:var(--primary);font-weight:700">Xem →</span>
+        <span style="font-size:.8rem;color:var(--primary);font-weight:700">${_lessonProgress[l.id]?.status === 'done' ? 'Xem lại →' : _lessonProgress[l.id] ? 'Học tiếp →' : 'Xem →'}</span>
       </div>`;
     card.addEventListener('mouseenter', () => { card.style.transform = 'translateY(-3px)'; card.style.boxShadow = '0 8px 24px rgba(0,0,0,.12)'; });
     card.addEventListener('mouseleave', () => { card.style.transform = ''; card.style.boxShadow = 'var(--shadow)'; });
@@ -462,6 +470,7 @@ async function renderLessonList(forceRefresh = false) {
     const [{ data: allVids }, { data: allDocs }] = await Promise.all([
       lessonIds.length ? db.from('lesson_videos').select('lesson_id').in('lesson_id', lessonIds) : { data: [] },
       lessonIds.length ? db.from('lesson_docs').select('lesson_id').in('lesson_id', lessonIds) : { data: [] },
+      loadLessonProgress()
     ]);
     _lessonCache = { list: merged, allVids: allVids||[], allDocs: allDocs||[], allGroups: allGroups||[] };
   }
@@ -471,6 +480,7 @@ async function renderLessonList(forceRefresh = false) {
 
 function renderLessonListFromCache() {
   const { list, allVids, allDocs, allGroups } = _lessonCache;
+  paintContinueBanner('sLessonContinue', list, true);
   const el = document.getElementById('sLessonList');
   el.innerHTML = '';
   const normalizedGroups = [];
@@ -534,8 +544,8 @@ function renderLessonListFromCache() {
     item.className = 'group-lesson-item';
     const num = document.createElement('div'); num.className = 'group-lesson-num'; num.textContent = idx + 1;
     const info = document.createElement('div'); info.className = 'group-lesson-info';
-    info.innerHTML = `<div class="group-lesson-title"><span style="margin-right:.35rem">📚</span>${l.name}</div>
-      <div class="group-lesson-stats"><span>🎬 ${vc}</span><span>📄 ${dc}</span></div>`;
+    info.innerHTML = `<div class="group-lesson-title"><span style="margin-right:.35rem">📚</span>${escHtml(l.name)}</div>
+      <div class="group-lesson-stats"><span>🎬 ${vc}</span><span>📄 ${dc}</span>${lessonProgressBadgeHtml(l.id, false)}</div>`;
     const favBtn = document.createElement('button');
     favBtn.style.cssText = 'background:none;border:none;cursor:pointer;font-size:1.1rem;padding:.2rem .3rem;flex-shrink:0;line-height:1;transition:transform .15s';
     favBtn.textContent = favSet.has(l.id) ? '❤️' : '🤍';
@@ -760,6 +770,125 @@ function logAccess(lessonId, lessonName, contentId, contentTitle, contentType) {
     content_type: contentType
   }).then(() => {}).catch(() => {});
 }
+
+// ---- Tiến độ bài học (đã học / học tiếp) ----
+let _lessonProgress = {};
+
+async function loadLessonProgress() {
+  try {
+    const { data, error } = await db.from('lesson_progress')
+      .select('lesson_id,status,last_opened_at,completed_at')
+      .eq('username', currentUser);
+    if (error || !data) return;
+    const next = {};
+    data.forEach(p => { next[p.lesson_id] = p; });
+    _lessonProgress = next;
+  } catch { /* bảng chưa tạo */ }
+}
+
+function pickContinueLesson(accessibleIds) {
+  const idSet = accessibleIds instanceof Set ? accessibleIds : new Set(accessibleIds || []);
+  let best = null;
+  Object.entries(_lessonProgress).forEach(([lid, p]) => {
+    const id = Number(lid);
+    if (!idSet.has(id)) return;
+    if ((p.status || 'in_progress') === 'done') return;
+    if (!best || new Date(p.last_opened_at || 0) > new Date(best.last_opened_at || 0)) {
+      best = { lesson_id: id, ...p };
+    }
+  });
+  return best;
+}
+
+function lessonProgressBadgeHtml(lessonId, onDark) {
+  const p = _lessonProgress[lessonId];
+  if (!p) return '';
+  if (p.status === 'done') {
+    return onDark
+      ? `<span style="display:inline-block;margin-top:.45rem;background:rgba(16,185,129,.25);color:#bbf7d0;font-size:.68rem;font-weight:700;padding:.15rem .5rem;border-radius:999px;position:relative">✓ Đã học</span>`
+      : `<span style="background:#d1fae5;color:#065f46;font-size:.65rem;font-weight:700;padding:.12rem .4rem;border-radius:6px">Đã học</span>`;
+  }
+  return onDark
+    ? `<span style="display:inline-block;margin-top:.45rem;background:rgba(255,255,255,.18);color:#fff;font-size:.68rem;font-weight:700;padding:.15rem .5rem;border-radius:999px;position:relative">▶ Đang học</span>`
+    : `<span style="background:#eef2ff;color:#4338ca;font-size:.65rem;font-weight:700;padding:.12rem .4rem;border-radius:6px">Đang học</span>`;
+}
+
+function paintContinueBanner(elId, lessons, alreadyOnLessons) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  const pick = pickContinueLesson((lessons || []).map(l => l.id));
+  const lesson = pick && (lessons || []).find(l => l.id === pick.lesson_id);
+  if (!lesson) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  el.style.display = '';
+  el.innerHTML = `
+    <div style="background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border-radius:14px;padding:1rem 1.2rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;cursor:pointer;box-shadow:0 8px 24px rgba(79,70,229,.22)">
+      <div style="min-width:0">
+        <div style="font-size:.72rem;font-weight:700;letter-spacing:.06em;opacity:.85;margin-bottom:.25rem">▶ TIẾP TỤC HỌC</div>
+        <div style="font-weight:800;font-size:1.02rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(lesson.name)}</div>
+        <div style="font-size:.75rem;opacity:.75;margin-top:.2rem">Mở lại bài bạn đang học dở</div>
+      </div>
+      <span style="flex-shrink:0;background:#fff;color:#4f46e5;border-radius:10px;padding:.55rem 1rem;font-weight:800;font-size:.85rem">Học tiếp →</span>
+    </div>`;
+  el.onclick = () => {
+    if (!alreadyOnLessons) showPage('lessons');
+    openLessonDetail(lesson.id);
+  };
+}
+
+async function markLessonOpened(lessonId) {
+  const now = new Date().toISOString();
+  const prev = _lessonProgress[lessonId];
+  const row = {
+    username: currentUser,
+    lesson_id: lessonId,
+    status: prev?.status === 'done' ? 'done' : 'in_progress',
+    last_opened_at: now,
+    completed_at: prev?.status === 'done' ? (prev.completed_at || null) : null
+  };
+  _lessonProgress[lessonId] = row;
+  try {
+    await db.from('lesson_progress').upsert(row, { onConflict: 'username,lesson_id' });
+  } catch { /* bảng chưa tạo */ }
+}
+
+async function setLessonProgressStatus(lessonId, done) {
+  const now = new Date().toISOString();
+  const prev = _lessonProgress[lessonId];
+  const row = {
+    username: currentUser,
+    lesson_id: lessonId,
+    status: done ? 'done' : 'in_progress',
+    last_opened_at: done ? (prev?.last_opened_at || now) : now,
+    completed_at: done ? now : null
+  };
+  _lessonProgress[lessonId] = row;
+  try {
+    await db.from('lesson_progress').upsert(row, { onConflict: 'username,lesson_id' });
+  } catch { /* bảng chưa tạo */ }
+}
+
+function paintLessonDoneBtn(lessonId) {
+  const row = document.getElementById('sLessonProgressRow');
+  if (!row) return;
+  const done = _lessonProgress[lessonId]?.status === 'done';
+  if (done) {
+    row.innerHTML = `
+      <span style="background:rgba(16,185,129,.22);color:#bbf7d0;font-size:.78rem;font-weight:700;padding:.4rem .75rem;border-radius:8px;border:1px solid rgba(167,243,208,.35)">✓ Đã học xong</span>
+      <button type="button" id="sUnmarkDoneBtn" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);color:#fff;padding:.4rem .75rem;border-radius:8px;font-size:.78rem;cursor:pointer;font-weight:600">Đánh dấu chưa xong</button>`;
+    document.getElementById('sUnmarkDoneBtn')?.addEventListener('click', async () => {
+      await setLessonProgressStatus(lessonId, false);
+      paintLessonDoneBtn(lessonId);
+    });
+  } else {
+    row.innerHTML = `
+      <button type="button" id="sMarkDoneBtn" style="background:#fff;color:#312e81;border:none;padding:.45rem .9rem;border-radius:8px;font-size:.8rem;cursor:pointer;font-weight:800">Đánh dấu đã học xong</button>`;
+    document.getElementById('sMarkDoneBtn')?.addEventListener('click', async () => {
+      await setLessonProgressStatus(lessonId, true);
+      paintLessonDoneBtn(lessonId);
+    });
+  }
+}
+
 async function openLessonDetail(id) {
   sessionStorage.setItem('st_lesson_id', id);
   // Lưu scroll position và nhóm đang mở
@@ -772,6 +901,8 @@ async function openLessonDetail(id) {
   document.getElementById('sLessonDetailView').style.display = '';
   document.getElementById('sLessonDetailTitle').textContent = '...';
   document.getElementById('sLessonDetailDesc').textContent  = '';
+  const progRow = document.getElementById('sLessonProgressRow');
+  if (progRow) progRow.innerHTML = '';
 
   // 3 query song song
   const [{ data:l }, { data:vids }, { data:docs }] = await Promise.all([
@@ -783,6 +914,8 @@ async function openLessonDetail(id) {
   if (!l) return;
   document.getElementById('sLessonDetailTitle').textContent = l.name;
   document.getElementById('sLessonDetailDesc').textContent  = l.description||'';
+  paintLessonDoneBtn(id);
+  markLessonOpened(id).then(() => paintLessonDoneBtn(id));
 
   // Render video — decrypt song song
   const vGrid = document.getElementById('sLessonVideoGrid');
@@ -1166,6 +1299,7 @@ document.getElementById('viewerRotateBtn')?.addEventListener('click', () => {
 // ---- Init ----
 
 loadMe().then(async () => {
+  await loadLessonProgress();
   const savedPage = sessionStorage.getItem('st_page') || 'home';
   const savedLesson = sessionStorage.getItem('st_lesson_id');
   if (savedPage === 'lessons' && savedLesson) {

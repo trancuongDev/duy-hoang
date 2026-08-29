@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Thư viện số - DHDT LMS</title>
+  <meta name="description" content="Thư viện số dành cho học sinh khóa học DHDT LMS — tài liệu Toán từ Bộ GDĐT, NXB Giáo dục, viện nghiên cứu và các nền tảng giáo dục mở uy tín."/>
+  <link rel="icon" type="image/png" href="icons/icon-192.png"/>
+  <link rel="apple-touch-icon" href="icons/icon-192.png"/>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="css/trungthu-dashboard.css?v=1.5.2"/>
+  <link rel="manifest" href="manifest.json"/>
+  <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="config.js"></script>
+  <script src="js/library-vn-pack.js"></script>
+  <meta name="theme-color" content="#1a1440"/>
+  <style>
+    .lib-hero{
+      position:relative;overflow:hidden;border-radius:20px;padding:1.7rem 1.6rem 1.5rem;margin-bottom:1.25rem;color:#fff;
+      background:
+        radial-gradient(ellipse 55% 80% at 92% 12%, rgba(255,226,122,.28), transparent 55%),
+        linear-gradient(135deg,#0a0820 0%,#1a1440 42%,#312e81 78%,#1e3a5f 100%);
+    }
+    .lib-hero h1{font-size:clamp(1.35rem,3vw,1.75rem);font-weight:800;letter-spacing:-.4px;margin:0 0 .4rem}
+    .lib-hero p{font-size:.88rem;line-height:1.7;color:rgba(255,255,255,.72);max-width:640px;margin:0}
+    .lib-badge{
+      display:inline-flex;align-items:center;gap:.45rem;background:rgba(245,215,110,.14);
+      border:1px solid rgba(245,215,110,.35);border-radius:999px;padding:.32rem .85rem;
+      font-size:.72rem;font-weight:700;letter-spacing:.04em;color:#f5d76e;margin-bottom:.85rem
+    }
+    .lib-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:#f5d76e;box-shadow:0 0 8px rgba(245,215,110,.8)}
+    .lib-stats{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1.1rem}
+    .lib-stat{
+      background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.12);border-radius:10px;
+      padding:.42rem .8rem;font-size:.76rem;font-weight:600;color:rgba(255,255,255,.88)
+    }
+    .lib-toolbar{
+      display:flex;flex-wrap:wrap;gap:.75rem;align-items:center;margin-bottom:1rem
+    }
+    .lib-search{
+      flex:1;min-width:220px;display:flex;align-items:center;gap:.55rem;
+      background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:.7rem .95rem
+    }
+    .lib-search input{
+      flex:1;border:none;outline:none;background:transparent;color:var(--text);font-size:.9rem;font-weight:500
+    }
+    .lib-chips{display:flex;flex-wrap:wrap;gap:.45rem;margin-bottom:1.15rem}
+    .lib-chip{
+      border:1.5px solid var(--border);background:var(--card);color:var(--muted);
+      border-radius:999px;padding:.38rem .85rem;font-size:.78rem;font-weight:700;cursor:pointer;transition:all .18s
+    }
+    .lib-chip:hover{border-color:#f5d76e;color:var(--text)}
+    .lib-chip.active{
+      background:linear-gradient(135deg,#1a1440,#312e81);color:#fff8eb;border-color:#f5d76e
+    }
+    .lib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:.9rem}
+    .lib-card{
+      display:flex;flex-direction:column;background:var(--card);border:1.5px solid var(--border);
+      border-radius:16px;padding:1.15rem 1.2rem 1.1rem;text-decoration:none;color:inherit;
+      box-shadow:var(--shadow);transition:transform .2s,border-color .2s,box-shadow .2s;min-height:100%
+    }
+    .lib-card:hover{
+      transform:translateY(-3px);border-color:rgba(245,215,110,.55);
+      box-shadow:0 12px 28px rgba(26,20,64,.12)
+    }
+    .lib-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:.6rem;margin-bottom:.7rem}
+    .lib-ico{
+      width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+      font-size:1.25rem;flex-shrink:0
+    }
+    .lib-src{
+      font-size:.65rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
+      color:#92400e;background:#fef3c7;border-radius:999px;padding:.2rem .55rem;white-space:nowrap
+    }
+    .lib-card h3{font-size:.95rem;font-weight:800;letter-spacing:-.2px;margin:0 0 .4rem;line-height:1.35}
+    .lib-card p{font-size:.8rem;color:var(--muted);line-height:1.6;margin:0 0 .5rem;flex:1}
+    .lib-by{
+      font-size:.75rem;font-weight:700;color:#4338ca;margin:0 0 .75rem;line-height:1.4
+    }
+    .lib-by b{font-weight:800}
+    body.dark-mode .lib-by{color:#a5b4fc}
+    .lib-card-foot{
+      display:flex;align-items:center;justify-content:space-between;gap:.5rem;
+      font-size:.76rem;font-weight:700;color:#4f46e5;padding-top:.7rem;border-top:1px solid var(--border)
+    }
+    .lib-card-main{display:flex;flex-direction:column;flex:1;text-decoration:none;color:inherit;min-height:0}
+    .lib-card-actions{display:flex;align-items:center;gap:.55rem;flex-shrink:0}
+    .lib-flag{
+      border:none;background:transparent;color:var(--muted);font-size:.72rem;font-weight:800;
+      cursor:pointer;font-family:inherit;padding:0
+    }
+    .lib-flag:hover{color:#b91c1c}
+    .lib-modal{
+      display:none;position:fixed;inset:0;z-index:80;background:rgba(15,23,42,.45);
+      align-items:center;justify-content:center;padding:1rem
+    }
+    .lib-modal.open{display:flex}
+    .lib-dialog{
+      width:min(440px,100%);background:var(--card);border-radius:16px;padding:1.15rem 1.2rem 1.2rem;
+      border:1.5px solid var(--border);box-shadow:0 20px 50px rgba(15,23,42,.22)
+    }
+    .lib-dialog h3{margin:0 0 .35rem;font-size:1.02rem;font-weight:800}
+    .lib-dialog .sub{margin:0 0 .85rem;font-size:.8rem;color:var(--muted);line-height:1.5}
+    .lib-dialog label{display:block;font-size:.75rem;font-weight:700;color:var(--muted);margin:.55rem 0 .3rem}
+    .lib-dialog select,.lib-dialog textarea{
+      width:100%;padding:.6rem .7rem;border:1.5px solid var(--border);border-radius:10px;
+      background:var(--bg);color:var(--text);font-size:.88rem;font-family:inherit
+    }
+    .lib-dialog textarea{min-height:72px;resize:vertical}
+    .lib-dialog-actions{display:flex;gap:.5rem;margin-top:1rem;flex-wrap:wrap}
+    .lib-tags{display:flex;flex-wrap:wrap;gap:.3rem}
+    .lib-tag{font-size:.68rem;font-weight:700;color:var(--muted);background:var(--bg);border-radius:6px;padding:.15rem .4rem}
+    .lib-note{
+      margin-top:1.5rem;background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1.5px solid #f59e0b;
+      border-radius:14px;padding:1rem 1.15rem;font-size:.82rem;color:#92400e;line-height:1.65
+    }
+    body.dark-mode .lib-note{background:linear-gradient(135deg,#3b2f12,#2a2414);border-color:#a16207;color:#fde68a}
+    .lib-copy{
+      margin-top:1.5rem;padding:1.25rem 1.2rem 1.1rem;border-top:1.5px solid var(--border);
+      font-size:.78rem;color:var(--muted);line-height:1.75
+    }
+    .lib-copy h3{margin:0 0 .5rem;font-size:.88rem;font-weight:800;color:var(--text)}
+    .lib-copy ul{margin:.35rem 0 .75rem;padding-left:1.15rem}
+    .lib-copy li{margin:.2rem 0}
+    .lib-copy a{color:#4f46e5;font-weight:700;text-decoration:none}
+    .lib-copy .lib-copy-bot{margin-top:.85rem;padding-top:.85rem;border-top:1px dashed var(--border);text-align:center;font-size:.72rem;line-height:1.7}
+    body.dark-mode .lib-src{background:#422006;color:#fcd34d}
+    .lib-empty{text-align:center;padding:2.5rem 1rem;color:var(--muted);font-weight:600}
+    .lib-new{font-size:.65rem;font-weight:800;background:#dcfce7;color:#166534;border-radius:999px;padding:.15rem .45rem}
+    .lib-suggest{
+      margin-top:1.5rem;background:var(--card);border:1.5px solid var(--border);border-radius:16px;
+      padding:1.25rem 1.3rem;box-shadow:var(--shadow)
+    }
+    .lib-suggest h2{font-size:1.05rem;font-weight:800;margin:0 0 .35rem}
+    .lib-suggest .hint{font-size:.8rem;color:var(--muted);line-height:1.55;margin:0 0 1rem}
+    .lib-form{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+    .lib-form .full{grid-column:1/-1}
+    .lib-form label{display:block;font-size:.75rem;font-weight:700;color:var(--muted);margin-bottom:.3rem}
+    .lib-form input,.lib-form select,.lib-form textarea{
+      width:100%;padding:.6rem .75rem;border:1.5px solid var(--border);border-radius:10px;
+      background:var(--bg);color:var(--text);font-size:.88rem;outline:none;font-family:inherit
+    }
+    .lib-form textarea{resize:vertical;min-height:72px}
+    .lib-form input:focus,.lib-form select:focus,.lib-form textarea:focus{border-color:#f5d76e}
+    .lib-btn{
+      display:inline-flex;align-items:center;justify-content:center;gap:.4rem;
+      background:linear-gradient(135deg,#1a1440,#312e81);color:#fff8eb;border:1px solid #f5d76e;
+      border-radius:12px;padding:.7rem 1.15rem;font-size:.88rem;font-weight:800;cursor:pointer
+    }
+    .lib-btn:disabled{opacity:.55;cursor:not-allowed}
+    .lib-pledge{
+      grid-column:1/-1;background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:1.5px solid #86efac;
+      border-radius:14px;padding:.95rem 1.05rem
+    }
+    body.dark-mode .lib-pledge{background:linear-gradient(135deg,#14532d22,#052e16);border-color:#166534}
+    .lib-pledge h3{margin:0 0 .35rem;font-size:.86rem;font-weight:800;color:#14532d}
+    body.dark-mode .lib-pledge h3{color:#bbf7d0}
+    .lib-pledge p{margin:0 0 .7rem;font-size:.78rem;color:#166534;line-height:1.55}
+    body.dark-mode .lib-pledge p{color:#86efac}
+    .lib-check{
+      display:flex;align-items:flex-start;gap:.6rem;margin:.45rem 0;cursor:pointer;
+      font-size:.8rem;line-height:1.5;color:var(--text);font-weight:600
+    }
+    .lib-check input{
+      width:18px;height:18px;padding:0;margin-top:.12rem;flex-shrink:0;accent-color:#16a34a;cursor:pointer
+    }
+    .lib-check a{color:#15803d;font-weight:800}
+    .lib-pledge-note,
+    .lib-pledge p.lib-pledge-note{
+      margin:.75rem 0 0;padding:.6rem .75rem;border-radius:10px;
+      background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;
+      font-size:.76rem;line-height:1.55;font-weight:600
+    }
+    body.dark-mode .lib-pledge-note,
+    body.dark-mode .lib-pledge p.lib-pledge-note{background:#431407;border-color:#9a3412;color:#fdba74}
+    .lib-who{
+      display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;
+      padding:.65rem .8rem;border:1.5px solid var(--border);border-radius:10px;
+      background:var(--bg);font-size:.88rem;font-weight:800;min-height:42px
+    }
+    .lib-who .lib-who-meta{font-weight:600;color:var(--muted);font-size:.78rem}
+    .lib-who a{color:#4f46e5;font-weight:800;text-decoration:none}
+    .lib-mine{margin-top:1rem;display:flex;flex-direction:column;gap:.45rem}
+    .lib-mine-item{
+      font-size:.8rem;padding:.65rem .8rem;border-radius:10px;border:1px solid var(--border);background:var(--bg)
+    }
+    .lib-mine-hint{color:var(--muted);margin-top:.28rem;font-size:.75rem;line-height:1.45;font-weight:600}
+    .lib-st{font-size:.68rem;font-weight:800;border-radius:999px;padding:.12rem .45rem;white-space:nowrap}
+    .lib-st.pending{background:#fef3c7;color:#92400e}
+    .lib-st.approved{background:#dcfce7;color:#166534}
+    .lib-st.rejected{background:#fee2e2;color:#991b1b}
+    .lib-st.removed{background:#ffedd5;color:#9a3412}
+    .lib-st.deleted{background:#e2e8f0;color:#334155}
+    .lib-more{
+      align-self:flex-start;margin-top:.15rem;border:1.5px solid var(--border);background:var(--card);
+      color:var(--text);border-radius:10px;padding:.45rem .85rem;font-size:.78rem;font-weight:800;
+      cursor:pointer;font-family:inherit
+    }
+    .lib-more:hover{border-color:#e8a317}
+    .lib-more-row{display:flex;flex-wrap:wrap;gap:.45rem;margin-top:.15rem}
+    .lib-msg{font-size:.82rem;font-weight:600;margin-top:.6rem}
+    @media (max-width:640px){
+      .lib-hero{padding:1.3rem 1.1rem}
+      .lib-form{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body class="dashboard-page trungthu-dash">
+  <div class="tt-dash-spark" id="ttDashSpark" aria-hidden="true"></div>
+  <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-brand-icon"><img src="icons/icon-192.png" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:8px"/></div>
+      <span class="sidebar-brand-text">DHDT LMS</span>
+      <button id="sidebarClose" class="sidebar-mini-toggle" title="Thu gọn" style="margin-left:auto;background:none;border:none;color:rgba(255,255,255,.5);cursor:pointer;font-size:1rem;padding:.25rem .4rem;border-radius:6px;flex-shrink:0">◀</button>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="student.html" class="slink" data-label="Trang chủ">
+        <span class="slink-icon">🏠</span><span class="slink-label">Trang Học Sinh</span>
+      </a>
+      <a href="student.html" class="slink" data-label="Bài học">
+        <span class="slink-icon">📚</span><span class="slink-label">Bài học</span>
+      </a>
+      <a href="homework.html" class="slink" data-label="Bài Tập">
+        <span class="slink-icon">📝</span><span class="slink-label">Bài Tập</span>
+      </a>
+      <a href="library.html" class="slink active" data-label="Thư viện số">
+        <span class="slink-icon">🏛️</span><span class="slink-label">Thư viện số</span>
+      </a>
+      <a href="groups.html" class="slink" data-label="Nhóm trao đổi">
+        <span class="slink-icon">💬</span><span class="slink-label">Nhóm trao đổi</span>
+      </a>
+      <a href="student.html" class="slink" data-label="Lịch học">
+        <span class="slink-icon">📅</span><span class="slink-label">Lịch học</span>
+      </a>
+      <a href="honor.html" class="slink" data-label="Vinh danh">
+        <span class="slink-icon">🏆</span><span class="slink-label">Vinh danh</span>
+      </a>
+    </nav>
+    <a href="login.html" class="slink slink-logout" data-label="Đăng xuất">
+      <span class="slink-icon">🚪</span><span class="slink-label">Đăng xuất</span>
+    </a>
+    <a href="index.html" style="display:flex;align-items:center;gap:.6rem;margin:.3rem .75rem .5rem;padding:.45rem .85rem;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:rgba(255,255,255,.5);font-size:.78rem;font-weight:600;text-decoration:none">
+      <span>🌐</span><span class="slink-label">Về trang chủ</span>
+    </a>
+    <div class="sidebar-version" style="padding:.6rem 1.25rem;font-size:.7rem;color:rgba(255,255,255,.3);font-weight:600">v1.5.0</div>
+    <div class="sidebar-mini-reopen">
+      <button id="sidebarMiniReopen" class="sidebar-mini-toggle" title="Mở rộng">▶</button>
+    </div>
+  </aside>
+
+  <div class="dash-main">
+    <header class="topbar">
+      <button class="menu-toggle" id="menuToggle">☰</button>
+      <div style="font-weight:700;font-size:.95rem;color:var(--text);display:flex;align-items:center;gap:.5rem">
+        <img src="icons/icon-192.png" alt="" style="width:24px;height:24px;border-radius:6px"/>
+        DHDT LMS
+      </div>
+      <div class="topbar-right">
+        <button id="studentDarkBtn" title="Chế độ tối" style="background:none;border:1.5px solid var(--border);color:var(--text);width:36px;height:36px;border-radius:10px;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center">🌙</button>
+      </div>
+    </header>
+
+    <section class="page active">
+      <div class="lib-hero">
+        <div class="lib-badge">Dành cho học sinh khóa học</div>
+        <h1>Thư viện số DHDT LMS</h1>
+        <p>
+          Kho học liệu Toán được chọn lọc từ cơ quan nhà nước, nhà xuất bản giáo dục,
+          kho sách đại học khắp cả nước (thư viện, LMS, đề thi, hướng dẫn học tập)
+          và giáo trình mở quốc tế. Học sinh mở tài liệu ngay trên website gốc — không sao chép sách có bản quyền.
+        </p>
+        <div class="lib-stats">
+          <span class="lib-stat"><b id="libHeroTotal">500+</b> nguồn uy tín</span>
+          <span class="lib-stat">📘 SGK &amp; chương trình</span>
+          <span class="lib-stat">🎯 Ôn thi THPT &amp; Olympic</span>
+          <span class="lib-stat">🌍 Đại học &amp; học liệu mở</span>
+          <span class="lib-stat">🧮 Công cụ &amp; video</span>
+        </div>
+      </div>
+
+      <div class="lib-toolbar">
+        <label class="lib-search">
+          <span aria-hidden="true">🔎</span>
+          <input id="libSearch" type="search" placeholder="Tìm đại học, thư viện, đề thi, Sở GDĐT, HUST, Khan, GeoGebra..." autocomplete="off"/>
+        </label>
+        <a href="#libSuggestBox" class="lib-btn" style="text-decoration:none;white-space:nowrap">💡 Đề xuất nguồn</a>
+      </div>
+
+      <div class="lib-chips" id="libChips"></div>
+      <div id="libCountBar" style="font-size:.8rem;color:var(--muted);font-weight:600;margin:-.35rem 0 1rem"></div>
+      <div class="lib-grid" id="libGrid"></div>
+      <div id="libGridMoreWrap" style="margin:.85rem 0 0"></div>
+      <div class="lib-empty" id="libEmpty" hidden>Không tìm thấy tài liệu phù hợp. Thử từ khóa khác nhé.</div>
+
+      <div class="lib-note">
+        <b>Lưu ý sử dụng:</b> Thư viện số chỉ <b>dẫn link</b> tới website chính thức. DHDT LMS <b>không lưu, không tải, không phát hành</b> sách PDF hay đề thi có bản quyền.
+        Học sinh đọc và luyện trên nguồn gốc. Nội dung thuộc về Bộ GDĐT, NXB Giáo dục Việt Nam, viện / đại học và tổ chức tương ứng.
+      </div>
+
+      <div class="lib-suggest" id="libSuggestBox">
+        <h2>💡 Đề xuất nguồn tài liệu</h2>
+        <p class="hint">Tìm thấy website uy tín (Bộ GDĐT, đại học, viện nghiên cứu, học liệu mở)? Gửi cho giáo viên. Admin sẽ nhận đề xuất, kiểm tra rồi thêm vào thư viện nếu phù hợp.</p>
+        <form class="lib-form" id="libSuggestForm">
+          <div class="full">
+            <label>Tên nguồn <span style="color:#ef4444">*</span></label>
+            <input id="sugTitle" required maxlength="160" placeholder="VD: NRICH — University of Cambridge"/>
+          </div>
+          <div class="full">
+            <label>Link website <span style="color:#ef4444">*</span></label>
+            <input id="sugUrl" type="url" required maxlength="500" placeholder="https://..."/>
+          </div>
+          <div>
+            <label>Đơn vị phát hành</label>
+            <input id="sugSource" maxlength="80" placeholder="VD: Cambridge, Bộ GDĐT"/>
+          </div>
+          <div>
+            <label>Nhóm</label>
+            <select id="sugCat"></select>
+          </div>
+          <div class="full">
+            <label>Mô tả ngắn</label>
+            <textarea id="sugDesc" maxlength="400" placeholder="Nguồn này giúp học sinh điều gì?"></textarea>
+          </div>
+          <div class="full">
+            <label>Vì sao nên thêm?</label>
+            <textarea id="sugNote" maxlength="300" placeholder="VD: Có đề thi HSG, hoàn toàn miễn phí, tiếng Việt..."></textarea>
+          </div>
+          <div class="full" id="sugNameWrap">
+            <label>Người đề xuất</label>
+            <div class="lib-who" id="sugWhoBox">Đang lấy tên từ tài khoản học sinh…</div>
+          </div>
+          <div class="lib-pledge">
+            <h3>🛡️ Cam kết trước khi gửi</h3>
+            <p>Bạn chỉ gửi <b>đường dẫn website chính thức / nguồn hợp pháp</b> (Bộ GD&amp;ĐT, NXB, trường đại học, học liệu mở…). Không gửi kho tài liệu, file PDF sách/đề hoặc nội dung có bản quyền được chia sẻ trái phép.</p>
+            <label class="lib-check">
+              <input type="checkbox" id="sugOkLegal" required/>
+              <span>Tôi xác nhận nguồn này <b>không vi phạm bản quyền</b>, là nguồn hợp pháp và không phải nội dung sao chép trái phép.</span>
+            </label>
+            <label class="lib-check">
+              <input type="checkbox" id="sugOkResp" required/>
+              <span>Tôi <b>chịu trách nhiệm</b> về đề xuất này và đã đọc <a href="policy.html#slib" target="_blank" rel="noopener">Điều khoản — Thư viện số</a>. Nếu sai, không hợp lệ hoặc vi phạm, admin có quyền từ chối, ẩn hoặc gỡ liên kết.</span>
+            </label>
+            <label class="lib-check">
+              <input type="checkbox" id="sugOkSafe" required/>
+              <span>Tôi xác nhận đường dẫn được gửi là <b>an toàn</b>, không chứa mã độc, nội dung lừa đảo hoặc chuyển hướng bất thường.</span>
+            </label>
+            <p class="lib-pledge-note">⚠️ <b>Lưu ý:</b> Việc gửi nguồn không đồng nghĩa với việc nguồn sẽ được duyệt. Admin có quyền kiểm tra và quyết định phê duyệt trước khi hiển thị công khai.</p>
+          </div>
+          <div class="full" style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
+            <button type="submit" class="lib-btn" id="sugSubmit" disabled>Gửi đề xuất cho admin</button>
+            <span class="lib-msg" id="sugMsg"></span>
+          </div>
+          <p class="full" style="margin:0;font-size:.72rem;color:var(--muted);font-weight:600">Tối đa 3 đề xuất đang chờ duyệt, 8 đề xuất mỗi ngày, cách nhau ít nhất 5 phút.</p>
+        </form>
+        <div class="lib-mine" id="libMine"></div>
+      </div>
+
+      <footer class="lib-copy">
+        <h3>©️ Bản quyền &amp; trách nhiệm sử dụng</h3>
+        <p>Trang Thư viện số của <b>DHDT LMS</b> là <b>mục lục đường dẫn</b> (link directory) phục vụ học tập. Hệ thống:</p>
+        <ul>
+          <li><b>Không lưu trữ, không sao chép, không phát hành</b> sách giáo khoa, đề thi, giáo trình hay tài liệu có bản quyền dưới dạng file.</li>
+          <li>Mỗi thẻ chỉ mở <b>website gốc</b> của Bộ GDĐT, NXB Giáo dục Việt Nam, viện nghiên cứu, đại học hoặc tổ chức giáo dục tương ứng.</li>
+          <li>Quyền tác giả, quyền liên quan thuộc về <b>chủ sở hữu nội dung trên trang gốc</b>. Học sinh phải tuân thủ điều khoản của từng website (kể cả giấy phép mở / Creative Commons nếu có).</li>
+          <li>Nghiêm cấm tải lậu, đăng lại, phát tán PDF/sách/đề thi trái phép từ các nguồn được dẫn — đó là vi phạm <b>Luật Sở hữu trí tuệ Việt Nam</b>.</li>
+          <li>Giao diện, cách sắp xếp mục lục và mã nguồn trang này thuộc bản quyền <b>DHDT LMS</b>. Không sao chép giao diện để phân phối lại khi chưa được phép.</li>
+        </ul>
+        <p>Nếu bạn là chủ sở hữu và cho rằng một liên kết không phù hợp, hãy liên hệ giáo viên / quản trị để gỡ. Xem thêm <a href="policy.html#slib">Chính sách — Thư viện số &amp; tài liệu</a>.</p>
+        <div class="lib-copy-bot">
+          © 2026 <b>DHDT LMS</b> — All rights reserved.<br/>
+          Mục lục học liệu chỉ để tra cứu. Nội dung trên các website được dẫn thuộc về chủ sở hữu tương ứng.<br/>
+          Nghiêm cấm sao chép, phân phối tài liệu có bản quyền dưới mọi hình thức khi chưa được cho phép.
+        </div>
+      </footer>
+    </section>
+  </div>
+
+  <div class="lib-modal" id="libReportModal" aria-hidden="true">
+    <div class="lib-dialog" role="dialog" aria-modal="true">
+      <h3>Báo cáo nguồn</h3>
+      <p class="sub" id="libReportTitle">Chọn lý do — admin sẽ kiểm tra rồi gỡ nếu không phù hợp.</p>
+      <label for="libReportReason">Lý do</label>
+      <select id="libReportReason">
+        <option value="broken">Link hỏng / không mở được</option>
+        <option value="unsuitable">Không phù hợp hoặc vi phạm</option>
+        <option value="scam">Có dấu hiệu lừa đảo / mã độc</option>
+        <option value="other">Khác</option>
+      </select>
+      <label for="libReportNote">Ghi chú (tuỳ chọn)</label>
+      <textarea id="libReportNote" maxlength="300" placeholder="VD: Trang báo lỗi 404, nội dung không liên quan Toán..."></textarea>
+      <div id="libReportMsg" style="font-size:.8rem;font-weight:600;margin-top:.55rem"></div>
+      <div class="lib-dialog-actions">
+        <button type="button" class="lib-btn" id="libReportSend">Gửi báo cáo</button>
+        <button type="button" class="lib-more" id="libReportCancel">Hủy</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+const CATS = [
+  { id: 'all', label: 'Tất cả' },
+  { id: 'sgk', label: 'SGK & chương trình' },
+  { id: 'exam', label: 'Ôn thi THPT' },
+  { id: 'vn', label: 'Viện & đại học VN' },
+  { id: 'olympiad', label: 'Olympic & HSG' },
+  { id: 'open', label: 'Học liệu quốc tế' },
+  { id: 'video', label: 'Video bài giảng' },
+  { id: 'tool', label: 'Công cụ toán' },
+  { id: 'lookup', label: 'Tra cứu' },
+  { id: 'other', label: 'Khác' }
+];
+
+const RESOURCES = [
+  { cat:'sgk', icon:'🇻🇳', color:'#dbeafe', title:'Bộ Giáo dục và Đào tạo', source:'Cơ quan nhà nước', desc:'Cổng thông tin chính thức: chương trình GDPT, văn bản, đề thi và hướng dẫn kỳ thi tốt nghiệp THPT.', url:'https://moet.gov.vn', tags:['Chính thức','Chương trình'] },
+  { cat:'sgk', icon:'📘', color:'#fef3c7', title:'Học liệu số — NXB Giáo dục Việt Nam', source:'NXBGD / HEID', desc:'Nền tảng học liệu số gắn SGK. Bộ Kết nối tri thức với cuộc sống dùng thống nhất toàn quốc từ năm học 2026–2027.', url:'https://www.hoclieu.vn', tags:['SGK số','KNTT'] },
+  { cat:'sgk', icon:'📚', color:'#dcfce7', title:'Nhà xuất bản Giáo dục Việt Nam', source:'NXBGD', desc:'Đơn vị xuất bản SGK phổ thông. Tra cứu sách Toán các cấp, tài liệu tập huấn và học liệu kèm sách.', url:'https://www.nxbgd.vn', tags:['SGK','Xuất bản'] },
+  { cat:'sgk', icon:'🧑‍🏫', color:'#ffedd5', title:'Tập huấn SGK — NXB Giáo dục', source:'NXBGD', desc:'Cổng tập huấn giáo viên và học liệu số theo bộ SGK thống nhất, hữu ích khi đối chiếu chương trình Toán mới.', url:'https://taphuan.nxbgd.vn', tags:['Tập huấn','SGK'] },
+  { cat:'sgk', icon:'⚖️', color:'#e0e7ff', title:'Cổng Thông tin điện tử Chính phủ', source:'Chính phủ Việt Nam', desc:'Văn bản, nghị quyết giáo dục và các thông tin chính sách liên quan chương trình, thi cử, SGK.', url:'https://www.chinhphu.vn', tags:['Chính sách','Văn bản'] },
+  { cat:'sgk', icon:'📜', color:'#fce7f3', title:'Cơ sở dữ liệu quốc gia về văn bản pháp luật', source:'Chính phủ Việt Nam', desc:'Tra cứu Luật Giáo dục, nghị định, thông tư của Bộ GDĐT — nguồn gốc khi cần dẫn chiếu quy định.', url:'https://vanban.chinhphu.vn', tags:['Luật','Thông tư'] },
+  { cat:'sgk', icon:'🌍', color:'#d1fae5', title:'UNESCO — Education', source:'UNESCO', desc:'Tài liệu giáo dục quốc tế, khung năng lực và định hướng dạy học Toán–STEM của Liên Hợp Quốc.', url:'https://www.unesco.org/en/education', tags:['Quốc tế','Giáo dục'] },
+  { cat:'sgk', icon:'📊', color:'#cffafe', title:'OECD PISA — Mathematics', source:'OECD', desc:'Kỳ đánh giá PISA: khung năng lực Toán, bài mẫu và báo cáo quốc tế — tham khảo tư duy vận dụng.', url:'https://www.oecd.org/pisa/', tags:['PISA','Năng lực'] },
+
+  { cat:'exam', icon:'🎓', color:'#ede9fe', title:'Cổng thí sinh tốt nghiệp THPT', source:'Bộ GDĐT', desc:'Hệ thống chính thức đăng ký dự thi, tra cứu điểm thi và xét tuyển đại học do Bộ GDĐT quản lý.', url:'https://thisinh.thitotnghiepthpt.edu.vn', tags:['Kỳ thi','Xét tuyển'] },
+  { cat:'exam', icon:'📰', color:'#ffe4e6', title:'Báo Giáo dục và Thời đại', source:'Cơ quan ngôn luận Bộ GDĐT', desc:'Công bố đề thi, đáp án tốt nghiệp THPT, lịch thi và chính sách giáo dục từ nguồn Bộ GDĐT.', url:'https://giaoduc.net.vn', tags:['Đề thi','Đáp án'] },
+  { cat:'exam', icon:'🏛️', color:'#e0f2fe', title:'Xây dựng chính sách — Cổng Chính phủ', source:'Chính phủ Việt Nam', desc:'Đăng tải đề thi, đáp án tốt nghiệp THPT và mốc xét tuyển đại học theo công bố của Bộ GDĐT.', url:'https://xaydungchinhsach.chinhphu.vn', tags:['Đề thi','Chính sách'] },
+  { cat:'exam', icon:'🎯', color:'#fef3c7', title:'Tuyển sinh Đại học Quốc gia Hà Nội', source:'ĐHQGHN', desc:'Đề án tuyển sinh, tổ hợp xét tuyển và thông tin kỳ thi ĐGNL — hữu ích khi ôn Toán vào đại học.', url:'https://tuyensinh.vnu.edu.vn', tags:['ĐGNL','ĐHQG'] },
+  { cat:'exam', icon:'🎯', color:'#dbeafe', title:'Tuyển sinh Đại học Quốc gia TP.HCM', source:'ĐHQG-HCM', desc:'Thông tin xét tuyển, kỳ đánh giá năng lực và hướng dẫn thí sinh khu vực phía Nam.', url:'https://tuyensinh.vnuhcm.edu.vn', tags:['ĐGNL','ĐHQG'] },
+  { cat:'exam', icon:'🏫', color:'#dcfce7', title:'Phổ thông Năng khiếu — ĐHQG TP.HCM', source:'PTNK', desc:'Trường chuyên trực thuộc ĐHQG-HCM: đề thi, chuyên đề Toán và định hướng học sinh giỏi.', url:'https://www.ptnk.edu.vn', tags:['Chuyên','HSG'] },
+
+  { cat:'vn', icon:'∫', color:'#dbeafe', title:'Viện Toán học Việt Nam', source:'Viện Hàn lâm KHCNVN', desc:'Cơ quan nghiên cứu toán học quốc gia: seminar, tài liệu chuyên đề, tin Olympic và hoạt động khoa học.', url:'https://math.ac.vn', tags:['Nghiên cứu','Nâng cao'] },
+  { cat:'vn', icon:'🌟', color:'#fce7f3', title:'VIASM — Viện Nghiên cứu cao cấp về Toán', source:'VIASM', desc:'Chương trình bồi dưỡng giáo viên, chuyên đề Toán phổ thông và tài liệu hội thảo dành cho học sinh giỏi.', url:'https://viasm.edu.vn', tags:['Bồi dưỡng','HSG'] },
+  { cat:'vn', icon:'π', color:'#fef3c7', title:'Tạp chí Pi', source:'Hội Toán học Việt Nam', desc:'Ấn phẩm phổ biến Toán học cho học sinh THCS–THPT: chuyên đề, thử thách toán, STEM — tòa soạn tại Viện Toán.', url:'https://pi.edu.vn', tags:['Tạp chí','HS'] },
+  { cat:'vn', icon:'🤝', color:'#ede9fe', title:'Hội Toán học Việt Nam', source:'VMS', desc:'Tổ chức nghề nghiệp toán học quốc gia: tin hội thảo, Olympic sinh viên và hoạt động cộng đồng Toán Việt Nam.', url:'https://www.vms.org.vn', tags:['Hội','Olympic SV'] },
+  { cat:'vn', icon:'🏫', color:'#d1fae5', title:'ĐH Khoa học Tự nhiên — ĐHQG Hà Nội', source:'HUS / VNU', desc:'Khoa Toán–Cơ–Tin: tài liệu đại cương, thông tin Olympic sinh viên và định hướng ngành Toán.', url:'https://hus.vnu.edu.vn', tags:['Đại học','Toán'] },
+  { cat:'vn', icon:'🏫', color:'#cffafe', title:'ĐH Khoa học Tự nhiên — ĐHQG TP.HCM', source:'HCMUS', desc:'Khoa Toán–Tin học: giáo trình, seminar và tài nguyên học Toán bậc đại học / nâng cao THPT.', url:'https://hcmus.edu.vn', tags:['Đại học','Giáo trình'] },
+  { cat:'vn', icon:'∑', color:'#e0f2fe', title:'Khoa Toán – Tin học HCMUS', source:'HCMUS', desc:'Trang khoa Toán–Tin: chương trình đào tạo, tài liệu môn học và tin hoạt động Olympic.', url:'https://www.math.hcmus.edu.vn', tags:['Khoa Toán','Giáo trình'] },
+  { cat:'vn', icon:'🎓', color:'#ffedd5', title:'Đại học Quốc gia Hà Nội', source:'ĐHQGHN', desc:'Cổng ĐHQGHN: thư viện, chương trình tài năng và thông tin các trường thành viên có đào tạo Toán.', url:'https://www.vnu.edu.vn', tags:['ĐHQG','Thư viện'] },
+  { cat:'vn', icon:'🎓', color:'#fce7f3', title:'Đại học Quốc gia TP. Hồ Chí Minh', source:'ĐHQG-HCM', desc:'Hệ thống đại học phía Nam: thông tin đào tạo, thư viện số và các trường thành viên ngành Toán–Tin.', url:'https://vnuhcm.edu.vn', tags:['ĐHQG','Đào tạo'] },
+  { cat:'vn', icon:'🧑‍🏫', color:'#ddd6fe', title:'Đại học Sư phạm Hà Nội', source:'HNUE', desc:'Trường đào tạo giáo viên Toán hàng đầu: khoa Toán, tài liệu sư phạm và định hướng nghề dạy học.', url:'https://www.hnue.edu.vn', tags:['Sư phạm','Toán'] },
+  { cat:'vn', icon:'🧑‍🏫', color:'#dbeafe', title:'Đại học Sư phạm TP. Hồ Chí Minh', source:'HCMUE', desc:'Đào tạo giáo viên Toán phía Nam: chương trình, hội thảo chuyên môn và tài nguyên sư phạm.', url:'https://hcmue.edu.vn', tags:['Sư phạm','Toán'] },
+  { cat:'vn', icon:'⚙️', color:'#fee2e2', title:'Đại học Bách khoa Hà Nội', source:'HUST', desc:'Toán ứng dụng, giải tích kỹ thuật và tài liệu đại cương cho khối kỹ thuật — bổ trợ ôn THPT nâng cao.', url:'https://hust.edu.vn', tags:['Bách khoa','Ứng dụng'] },
+  { cat:'vn', icon:'⚙️', color:'#ffedd5', title:'Đại học Bách khoa TP.HCM', source:'HCMUT', desc:'Toán cho kỹ thuật, xác suất thống kê và học liệu đại cương của trường kỹ thuật lớn phía Nam.', url:'https://hcmut.edu.vn', tags:['Bách khoa','Kỹ thuật'] },
+  { cat:'vn', icon:'🔬', color:'#e0e7ff', title:'Viện Hàn lâm Khoa học và Công nghệ Việt Nam', source:'VAST', desc:'Cơ quan chủ quản Viện Toán học: tin khoa học, xuất bản và các viện nghiên cứu liên quan.', url:'https://vast.gov.vn', tags:['KHCN','Viện'] },
+  { cat:'vn', icon:'📖', color:'#fef9c3', title:'Thư viện Quốc gia Việt Nam', source:'Bộ VHTTDL', desc:'Kho sách, luận văn và học liệu số quốc gia. Tra cứu tài liệu Toán, giáo dục và sách tham khảo.', url:'https://nlv.gov.vn', tags:['Thư viện','Tra cứu'] },
+  { cat:'vn', icon:'📚', color:'#dbeafe', title:'Thư viện & Tri thức số ĐHQGHN', source:'ĐHQGHN / LIC', desc:'Trung tâm thư viện ĐHQG Hà Nội: hàng trăm nghìn giáo trình, sách số và học liệu — tra cứu sách Toán đại cương.', url:'https://lic.vnu.edu.vn', tags:['Thư viện','Giáo trình'] },
+  { cat:'vn', icon:'📘', color:'#fef3c7', title:'Bookworm — Giáo trình số ĐHQGHN', source:'ĐHQGHN', desc:'Kho giáo trình và sách số của ĐHQGHN (bookworm): đọc online sách Toán, xác suất, đại số dùng trong đào tạo.', url:'https://bookworm.vnu.edu.vn', tags:['Sách số','Giáo trình'] },
+  { cat:'vn', icon:'🗂️', color:'#e0e7ff', title:'Thư viện số nội sinh ĐHQGHN', source:'ĐHQGHN', desc:'Kho luận văn, giáo trình nội sinh DR-VNU: nhiều tài liệu Toán phổ thông, sư phạm Toán và chuyên đề nâng cao.', url:'https://repository.vnu.edu.vn', tags:['Luận văn','Giáo trình'] },
+  { cat:'vn', icon:'∑', color:'#d1fae5', title:'Khoa Toán–Cơ–Tin học — HUS', source:'HUS / ĐHQGHN', desc:'Khoa Toán lâu đời nhất Việt Nam: chương trình, giáo trình đại cương và seminar — nền tảng sách Toán ĐHQGHN.', url:'https://hus.vnu.edu.vn', tags:['Khoa Toán','Giáo trình'] },
+  { cat:'vn', icon:'📖', color:'#cffafe', title:'Thư viện Đại học Bách khoa Hà Nội', source:'HUST', desc:'Cổng thư viện HUST: mục lục sách, giáo trình Toán kỹ thuật, xác suất thống kê và tài nguyên số.', url:'https://library.hust.edu.vn', tags:['Thư viện','Giáo trình'] },
+  { cat:'vn', icon:'💾', color:'#dbeafe', title:'Tài nguyên số HUST (DLib)', source:'HUST', desc:'Học liệu số Bách khoa Hà Nội: giáo trình, bài giảng Toán đại cương — một phần mở cho bạn đọc ngoài trường.', url:'https://dlib.hust.edu.vn', tags:['Sách số','HUST'] },
+  { cat:'vn', icon:'🧮', color:'#ede9fe', title:'Viện Toán ứng dụng và Tin học — SAMI', source:'HUST', desc:'Viện Toán HUST: giáo trình giải tích, đại số tuyến tính, xác suất cho kỹ thuật; có hệ thống số hóa bài giảng.', url:'https://sami.hust.edu.vn', tags:['Giáo trình','Toán KT'] },
+  { cat:'vn', icon:'📂', color:'#ffedd5', title:'Số hóa bài giảng SAMI — HUST', source:'HUST / SAMI', desc:'Kho bài giảng–giáo trình đã số hóa của Viện Toán ứng dụng HUST: giải tích, ĐSTT, phương trình vi phân.', url:'https://sami.hust.edu.vn/sohoa/', tags:['Bài giảng','PDF'] },
+  { cat:'vn', icon:'π', color:'#fee2e2', title:'Khoa Toán–Tin (FaMI) — HUST', source:'HUST', desc:'Khoa Toán–Tin Bách khoa Hà Nội: chương trình Toán Tin, tài liệu đại số, giải tích, tối ưu và thống kê.', url:'https://fami.hust.edu.vn', tags:['Khoa Toán','Giáo trình'] },
+  { cat:'vn', icon:'📗', color:'#dcfce7', title:'Thư viện ĐH Khoa học Tự nhiên TP.HCM', source:'HCMUS', desc:'Thư viện HCMUS: giáo trình số, luận văn Toán–Tin và bộ sưu tập sách chuyên ngành Toán.', url:'https://glib.hcmus.edu.vn', tags:['Thư viện','Giáo trình'] },
+  { cat:'vn', icon:'🏛️', color:'#e0f2fe', title:'Thư viện Trung tâm ĐHQG TP.HCM', source:'ĐHQG-HCM', desc:'Thư viện trung tâm ĐHQG-HCM: sách, giáo trình, CSDL Springer/MathSciNet — kho sách lớn phía Nam.', url:'https://www.vnulib.edu.vn', tags:['Thư viện','Sách'] },
+  { cat:'vn', icon:'📐', color:'#fce7f3', title:'Khoa Toán–Tin — ĐHSP Hà Nội', source:'HNUE', desc:'Khoa Toán–Tin HNUE (math.hnue.edu.vn): giáo trình sư phạm Toán, hình học, đại số — nguồn sách cho giáo viên tương lai.', url:'https://math.hnue.edu.vn', tags:['Sư phạm','Giáo trình'] },
+  { cat:'vn', icon:'📚', color:'#fef3c7', title:'Thư viện ĐH Sư phạm TP.HCM', source:'HCMUE', desc:'Thư viện HCMUE: giáo trình dạy Toán phổ thông, sách phương pháp và học liệu sư phạm.', url:'https://lib.hcmue.edu.vn', tags:['Sư phạm','Sách'] },
+  { cat:'vn', icon:'🏫', color:'#d1fae5', title:'Đại học Cần Thơ', source:'CTU', desc:'ĐH vùng ĐBSCL: khoa Sư phạm / Toán–Tin, giáo trình đại cương và tài liệu ôn Toán THPT–ĐH.', url:'https://www.ctu.edu.vn', tags:['Đại học','Giáo trình'] },
+  { cat:'vn', icon:'📖', color:'#cffafe', title:'Trung tâm Học liệu ĐH Cần Thơ', source:'CTU LRC', desc:'Học liệu số CTU: giáo trình, sách điện tử Toán–Thống kê và tài liệu mở cho sinh viên / học sinh giỏi.', url:'https://lrc.ctu.edu.vn', tags:['Học liệu','Sách số'] },
+  { cat:'vn', icon:'🌸', color:'#fce7f3', title:'Đại học Khoa học — ĐH Huế', source:'HUSC / ĐH Huế', desc:'Khoa Toán HUSC: giáo trình giải tích, đại số, hình học; trường khoa học tự nhiên lớn miền Trung.', url:'https://husc.edu.vn', tags:['Huế','Giáo trình'] },
+  { cat:'vn', icon:'🧑‍🏫', color:'#ede9fe', title:'Đại học Sư phạm Huế', source:'ĐHSP Huế', desc:'Đào tạo giáo viên Toán miền Trung: giáo trình phương pháp dạy học Toán và sách chuyên đề phổ thông.', url:'https://dhsphue.edu.vn', tags:['Sư phạm','Sách'] },
+  { cat:'vn', icon:'🌊', color:'#dbeafe', title:'Đại học Sư phạm Đà Nẵng', source:'UED / ĐH Đà Nẵng', desc:'Khoa Toán UED: giáo trình sư phạm Toán, đề thi và tài liệu bồi dưỡng giáo viên khu vực miền Trung.', url:'https://ued.udn.vn', tags:['Sư phạm','Đà Nẵng'] },
+  { cat:'vn', icon:'⚙️', color:'#ffedd5', title:'Đại học Bách khoa Đà Nẵng', source:'DUT / ĐH Đà Nẵng', desc:'Toán cho kỹ thuật, giải tích ứng dụng và giáo trình đại cương của trường kỹ thuật lớn miền Trung.', url:'https://dut.udn.vn', tags:['Bách khoa','Giáo trình'] },
+  { cat:'vn', icon:'🎓', color:'#e0e7ff', title:'Đại học Vinh', source:'VinhUni', desc:'Trường ĐH lâu đời Nghệ An: khoa Toán–Tin, giáo trình và truyền thống bồi dưỡng HSG Toán.', url:'https://vinhuni.edu.vn', tags:['Đại học','Giáo trình'] },
+  { cat:'vn', icon:'⛰️', color:'#dcfce7', title:'Đại học Thái Nguyên', source:'TNU', desc:'ĐHQG vùng trung du: các trường thành viên có khoa Toán, giáo trình đại cương và sư phạm Toán.', url:'https://tnu.edu.vn', tags:['Đại học','Giáo trình'] },
+  { cat:'vn', icon:'🧑‍🏫', color:'#fef9c3', title:'Đại học Sư phạm Thái Nguyên', source:'TNUE', desc:'Đào tạo giáo viên Toán Việt Bắc: giáo trình, chuyên đề phổ thông và tài liệu thực hành sư phạm.', url:'https://tnue.edu.vn', tags:['Sư phạm','Sách'] },
+  { cat:'vn', icon:'🧑‍🏫', color:'#ddd6fe', title:'Đại học Sư phạm Hà Nội 2', source:'HPU2', desc:'Trường sư phạm Phúc Yên: khoa Toán, giáo trình dạy học Toán THCS–THPT.', url:'https://hpu2.edu.vn', tags:['Sư phạm','Giáo trình'] },
+  { cat:'vn', icon:'🔬', color:'#fee2e2', title:'Đại học Mỏ – Địa chất', source:'HUMG', desc:'Toán ứng dụng, giải tích và xác suất cho khoa học trái đất — giáo trình đại cương uy tín khối kỹ thuật.', url:'https://humg.edu.vn', tags:['Kỹ thuật','Giáo trình'] },
+  { cat:'vn', icon:'🏗️', color:'#ffedd5', title:'Đại học Xây dựng Hà Nội', source:'HUCE', desc:'Giáo trình toán kỹ thuật, hình học họa hình và đại số tuyến tính cho khối xây dựng.', url:'https://huce.edu.vn', tags:['Kỹ thuật','Giáo trình'] },
+  { cat:'vn', icon:'🚆', color:'#e0f2fe', title:'Đại học Giao thông vận tải', source:'UTC', desc:'Toán đại cương, xác suất thống kê cho kỹ thuật giao thông — giáo trình dùng nhiều tại miền Bắc.', url:'https://utc.edu.vn', tags:['Kỹ thuật','Giáo trình'] },
+  { cat:'vn', icon:'📊', color:'#d1fae5', title:'Đại học Kinh tế Quốc dân', source:'NEU', desc:'Giáo trình toán cao cấp, xác suất thống kê kinh tế — bổ trợ chuyên đề thống kê THPT và khối A.', url:'https://neu.edu.vn', tags:['Thống kê','Giáo trình'] },
+  { cat:'vn', icon:'🧪', color:'#ede9fe', title:'Học viện Khoa học và Công nghệ', source:'GUST / VAST', desc:'Đào tạo sau đại học của Viện Hàn lâm: chuyên đề Toán–Tin, seminar và tài liệu nghiên cứu.', url:'https://gust.edu.vn', tags:['Sau ĐH','Toán'] },
+  { cat:'vn', icon:'🎓', color:'#fce7f3', title:'Đại học Tôn Đức Thắng', source:'TDTU', desc:'Khoa Toán–Thống kê TDTU: giáo trình xác suất, toán ứng dụng và học liệu số tiếng Anh–Việt.', url:'https://tdtu.edu.vn', tags:['Thống kê','Giáo trình'] },
+
+  { cat:'olympiad', icon:'🏅', color:'#fde68a', title:'IMO Official', source:'Olympic Toán quốc tế', desc:'Đề thi, đáp án và bảng thành tích chính thức Olympic Toán quốc tế qua các năm — nguồn luyện HSG chuẩn.', url:'https://www.imo-official.org', tags:['IMO','Đề thi'] },
+  { cat:'olympiad', icon:'📄', color:'#fef3c7', title:'IMO — Problems archive', source:'IMO Official', desc:'Kho đề thi IMO theo năm, có lời giải chính thức — luyện HSG quốc gia và đội tuyển.', url:'https://www.imo-official.org/problems.aspx', tags:['IMO','Lời giải'] },
+  { cat:'olympiad', icon:'🧩', color:'#ddd6fe', title:'Art of Problem Solving', source:'AoPS', desc:'Cộng đồng và thư viện bài toán Olympic, AMC: lời giải chi tiết cho Toán nâng cao.', url:'https://artofproblemsolving.com', tags:['HSG','Wiki'] },
+  { cat:'olympiad', icon:'🗂️', color:'#e0e7ff', title:'AoPS Wiki — Contests', source:'AoPS', desc:'Kho đề và lời giải AMC, AIME, IMO Shortlist, olympiad quốc gia do cộng đồng sư phạm duy trì.', url:'https://artofproblemsolving.com/wiki/index.php/Math_Competition_Resources', tags:['AMC','AIME'] },
+  { cat:'olympiad', icon:'🥇', color:'#fce7f3', title:'AoPS Wiki — IMO Problems', source:'AoPS', desc:'Đề và lời giải IMO được biên soạn dạng wiki, phân loại theo năm và chủ đề (số học, hình, tổ hợp).', url:'https://artofproblemsolving.com/wiki/index.php/IMO_Problems_and_Solutions', tags:['IMO','Chủ đề'] },
+  { cat:'olympiad', icon:'🍁', color:'#d1fae5', title:'CEMC — University of Waterloo', source:'Univ. of Waterloo', desc:'Kỳ thi Gauss, Pascal, Cayley, Fermat, Euclid: đề cũ, lời giải và courseware miễn phí rất hợp ôn THPT.', url:'https://cemc.uwaterloo.ca', tags:['Euclid','Đề thi'] },
+  { cat:'olympiad', icon:'📘', color:'#cffafe', title:'CEMC Courseware', source:'Univ. of Waterloo', desc:'Khóa học miễn phí: Grade 7–12 math, functions, calculus — bài giảng + bài tập kiểu Waterloo.', url:'https://courseware.cemc.uwaterloo.ca', tags:['Khóa học','Miễn phí'] },
+  { cat:'olympiad', icon:'🇬🇧', color:'#dbeafe', title:'UK Mathematics Trust', source:'UKMT', desc:'Kỳ thi Junior/Intermediate/Senior Mathematical Challenge của Anh — đề hay, sát tư duy HSG.', url:'https://www.ukmt.org.uk', tags:['UKMT','Challenge'] },
+  { cat:'olympiad', icon:'🌸', color:'#fce7f3', title:'NRICH — University of Cambridge', source:'Cambridge', desc:'Bài toán giàu ý tưởng cho học sinh 3–18 tuổi, do Khoa Toán Cambridge biên soạn, miễn phí.', url:'https://nrich.maths.org', tags:['Cambridge','Problem'] },
+  { cat:'olympiad', icon:'🚇', color:'#ede9fe', title:'Underground Mathematics', source:'Cambridge', desc:'Kho bài toán A-level của Cambridge: hàm số, lượng giác, giải tích — rất gần chương trình 12.', url:'https://undergroundmathematics.org', tags:['A-level','Giải tích'] },
+  { cat:'olympiad', icon:'🇺🇸', color:'#fee2e2', title:'MAA — AMC Contests', source:'Mathematical Association of America', desc:'Kỳ thi AMC 8/10/12 và AIME của Mỹ: thể lệ, đề mẫu và tài nguyên luyện chính thức.', url:'https://maa.org/student-programs/amc/', tags:['AMC','MAA'] },
+  { cat:'olympiad', icon:'✨', color:'#fef3c7', title:'AwesomeMath', source:'AwesomeMath', desc:'Tài nguyên Olympic, sách và bài giảng cho học sinh giỏi quốc tế (số học, bất đẳng thức, tổ hợp).', url:'https://www.awesomemath.org', tags:['Olympiad','Sách'] },
+  { cat:'olympiad', icon:'🧠', color:'#e0e7ff', title:'Project Euler', source:'Project Euler', desc:'Chuỗi bài toán Toán + lập trình: rèn tư duy số học, tổ hợp và thuật toán — phù hợp HS yêu tin học.', url:'https://projecteuler.net', tags:['Số học','Lập trình'] },
+
+  { cat:'open', icon:'▶️', color:'#fee2e2', title:'Khan Academy tiếng Việt — Toán', source:'Khan Academy', desc:'Bài giảng Toán miễn phí tiếng Việt: đại số, hình học, hàm số, giải tích căn bản.', url:'https://vi.khanacademy.org/math', tags:['Video','Tiếng Việt'] },
+  { cat:'open', icon:'𝑎', color:'#dbeafe', title:'Khan Academy — Algebra', source:'Khan Academy', desc:'Đại số: phương trình, hệ, hàm bậc nhất/hai, bất phương trình — nền tảng THCS–THPT.', url:'https://www.khanacademy.org/math/algebra', tags:['Đại số','Luyện tập'] },
+  { cat:'open', icon:'△', color:'#d1fae5', title:'Khan Academy — Geometry', source:'Khan Academy', desc:'Hình học: tam giác, đường tròn, thể tích, vector — có hình minh họa và bài luyện.', url:'https://www.khanacademy.org/math/geometry', tags:['Hình học','THPT'] },
+  { cat:'open', icon:'sin', color:'#fce7f3', title:'Khan Academy — Trigonometry', source:'Khan Academy', desc:'Lượng giác: sin, cos, tan, công thức biến đổi, phương trình lượng giác.', url:'https://www.khanacademy.org/math/trigonometry', tags:['Lượng giác','Lớp 11'] },
+  { cat:'open', icon:'𝑓', color:'#ffedd5', title:'Khan Academy — Precalculus', source:'Khan Academy', desc:'Tiền giải tích: hàm số, dãy, lượng giác, số phức, ma trận — cầu nối lớp 12 và đại học.', url:'https://www.khanacademy.org/math/precalculus', tags:['Hàm số','Lớp 12'] },
+  { cat:'open', icon:'∫', color:'#ede9fe', title:'Khan Academy — Calculus 1', source:'Khan Academy', desc:'Giải tích 1: giới hạn, đạo hàm, nguyên hàm, tích phân — bổ trợ chuyên đề 12 và đại học.', url:'https://www.khanacademy.org/math/calculus-1', tags:['Giải tích','Đạo hàm'] },
+  { cat:'open', icon:'σ', color:'#cffafe', title:'Khan Academy — Statistics', source:'Khan Academy', desc:'Xác suất thống kê: mô tả dữ liệu, phân phối, suy diễn — khớp chuyên đề THPT mới.', url:'https://www.khanacademy.org/math/statistics-probability', tags:['Xác suất','Thống kê'] },
+  { cat:'open', icon:'🎓', color:'#dbeafe', title:'MIT OpenCourseWare — Mathematics', source:'MIT', desc:'Bài giảng, bài tập và giáo trình Toán mở của MIT: calculus, linear algebra, differential equations.', url:'https://ocw.mit.edu/search/?d=Mathematics', tags:['MIT','Mở'] },
+  { cat:'open', icon:'𝟏', color:'#e0e7ff', title:'MIT OCW — Single Variable Calculus', source:'MIT 18.01SC', desc:'Giải tích một biến (David Jerison): video, recitation, bài tập — chuẩn quốc tế cho đạo hàm–tích phân.', url:'https://ocw.mit.edu/courses/18-01sc-single-variable-calculus-fall-2010/', tags:['Calculus','Video'] },
+  { cat:'open', icon:'⊞', color:'#dcfce7', title:'MIT OCW — Linear Algebra (Strang)', source:'MIT 18.06', desc:'Đại số tuyến tính của Gilbert Strang: ma trận, không gian vector — video kinh điển, miễn phí.', url:'https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/', tags:['Ma trận','Strang'] },
+  { cat:'open', icon:'📗', color:'#d1fae5', title:'OpenStax Mathematics', source:'Rice University', desc:'SGK Toán miễn phí, phản biện khoa học: Algebra, Precalculus, Calculus, Statistics — đọc online / PDF.', url:'https://openstax.org/subjects/math', tags:['SGK mở','PDF'] },
+  { cat:'open', icon:'📝', color:'#ffedd5', title:"Paul's Online Math Notes", source:'Lamar University', desc:'Ghi chú Algebra, Calculus I–III, DE rõ ràng, có bài tập và lời giải — hợp ôn THPT nâng cao.', url:'https://tutorial.math.lamar.edu', tags:['Giải tích','Ghi chú'] },
+  { cat:'open', icon:'🌐', color:'#e0f2fe', title:'CK-12 FlexBooks', source:'CK-12 Foundation', desc:'Sách Toán tương tác miễn phí (Algebra, Geometry, Calculus) theo chuẩn phổ thông, có bài luyện kèm.', url:'https://www.ck12.org/student/', tags:['Tương tác','Miễn phí'] },
+  { cat:'open', icon:'📚', color:'#fef3c7', title:'Open Textbook Library — Math', source:'Univ. of Minnesota', desc:'Thư viện SGK mở được thư viện đại học Mỹ kiểm định: đại số, giải tích, thống kê, rời rạc.', url:'https://open.umn.edu/opentextbooks/subjects/mathematics', tags:['SGK mở','Đại học'] },
+  { cat:'open', icon:'🔗', color:'#ddd6fe', title:'LibreTexts Mathematics', source:'LibreTexts', desc:'Bách khoa giáo trình Toán mở: đại số, giải tích, thống kê, toán rời rạc — đọc trực tuyến miễn phí.', url:'https://math.libretexts.org', tags:['Giáo trình','Mở'] },
+  { cat:'open', icon:'∫𝑥', color:'#dbeafe', title:'Active Calculus', source:'Grand Valley State Univ.', desc:'SGK giải tích miễn phí, nhấn mạnh khám phá và bài toán — thay thế sách thương mại.', url:'https://activecalculus.org', tags:['Calculus','PDF'] },
+  { cat:'open', icon:'📖', color:'#dcfce7', title:'Whitman College — Calculus', source:'Whitman College', desc:'Sách Calculus online miễn phí, trình bày mạch lạc từ giới hạn đến tích phân nhiều lớp.', url:'https://www.whitman.edu/mathematics/calculus_online/', tags:['Calculus','Sách'] },
+  { cat:'open', icon:'📐', color:'#fce7f3', title:'Mathigon', source:'Mathigon', desc:'Toán phổ thông tương tác (Polypad): phân số, hình học, đại số — giao diện đẹp, rất hợp tự học.', url:'https://mathigon.org', tags:['Tương tác','Phổ thông'] },
+  { cat:'open', icon:'🎲', color:'#fef9c3', title:'Seeing Theory', source:'Brown University', desc:'Xác suất thống kê trực quan của Brown: phân phối, Bayes, suy diễn — học bằng hình ảnh.', url:'https://seeing-theory.brown.edu', tags:['Xác suất','Trực quan'] },
+  { cat:'open', icon:'📈', color:'#e0f2fe', title:'OpenIntro Statistics', source:'OpenIntro', desc:'SGK thống kê mở được nhiều đại học dùng: PDF miễn phí, bộ dữ liệu và bài tập.', url:'https://www.openintro.org', tags:['Thống kê','PDF'] },
+  { cat:'open', icon:'🎓', color:'#ede9fe', title:'edX — Mathematics', source:'edX / Harvard–MIT', desc:'Khóa Toán đại học mở: calculus, thống kê, đại số tuyến tính từ Harvard, MIT, Delft...', url:'https://www.edx.org/learn/mathematics', tags:['Khóa học','MOOC'] },
+  { cat:'open', icon:'🎓', color:'#d1fae5', title:'Coursera — Math and Logic', source:'Coursera', desc:'Khóa Toán từ Stanford, Duke, Imperial...: xác suất, rời rạc, giải tích. Nhiều khóa học thử miễn phí.', url:'https://www.coursera.org/browse/math-and-logic', tags:['MOOC','Đại học'] },
+  { cat:'open', icon:'🇬🇧', color:'#cffafe', title:'OpenLearn — Mathematics', source:'The Open University', desc:'Khóa Toán miễn phí của đại học mở Anh: phổ thông đến đại cương, chứng nhận tùy chọn.', url:'https://www.open.edu/openlearn/science-maths-technology/mathematics-statistics', tags:['OU','Miễn phí'] },
+  { cat:'open', icon:'🏛️', color:'#ffedd5', title:'Faculty of Mathematics — Cambridge', source:'Univ. of Cambridge', desc:'Khoa Toán Cambridge: tài nguyên sinh viên, seminar và định hướng toán học đỉnh cao.', url:'https://www.maths.cam.ac.uk', tags:['Cambridge','Khoa Toán'] },
+  { cat:'open', icon:'🏛️', color:'#e0e7ff', title:'Mathematical Institute — Oxford', source:'Univ. of Oxford', desc:'Viện Toán Oxford: chương trình, tài liệu công khai và tin nghiên cứu.', url:'https://www.maths.ox.ac.uk', tags:['Oxford','Toán'] },
+  { cat:'open', icon:'🗒️', color:'#fce7f3', title:'AMS Open Math Notes', source:'American Mathematical Society', desc:'Ghi chú bài giảng do AMS xuất bản mở: đại số, giải tích, hình học — trình độ đại học.', url:'https://www.ams.org/open-math-notes', tags:['AMS','Ghi chú'] },
+  { cat:'open', icon:'🎲', color:'#ddd6fe', title:'Introduction to Probability', source:'probabilitycourse.com', desc:'Giáo trình xác suất miễn phí (mức đại học nhập môn), có ví dụ và bài tập — bổ trợ THPT nâng cao.', url:'https://www.probabilitycourse.com', tags:['Xác suất','Giáo trình'] },
+  { cat:'open', icon:'✅', color:'#fef3c7', title:'AIM — Open Textbook Initiative', source:'American Institute of Mathematics', desc:'Danh mục SGK Toán mở được hội đồng AIM thẩm định: precalculus → giải tích, đại số, thống kê — chỉ sách đạt chuẩn đại học.', url:'https://textbooks.aimath.org/', tags:['SGK mở','AIM'] },
+  { cat:'open', icon:'𝟐', color:'#dbeafe', title:'MIT OCW — Multivariable Calculus', source:'MIT 18.02SC', desc:'Giải tích nhiều biến: đạo hàm riêng, tích phân kép/bội, vector — giáo trình + video MIT, PDF miễn phí.', url:'https://ocw.mit.edu/courses/18-02sc-multivariable-calculus-fall-2010/', tags:['Calculus','MIT'] },
+  { cat:'open', icon:'𝑑𝑦', color:'#e0e7ff', title:'MIT OCW — Differential Equations', source:'MIT 18.03SC', desc:'Phương trình vi phân: PTVP cấp 1–2, hệ, Laplace — bài giảng + bài tập MIT, rất hợp sau giải tích 12.', url:'https://ocw.mit.edu/courses/18-03sc-differential-equations-fall-2011/', tags:['PTVP','MIT'] },
+  { cat:'open', icon:'𝑃', color:'#dcfce7', title:'MIT OCW — Probability & Statistics', source:'MIT 18.05', desc:'Nhập môn xác suất thống kê MIT: Bayes, phân phối, suy diễn — giáo trình và bài tập mở.', url:'https://ocw.mit.edu/courses/18-05-introduction-to-probability-and-statistics-spring-2022/', tags:['Xác suất','MIT'] },
+  { cat:'open', icon:'⊞', color:'#cffafe', title:'MIT OCW — Linear Algebra (18.06SC)', source:'MIT 18.06SC', desc:'Phiên bản Scholar của khóa Strang: video recitation, bài tập, exam — giáo trình đại số tuyến tính đầy đủ.', url:'https://ocw.mit.edu/courses/18-06sc-linear-algebra-fall-2011/', tags:['ĐSTT','MIT'] },
+  { cat:'open', icon:'📕', color:'#fee2e2', title:'Harvard Stat 110 — Probability', source:'Harvard University', desc:'Khóa xác suất nổi tiếng của Joe Blitzstein: sách Introduction to Probability (PDF), video bài giảng, bài tập.', url:'https://stat110.hsites.harvard.edu/', tags:['Harvard','Xác suất'] },
+  { cat:'open', icon:'📘', color:'#fce7f3', title:'Introduction to Probability (sách)', source:'Harvard / Blitzstein–Hwang', desc:'SGK xác suất Stat 110 bản mở: http://probabilitybook.net — đọc online miễn phí, chuẩn đại học Harvard.', url:'http://probabilitybook.net', tags:['Sách','Xác suất'] },
+  { cat:'open', icon:'🎓', color:'#ede9fe', title:'Khoa Toán Harvard', source:'Harvard University', desc:'Department of Mathematics: giáo trình, notes sinh viên, seminar — định hướng sách Toán đại học Mỹ.', url:'https://www.math.harvard.edu', tags:['Harvard','Khoa Toán'] },
+  { cat:'open', icon:'📺', color:'#dbeafe', title:'Yale Open Courses — Mathematics', source:'Yale University', desc:'Bài giảng Toán Yale mở (OYC): calculus và tư duy toán — video + syllabus + reading list miễn phí.', url:'https://oyc.yale.edu/mathematics', tags:['Yale','OCW'] },
+  { cat:'open', icon:'🌲', color:'#d1fae5', title:'Stanford Mathematics', source:'Stanford University', desc:'Khoa Toán Stanford: course pages, notes và tài liệu công khai cho calculus, đại số, xác suất.', url:'https://mathematics.stanford.edu', tags:['Stanford','Giáo trình'] },
+  { cat:'open', icon:'💡', color:'#ffedd5', title:'Stanford Engineering Everywhere', source:'Stanford University', desc:'Khóa kỹ thuật–Toán mở của Stanford (SEE): linear algebra, Fourier, machine learning — bài giảng + notes.', url:'https://see.stanford.edu', tags:['Stanford','OCW'] },
+  { cat:'open', icon:'🐻', color:'#e0e7ff', title:'UC Berkeley Mathematics', source:'UC Berkeley', desc:'Khoa Toán Berkeley: notes các lớp lower/upper division, đề thi cũ và tài liệu giải tích–đại số.', url:'https://math.berkeley.edu', tags:['Berkeley','Notes'] },
+  { cat:'open', icon:'🔬', color:'#fef3c7', title:'Caltech Mathematics', source:'Caltech', desc:'PMA Caltech: giáo trình toán vật lý, giải tích, đại số — trình độ cao, nhiều lecture notes công khai.', url:'https://pma.caltech.edu', tags:['Caltech','Notes'] },
+  { cat:'open', icon:'🐯', color:'#ede9fe', title:'Princeton Mathematics', source:'Princeton University', desc:'Khoa Toán Princeton: undergraduate notes, đề thi và định hướng sách Toán lý thuyết hàng đầu thế giới.', url:'https://www.math.princeton.edu', tags:['Princeton','Notes'] },
+  { cat:'open', icon:'🌌', color:'#dbeafe', title:'IAS — School of Mathematics', source:'Institute for Advanced Study', desc:'Viện IAS Princeton (Einstein, Weyl…): video seminar, notes chuyên đề Toán — nguồn học thuật đỉnh cao.', url:'https://www.ias.edu/math', tags:['IAS','Seminar'] },
+  { cat:'open', icon:'🗽', color:'#cffafe', title:'Courant Institute — NYU', source:'New York University', desc:'Viện Courant: giáo trình giải tích ứng dụng, PDE, xác suất — một trong những khoa Toán ứng dụng mạnh nhất.', url:'https://cims.nyu.edu', tags:['NYU','Giáo trình'] },
+  { cat:'open', icon:'🧮', color:'#dcfce7', title:'Linear Algebra (Hefferon)', source:'University of Vermont', desc:'SGK đại số tuyến tính miễn phí (AIM duyệt): hệ phương trình, không gian vector, trị riêng — PDF + lời giải.', url:'https://hefferon.net/linearalgebra/', tags:['ĐSTT','SGK mở'] },
+  { cat:'open', icon:'📗', color:'#fce7f3', title:'A First Course in Linear Algebra (Beezer)', source:'Univ. of Puget Sound', desc:'SGK ĐSTT mở (PreTeXt/HTML): đọc trên web, có bài tập — sách chuẩn AIM Open Textbook.', url:'https://linear.ups.edu', tags:['ĐSTT','HTML'] },
+  { cat:'open', icon:'📕', color:'#fee2e2', title:'Linear Algebra Done Right', source:'Sheldon Axler (USF)', desc:'Sách ĐSTT kinh điển bản 4 mở trên web: nhấn mạnh không gian vector và toán tử tuyến tính, không lệ thuộc định thức.', url:'https://linear.axler.net', tags:['ĐSTT','Sách'] },
+  { cat:'open', icon:'∫', color:'#dbeafe', title:'APEX Calculus', source:'APEX Consortium', desc:'Bộ SGK calculus 3 tập miễn phí (PDF): giới hạn đến giải tích vector — nhiều đại học Mỹ dùng thay Stewart.', url:'https://www.apexcalculus.com', tags:['Calculus','PDF'] },
+  { cat:'open', icon:'📜', color:'#fef3c7', title:'Book of Proof', source:'Virginia Commonwealth Univ.', desc:'Sách nhập môn chứng minh (Hammack): logic, tập hợp, quy nạp, đẳng thức — PDF miễn phí, rất hợp HSG / năm nhất.', url:'https://www.people.vcu.edu/~rhammack/BookOfProof/', tags:['Chứng minh','PDF'] },
+  { cat:'open', icon:'𝐴', color:'#ede9fe', title:'Abstract Algebra: Theory and Applications', source:'Univ. of Puget Sound', desc:'SGK đại số trừu tượng mở (Judson): nhóm, vành, trường — HTML/PDF, được AIM liệt kê.', url:'http://abstract.ups.edu', tags:['Đại số','SGK mở'] },
+  { cat:'open', icon:'📏', color:'#d1fae5', title:'Basic Analysis — Introduction to Real Analysis', source:'Jiří Lebl', desc:'Giáo trình giải tích thực mở: dãy, chuỗi, liên tục, đạo hàm, Riemann — PDF cập nhật, nhiều trường dùng.', url:'https://www.jirka.org/ra/', tags:['Giải tích','PDF'] },
+  { cat:'open', icon:'🔢', color:'#e0e7ff', title:'Discrete Mathematics: an Open Introduction', source:'Univ. of Northern Colorado', desc:'SGK toán rời rạc mở (Oscar Levin): tổ hợp, đồ thị, quy nạp — rất gần chuyên đề THPT nâng cao + tin học.', url:'https://discrete.openmathbooks.org', tags:['Rời rạc','Tổ hợp'] },
+  { cat:'open', icon:'🍁', color:'#cffafe', title:'BCcampus Open Textbooks — Math', source:'BCcampus / các ĐH British Columbia', desc:'Kho SGK mở của hệ thống đại học British Columbia: calculus, thống kê, đại số — PDF miễn phí, đã peer-review.', url:'https://collection.bccampus.ca', tags:['Canada','SGK mở'] },
+  { cat:'open', icon:'🍑', color:'#fce7f3', title:'GALILEO Open Math Textbooks', source:'University System of Georgia', desc:'SGK Toán mở của hệ thống đại học Georgia (GALILEO): college algebra, precalculus, thống kê, calculus.', url:'https://oer.galileo.usg.edu', tags:['Georgia','SGK mở'] },
+  { cat:'open', icon:'📘', color:'#ffedd5', title:'Milne Open Textbooks (SUNY)', source:'State University of New York', desc:'NXB sách mở của SUNY: nhiều giáo trình Toán–Thống kê do giảng viên đại học New York biên soạn.', url:'https://milneopentextbooks.org', tags:['SUNY','SGK mở'] },
+  { cat:'open', icon:'🌲', color:'#dcfce7', title:'Open Oregon State — Textbooks', source:'Oregon State University', desc:'Giáo trình mở OSU: toán, thống kê, khoa học dữ liệu — đọc web / PDF, trường công Mỹ uy tín.', url:'https://open.oregonstate.education', tags:['Oregon','SGK mở'] },
+  { cat:'open', icon:'📚', color:'#dbeafe', title:'Open Michigan', source:'University of Michigan', desc:'Tài nguyên giáo dục mở U-M: notes, OCW và học liệu Toán từ một trong những đại học công hàng đầu Mỹ.', url:'https://open.umich.edu', tags:['Michigan','OER'] },
+  { cat:'open', icon:'🐻', color:'#e0e7ff', title:'University of Michigan Mathematics', source:'University of Michigan', desc:'Khoa Toán U-M: course pages, past exams và notes calculus / linear algebra / probability.', url:'https://lsa.umich.edu/math', tags:['Michigan','Notes'] },
+  { cat:'open', icon:'🐝', color:'#fef3c7', title:'Georgia Tech Mathematics', source:'Georgia Institute of Technology', desc:'Khoa Toán Georgia Tech: giáo trình toán kỹ thuật, xác suất, tối ưu — notes và syllabus công khai.', url:'https://math.gatech.edu', tags:['Georgia Tech','Kỹ thuật'] },
+  { cat:'open', icon:'🤖', color:'#ede9fe', title:'Carnegie Mellon Mathematics', source:'CMU', desc:'Khoa Toán CMU: notes giải tích, rời rạc, xác suất — trường CS–Toán ứng dụng hàng đầu.', url:'https://www.cmu.edu/math', tags:['CMU','Notes'] },
+  { cat:'open', icon:'🌽', color:'#d1fae5', title:'Cornell Mathematics', source:'Cornell University', desc:'Khoa Toán Cornell (nơi lưu arXiv): undergraduate notes, đề thi và giáo trình giải tích–đại số.', url:'https://math.cornell.edu', tags:['Cornell','Notes'] },
+  { cat:'open', icon:'🎬', color:'#fee2e2', title:'UCLA Mathematics', source:'UCLA', desc:'Khoa Toán UCLA: course websites, lecture notes calculus và đại số tuyến tính cho sinh viên năm nhất.', url:'https://ww3.math.ucla.edu', tags:['UCLA','Notes'] },
+  { cat:'open', icon:'🏫', color:'#cffafe', title:'University of Chicago Mathematics', source:'UChicago', desc:'Khoa Toán Chicago (truyền thống Honors Calculus): notes chặt, thiên chứng minh — hợp HSG.', url:'https://mathematics.uchicago.edu', tags:['Chicago','Giải tích'] },
+  { cat:'open', icon:'🦁', color:'#fce7f3', title:'Columbia Mathematics', source:'Columbia University', desc:'Khoa Toán Columbia: undergraduate resources, notes và định hướng sách Toán Ivy League.', url:'https://www.math.columbia.edu', tags:['Columbia','Notes'] },
+  { cat:'open', icon:'⚕️', color:'#e0e7ff', title:'Johns Hopkins Mathematics', source:'Johns Hopkins University', desc:'Khoa Toán JHU: giáo trình giải tích, thống kê y sinh và notes đại cương.', url:'https://mathematics.jhu.edu', tags:['JHU','Giáo trình'] },
+  { cat:'open', icon:'😈', color:'#dbeafe', title:'Duke Mathematics', source:'Duke University', desc:'Khoa Toán Duke: calculus, linear algebra, probability — course materials thường mở trên site khoa.', url:'https://math.duke.edu', tags:['Duke','Notes'] },
+  { cat:'open', icon:'🧡', color:'#ffedd5', title:'UT Austin Mathematics', source:'University of Texas at Austin', desc:'Khoa Toán UT Austin: notes, đề thi cũ calculus/ĐSTT và tài liệu Inquiry-Based Learning.', url:'https://www.ma.utexas.edu', tags:['Texas','Notes'] },
+  { cat:'open', icon:'🔷', color:'#dcfce7', title:'Illinois Mathematics', source:'University of Illinois Urbana-Champaign', desc:'Khoa Toán UIUC: NetMath, notes và giáo trình giải tích–đại số của đại học công lớn Mỹ.', url:'https://math.illinois.edu', tags:['Illinois','Giáo trình'] },
+  { cat:'open', icon:'🚂', color:'#fef3c7', title:'Purdue Mathematics', source:'Purdue University', desc:'Khoa Toán Purdue: MA 161/165 calculus notes, video và đề thi — rất nhiều tài liệu tự học.', url:'https://www.math.purdue.edu', tags:['Purdue','Calculus'] },
+  { cat:'open', icon:'🌧️', color:'#e0f2fe', title:'University of Washington Mathematics', source:'Univ. of Washington', desc:'Khoa Toán UW Seattle: notes, webwork và giáo trình calculus cho khối STEM.', url:'https://math.washington.edu', tags:['Washington','Notes'] },
+  { cat:'open', icon:'🦡', color:'#ede9fe', title:'UW–Madison Mathematics', source:'Univ. of Wisconsin–Madison', desc:'Khoa Toán Wisconsin: calculus projects, notes và tài liệu sư phạm Toán đại học.', url:'https://www.math.wisc.edu', tags:['Wisconsin','Giáo trình'] },
+  { cat:'open', icon:'🇬🇧', color:'#dbeafe', title:'Imperial College Mathematics', source:'Imperial College London', desc:'Khoa Toán Imperial: undergraduate notes, problem sheets giải tích–đại số của trường kỹ thuật hàng đầu Anh.', url:'https://www.imperial.ac.uk/mathematics', tags:['Imperial','Notes'] },
+  { cat:'open', icon:'🏛️', color:'#e0e7ff', title:'UCL Mathematics', source:'University College London', desc:'Khoa Toán UCL: course materials, notes và tài liệu thống kê–giải tích.', url:'https://www.ucl.ac.uk/maths', tags:['UCL','Giáo trình'] },
+  { cat:'open', icon:'🏴󠁧󠁢󠁳󠁣󠁴󠁿', color:'#d1fae5', title:'Edinburgh School of Mathematics', source:'Univ. of Edinburgh', desc:'Khoa Toán Edinburgh (Russell Group): notes, lecture videos và giáo trình đại cương–nâng cao.', url:'https://www.maths.ed.ac.uk', tags:['Edinburgh','Notes'] },
+  { cat:'open', icon:'🎓', color:'#fce7f3', title:'Warwick Mathematics Institute', source:'Univ. of Warwick', desc:'Viện Toán Warwick: notes nổi tiếng (Warwick notes), đại số, giải tích, xác suất — nhiều PDF công khai.', url:'https://warwick.ac.uk/fac/sci/maths', tags:['Warwick','Notes'] },
+  { cat:'open', icon:'🇨🇭', color:'#dbeafe', title:'ETH Zurich Mathematics', source:'ETH Zürich', desc:'Khoa Toán ETH: Vorlesungsunterlagen (bài giảng PDF) giải tích, ĐSTT, xác suất — chuẩn kỹ thuật châu Âu.', url:'https://math.ethz.ch', tags:['ETH','Giáo trình'] },
+  { cat:'open', icon:'🇨🇭', color:'#cffafe', title:'EPFL Mathematics', source:'EPFL', desc:'Toán EPFL Lausanne: course pages, notes calculus và hình học — đại học kỹ thuật Thụy Sĩ hàng đầu.', url:'https://www.epfl.ch/schools/sb/research/math/', tags:['EPFL','Notes'] },
+  { cat:'open', icon:'🇳🇱', color:'#e0e7ff', title:'TU Delft OpenCourseWare', source:'TU Delft', desc:'OCW Đại học Kỹ thuật Delft: Toán kỹ thuật, giải tích, xác suất — bài giảng + slides mở.', url:'https://ocw.tudelft.nl', tags:['Delft','OCW'] },
+  { cat:'open', icon:'🇩🇪', color:'#fee2e2', title:'TUM Mathematics', source:'Technical University of Munich', desc:'Khoa Toán TUM: giáo trình toán kỹ thuật Đức, notes và module giải tích–đại số tuyến tính.', url:'https://www.ma.tum.de', tags:['TUM','Giáo trình'] },
+  { cat:'open', icon:'🇫🇷', color:'#ede9fe', title:'École Polytechnique — Mathématiques', source:'École Polytechnique', desc:'Toán trường Polytechnique (l’X): giáo trình classes prépa / đại học kiểu Pháp — giải tích, đại số chặt.', url:'https://www.polytechnique.edu', tags:['Pháp','Giáo trình'] },
+  { cat:'open', icon:'🇸🇬', color:'#d1fae5', title:'NUS Department of Mathematics', source:'National University of Singapore', desc:'Khoa Toán NUS: undergraduate modules, notes calculus/ĐSTT và tài liệu Olympic sinh viên châu Á.', url:'https://www.math.nus.edu.sg', tags:['NUS','Giáo trình'] },
+  { cat:'open', icon:'🇸🇬', color:'#fef3c7', title:'NTU Mathematical Sciences', source:'Nanyang Technological University', desc:'Toán NTU Singapore: course outlines, notes và giáo trình toán khoa học–kỹ thuật.', url:'https://www.ntu.edu.sg/spms', tags:['NTU','Notes'] },
+  { cat:'open', icon:'🇭🇰', color:'#dbeafe', title:'HKUST Mathematics', source:'HKUST', desc:'Khoa Toán HKUST: calculus, linear algebra, probability notes — đại học kỹ thuật hàng đầu châu Á.', url:'https://www.math.hkust.edu.hk', tags:['HKUST','Giáo trình'] },
+  { cat:'open', icon:'🇭🇰', color:'#fce7f3', title:'CUHK Mathematics', source:'Chinese University of Hong Kong', desc:'Khoa Toán CUHK: undergraduate notes, đề thi và tài liệu giải tích–đại số.', url:'https://www.math.cuhk.edu.hk', tags:['CUHK','Notes'] },
+  { cat:'open', icon:'🇯🇵', color:'#e0e7ff', title:'UTokyo Mathematical Sciences', source:'University of Tokyo', desc:'Khoa Toán Đại học Tokyo: lecture notes, seminar và tài liệu Toán Nhật Bản trình độ cao.', url:'https://www.ms.u-tokyo.ac.jp', tags:['Tokyo','Notes'] },
+  { cat:'open', icon:'🇨🇳', color:'#fee2e2', title:'Peking School of Mathematical Sciences', source:'Peking University', desc:'Khoa Toán Bắc Đại: chương trình, notes và truyền thống luyện Toán Olympic–đại học Trung Quốc.', url:'https://www.math.pku.edu.cn', tags:['Bắc Đại','Giáo trình'] },
+  { cat:'open', icon:'🇨🇳', color:'#ffedd5', title:'Tsinghua Mathematical Sciences', source:'Tsinghua University', desc:'Toán Thanh Hoa: giáo trình, Qiuzhen College notes — trường kỹ thuật–Toán hàng đầu Trung Quốc.', url:'https://www.tsinghua.edu.cn', tags:['Thanh Hoa','Giáo trình'] },
+  { cat:'open', icon:'🇮🇳', color:'#dcfce7', title:'NPTEL — Mathematics', source:'IITs / IISc (Ấn Độ)', desc:'Khóa Toán video + notes của các IIT: calculus, ĐSTT, DE, thống kê — miễn phí, chuẩn kỹ thuật Ấn Độ.', url:'https://nptel.ac.in', tags:['IIT','Video'] },
+  { cat:'open', icon:'🇮🇳', color:'#dbeafe', title:'IIT Bombay Mathematics', source:'IIT Bombay', desc:'Khoa Toán IIT Bombay: course pages, notes giải tích và đại số tuyến tính cho kỹ sư.', url:'https://www.math.iitb.ac.in', tags:['IIT','Notes'] },
+  { cat:'open', icon:'🇮🇳', color:'#ede9fe', title:'IISc Mathematics', source:'Indian Institute of Science', desc:'Khoa Toán IISc Bangalore: giáo trình sau đại học, notes giải tích, đại số, xác suất.', url:'https://math.iisc.ac.in', tags:['IISc','Giáo trình'] },
+  { cat:'open', icon:'🍁', color:'#cffafe', title:'University of Toronto Mathematics', source:'Univ. of Toronto', desc:'Khoa Toán U of T: notes calculus (MAT137/157), đề thi và giáo trình danh tiếng Canada.', url:'https://www.math.toronto.edu', tags:['Toronto','Calculus'] },
+  { cat:'open', icon:'🌲', color:'#d1fae5', title:'UBC Mathematics', source:'Univ. of British Columbia', desc:'Khoa Toán UBC: CLP Calculus textbooks (PDF mở), WebWork và notes — SGK calculus Canada rất tốt.', url:'https://www.math.ubc.ca', tags:['UBC','SGK'] },
+  { cat:'open', icon:'📘', color:'#fef3c7', title:'CLP Calculus Textbooks', source:'Univ. of British Columbia', desc:'Bộ sách Calculus CLP (UBC) miễn phí PDF: differential, integral, multivariable — viết rõ, có bài tập.', url:'https://www.math.ubc.ca/~CLP/', tags:['Calculus','PDF'] },
+  { cat:'open', icon:'📐', color:'#e0e7ff', title:'Faculty of Mathematics — Waterloo', source:'Univ. of Waterloo', desc:'Khoa Toán Waterloo (lớn nhất thế giới): giáo trình, course notes ngoài CEMC — đại số, giải tích, tổ hợp.', url:'https://uwaterloo.ca/math', tags:['Waterloo','Giáo trình'] },
+  { cat:'open', icon:'🇨🇦', color:'#fce7f3', title:'McGill Mathematics & Statistics', source:'McGill University', desc:'Khoa Toán–Thống kê McGill: notes, syllabus calculus/ĐSTT của đại học nghiên cứu Canada.', url:'https://www.mcgill.ca/mathstat', tags:['McGill','Notes'] },
+  { cat:'open', icon:'🦘', color:'#dbeafe', title:'ANU Mathematical Sciences Institute', source:'Australian National University', desc:'MSI ANU: notes, giáo trình toán Úc, seminar — đại học nghiên cứu hàng đầu Australia.', url:'https://maths.anu.edu.au', tags:['ANU','Giáo trình'] },
+  { cat:'open', icon:'🐨', color:'#dcfce7', title:'University of Melbourne Mathematics', source:'Univ. of Melbourne', desc:'School of Maths & Stats Melbourne: undergraduate notes, calculus và thống kê.', url:'https://ms.unimelb.edu.au', tags:['Melbourne','Notes'] },
+  { cat:'open', icon:'🇦🇺', color:'#ffedd5', title:'University of Sydney Mathematics', source:'Univ. of Sydney', desc:'Khoa Toán Sydney: lecture notes, past papers calculus–đại số của Group of Eight.', url:'https://www.maths.usyd.edu.au', tags:['Sydney','Notes'] },
+  { cat:'open', icon:'🇰🇷', color:'#fee2e2', title:'KAIST Mathematical Sciences', source:'KAIST', desc:'Toán KAIST: giáo trình, notes giải tích và đại số của viện kỹ thuật hàng đầu Hàn Quốc.', url:'https://mathsci.kaist.ac.kr', tags:['KAIST','Giáo trình'] },
+  { cat:'open', icon:'🇰🇷', color:'#ede9fe', title:'SNU Mathematics', source:'Seoul National University', desc:'Khoa Toán Đại học Quốc gia Seoul: chương trình, notes và tài liệu Toán Hàn Quốc.', url:'https://www.math.snu.ac.kr', tags:['SNU','Notes'] },
+  { cat:'open', icon:'📖', color:'#dbeafe', title:'Cambridge CORE — Open Access', source:'Cambridge University Press', desc:'Sách và bài báo Toán truy cập mở của NXB Đại học Cambridge — lọc Open Access để đọc miễn phí.', url:'https://www.cambridge.org/core', tags:['Cambridge','Sách'] },
+  { cat:'open', icon:'📕', color:'#fef3c7', title:'PreTeXt Open Textbooks', source:'PreTeXt / các ĐH Mỹ', desc:'Nền tảng sách Toán mở (HTML có công thức đẹp): ĐSTT, giải tích, rời rạc do giảng viên đại học biên soạn.', url:'https://pretextbook.org', tags:['SGK mở','HTML'] },
+
+  { cat:'video', icon:'🎬', color:'#fce7f3', title:'3Blue1Brown', source:'Grant Sanderson', desc:'Video trực quan hóa giải tích, đại số tuyến tính, xác suất — hiểu bản chất công thức, không chỉ nhớ máy.', url:'https://www.3blue1brown.com', tags:['Trực quan','YouTube'] },
+  { cat:'video', icon:'▶️', color:'#fee2e2', title:'3Blue1Brown trên YouTube', source:'YouTube', desc:'Kênh Essence of calculus / linear algebra — playlist nên xem trước khi vào chuyên đề khó.', url:'https://www.youtube.com/@3blue1brown', tags:['Playlist','Giải tích'] },
+  { cat:'video', icon:'▶️', color:'#dbeafe', title:'MIT OpenCourseWare trên YouTube', source:'MIT', desc:'Toàn bộ bài giảng Toán MIT quay tại lớp: 18.01, 18.06, 18.02... phụ đề tiếng Anh.', url:'https://www.youtube.com/@mitocw', tags:['MIT','Bài giảng'] },
+  { cat:'video', icon:'▶️', color:'#ffedd5', title:'Khan Academy trên YouTube', source:'Khan Academy', desc:'Kênh video chính thức: từng dạng bài Toán phổ thông, xem được trên điện thoại.', url:'https://www.youtube.com/@khanacademy', tags:['Phổ thông','Miễn phí'] },
+  { cat:'video', icon:'#️⃣', color:'#e0e7ff', title:'Numberphile', source:'Brady Haran / MSRI', desc:'Video kể chuyện số học, số nguyên tố, hằng số — hợp mở rộng kiến thức ngoài SGK.', url:'https://www.numberphile.com', tags:['Số học','Khoa học'] },
+  { cat:'video', icon:'📊', color:'#d1fae5', title:'StatQuest', source:'Josh Starmer', desc:'Giải thích thống kê và xác suất bằng hình vẽ cực rõ — hữu ích chuyên đề thống kê THPT / đại cương.', url:'https://statquest.org', tags:['Thống kê','Video'] },
+  { cat:'video', icon:'🧑‍🏫', color:'#fef3c7', title:'Professor Leonard', source:'YouTube', desc:'Bài giảng đại số, lượng giác, calculus dài và chi tiết như ngồi trong lớp — phù hợp tự học lại nền.', url:'https://www.youtube.com/@ProfessorLeonard', tags:['Calculus','Lớp học'] },
+  { cat:'video', icon:'💡', color:'#fce7f3', title:'TED-Ed — Mathematics', source:'TED-Ed', desc:'Hoạt hình ngắn về ý tưởng Toán: vô hạn, xác suất, hình học — xem để yêu Toán hơn.', url:'https://ed.ted.com', tags:['Hoạt hình','Ý tưởng'] },
+  { cat:'video', icon:'▶️', color:'#ede9fe', title:'Harvard Stat 110 trên YouTube', source:'Harvard University', desc:'Full lecture Stat 110 (Blitzstein): xác suất đại học quay tại lớp Harvard, phụ đề tiếng Anh.', url:'https://www.youtube.com/playlist?list=PL2SOU6wwxB0uwwH80KTQ6ht66KWxbzTIo', tags:['Harvard','Xác suất'] },
+  { cat:'video', icon:'▶️', color:'#dbeafe', title:'Yale Open Courses trên YouTube', source:'Yale University', desc:'Bài giảng Toán và khoa học Yale quay tại giảng đường — kèm reading list trên oyc.yale.edu.', url:'https://www.youtube.com/@YaleCourses', tags:['Yale','Bài giảng'] },
+  { cat:'video', icon:'▶️', color:'#ffedd5', title:'Stanford Online / YouTube', source:'Stanford University', desc:'Bài giảng Toán–CS Stanford (SEE, Linear Algebra, ML) — video chính thức của trường.', url:'https://www.youtube.com/@stanford', tags:['Stanford','Bài giảng'] },
+  { cat:'video', icon:'▶️', color:'#d1fae5', title:'NPTEL Mathematics (YouTube)', source:'IITs / IISc', desc:'Hàng trăm bài giảng Toán IIT: Calculus, Linear Algebra, Real Analysis — miễn phí, viết bảng rõ.', url:'https://www.youtube.com/@nptelhrd', tags:['IIT','Bài giảng'] },
+  { cat:'video', icon:'▶️', color:'#e0e7ff', title:'Harvard @ YouTube', source:'Harvard University', desc:'Kênh Harvard: bài giảng công khai, seminar Toán–Thống kê và khóa học mở.', url:'https://www.youtube.com/@harvard', tags:['Harvard','Seminar'] },
+
+  { cat:'tool', icon:'📐', color:'#d1fae5', title:'GeoGebra', source:'GeoGebra', desc:'Vẽ đồ thị, hình học động, 3D và CAS. Khảo sát hàm số, hình không gian và kiểm tra lời giải.', url:'https://www.geogebra.org', tags:['Đồ thị','Hình học'] },
+  { cat:'tool', icon:'✏️', color:'#dcfce7', title:'GeoGebra Classic', source:'GeoGebra', desc:'Bảng vẽ đầy đủ (đại số + hình + bảng tính) — dùng khi làm chuyên đề hàm số, tọa độ.', url:'https://www.geogebra.org/classic', tags:['Classic','Hàm số'] },
+  { cat:'tool', icon:'🧊', color:'#e0f2fe', title:'GeoGebra 3D', source:'GeoGebra', desc:'Hình học không gian 3D: khối, mặt, vector trong không gian — minh họa bài 12.', url:'https://www.geogebra.org/3d', tags:['3D','Không gian'] },
+  { cat:'tool', icon:'📏', color:'#fef3c7', title:'GeoGebra Geometry', source:'GeoGebra', desc:'Hình học phẳng động: dựng hình, quỹ tích, chứng minh trực quan.', url:'https://www.geogebra.org/geometry', tags:['Hình phẳng','Dựng hình'] },
+  { cat:'tool', icon:'📈', color:'#dbeafe', title:'Desmos Graphing Calculator', source:'Desmos', desc:'Máy tính đồ thị miễn phí: hàm số, bất phương trình, lượng giác, thống kê mô tả.', url:'https://www.desmos.com/calculator', tags:['Đồ thị','Hàm số'] },
+  { cat:'tool', icon:'📐', color:'#cffafe', title:'Desmos Geometry', source:'Desmos', desc:'Hình học tương tác của Desmos: dựng hình, đo góc, biến đổi.', url:'https://www.desmos.com/geometry', tags:['Hình học','Tương tác'] },
+  { cat:'tool', icon:'🧊', color:'#ede9fe', title:'Desmos 3D', source:'Desmos', desc:'Đồ thị 3D: mặt, đường trong không gian — hỗ trợ hình giải tích Oxyz.', url:'https://www.desmos.com/3d', tags:['3D','Oxyz'] },
+  { cat:'tool', icon:'🔢', color:'#ffedd5', title:'Desmos Scientific', source:'Desmos', desc:'Máy tính khoa học online: lượng giác, log, tổ hợp — thay máy Casio khi quên ở nhà.', url:'https://www.desmos.com/scientific', tags:['Máy tính','Khoa học'] },
+  { cat:'tool', icon:'🧮', color:'#ede9fe', title:'Wolfram Alpha', source:'Wolfram', desc:'Máy tính tri thức: khai triển, nguyên hàm, phương trình, ma trận. Dùng để kiểm tra, không thay thế làm bài.', url:'https://www.wolframalpha.com', tags:['Tính toán','Kiểm tra'] },
+  { cat:'tool', icon:'🔬', color:'#fef3c7', title:'PhET Interactive Simulations', source:'Univ. of Colorado', desc:'Mô phỏng Toán–Lý miễn phí (có tiếng Việt): phân số, đồ thị, xác suất, vector.', url:'https://phet.colorado.edu/vi/simulations/filter?subjects=math&type=html,prototype', tags:['Mô phỏng','Tiếng Việt'] },
+  { cat:'tool', icon:'🐍', color:'#d1fae5', title:'Python.org', source:'Python Software Foundation', desc:'Ngôn ngữ lập trình dùng nhiều trong Toán–Thống kê. Học viên có thể tính toán, vẽ đồ thị bằng thư viện chuẩn.', url:'https://www.python.org', tags:['Lập trình','Toán'] },
+  { cat:'tool', icon:'📓', color:'#e0e7ff', title:'Project Jupyter', source:'Jupyter', desc:'Notebook tính toán tương tác: Python, ghi công thức và đồ thị trên cùng một trang — hợp làm chuyên đề.', url:'https://jupyter.org', tags:['Notebook','Python'] },
+  { cat:'tool', icon:'🌿', color:'#dcfce7', title:'SageMath', source:'SageMath', desc:'Hệ đại số máy tính mã mở (kiểu Mathematica): giải phương trình, đại số, số học — miễn phí.', url:'https://www.sagemath.org', tags:['CAS','Mã mở'] },
+  { cat:'tool', icon:'☁️', color:'#dbeafe', title:'CoCalc', source:'SageMath Inc.', desc:'Chạy Sage, Jupyter, LaTeX trên trình duyệt — không cần cài đặt máy tính.', url:'https://cocalc.com', tags:['Cloud','Sage'] },
+  { cat:'tool', icon:'🎛️', color:'#fce7f3', title:'GNU Octave', source:'GNU', desc:'Tính toán số và ma trận tương thích MATLAB, miễn phí — luyện đại số tuyến tính.', url:'https://octave.org', tags:['Ma trận','Mã mở'] },
+  { cat:'tool', icon:'⊞', color:'#fee2e2', title:'Matrix Calculator', source:'matrixcalc.org', desc:'Tính định thức, nghịch đảo, trị riêng, nhân ma trận từng bước — kiểm tra bài đại số tuyến tính.', url:'https://matrixcalc.org', tags:['Ma trận','Từng bước'] },
+  { cat:'tool', icon:'🧩', color:'#fef9c3', title:'Mathigon Polypad', source:'Mathigon', desc:'Bảng thao tác ảo: phân số, đại số tiles, xúc xắc, hình — rất hợp ôn khái niệm THCS–THPT.', url:'https://mathigon.org/polypad', tags:['Thao tác','Khái niệm'] },
+
+  { cat:'lookup', icon:'🔎', color:'#e0e7ff', title:'Wolfram MathWorld', source:'Wolfram', desc:'Bách khoa toán học tiếng Anh: định nghĩa, công thức, định lý — tra cứu khi gặp thuật ngữ lạ.', url:'https://mathworld.wolfram.com', tags:['Từ điển','Công thức'] },
+  { cat:'lookup', icon:'💡', color:'#f1f5f9', title:'Wikipedia — Toán học', source:'Wikimedia', desc:'Bài viết tiếng Việt về khái niệm Toán phổ thông và đại học. Nên đối chiếu thêm SGK hoặc nguồn học thuật.', url:'https://vi.wikipedia.org/wiki/To%C3%A1n_h%E1%BB%8Dc', tags:['Tiếng Việt','Khái niệm'] },
+  { cat:'lookup', icon:'🌐', color:'#e0f2fe', title:'Wikipedia — Lists of mathematics topics', source:'Wikimedia', desc:'Mục lục Toán tiếng Anh: từ số học đến tôpô — dùng khi cần bản đồ kiến thức.', url:'https://en.wikipedia.org/wiki/Lists_of_mathematics_topics', tags:['Mục lục','Tiếng Anh'] },
+  { cat:'lookup', icon:'📗', color:'#dcfce7', title:'Encyclopedia Britannica — Mathematics', source:'Britannica', desc:'Bài tổng quan toán học do biên tập viên học thuật duy trì: lịch sử, nhánh Toán, định nghĩa chuẩn.', url:'https://www.britannica.com/science/mathematics', tags:['Bách khoa','Chuẩn'] },
+  { cat:'lookup', icon:'📜', color:'#fef3c7', title:'MacTutor History of Mathematics', source:'Univ. of St Andrews', desc:'Tiểu sử nhà toán học và lịch sử định lý — nguồn học thuật nổi tiếng của Đại học St Andrews.', url:'https://mathshistory.st-andrews.ac.uk', tags:['Lịch sử','Tiểu sử'] },
+  { cat:'lookup', icon:'🇺🇸', color:'#dbeafe', title:'NIST DLMF', source:'NIST (Hoa Kỳ)', desc:'Digital Library of Mathematical Functions: công thức hàm đặc biệt chuẩn, do Viện Tiêu chuẩn Mỹ biên soạn.', url:'https://dlmf.nist.gov', tags:['Công thức','Chuẩn'] },
+  { cat:'lookup', icon:'🔢', color:'#d1fae5', title:'OEIS — Encyclopedia of Integer Sequences', source:'OEIS Foundation', desc:'Bách khoa dãy số nguyên: Fibonacci, số nguyên tố, tổ hợp — tra khi gặp dãy lạ trong bài toán.', url:'https://oeis.org', tags:['Dãy số','Số học'] },
+  { cat:'lookup', icon:'📘', color:'#ede9fe', title:'Encyclopedia of Mathematics', source:'EMS / Springer', desc:'Bách khoa toán học của Hội Toán học Châu Âu: định nghĩa và định lý trình độ cao.', url:'https://encyclopediaofmath.org', tags:['EMS','Định lý'] },
+  { cat:'lookup', icon:'✅', color:'#e0e7ff', title:'ProofWiki', source:'ProofWiki', desc:'Kho chứng minh định lý được cộng đồng toán học biên tập: xem cấu trúc chứng minh chuẩn.', url:'https://proofwiki.org', tags:['Chứng minh','Định lý'] },
+  { cat:'lookup', icon:'✂️', color:'#ffedd5', title:'Cut-the-Knot', source:'Alexander Bogomolny', desc:'Hình học, bất đẳng thức, trò chơi toán — bài viết sư phạm nổi tiếng, nhiều chứng minh trực quan.', url:'https://www.cut-the-knot.org', tags:['Hình học','Sư phạm'] },
+  { cat:'lookup', icon:'📗', color:'#fce7f3', title:"Euclid's Elements (Joyce)", source:'Clark University', desc:'Bản Elements của Euclid có hình Java/HTML — đọc hình học Euclid gốc, nền tảng chứng minh THPT.', url:'https://mathcs.clarku.edu/~djoyce/java/elements/elements.html', tags:['Euclid','Hình học'] },
+  { cat:'lookup', icon:'❓', color:'#dcfce7', title:'Mathematics Stack Exchange', source:'Stack Exchange', desc:'Diễn đàn hỏi–đáp Toán có kiểm duyệt: tra lời giải ý tưởng (không copy nguyên khi làm bài tập lớp).', url:'https://math.stackexchange.com', tags:['Hỏi đáp','Ý tưởng'] },
+  { cat:'lookup', icon:'🔍', color:'#e2e8f0', title:'Google Scholar', source:'Google', desc:'Tìm bài báo, giáo trình PDF học thuật. Ưu tiên file từ .edu, viện nghiên cứu, NXB đại học.', url:'https://scholar.google.com', tags:['Học thuật','Tìm kiếm'] },
+  { cat:'lookup', icon:'📄', color:'#ddd6fe', title:'arXiv — Mathematics', source:'Cornell University', desc:'Kho preprint Toán miễn phí. Phù hợp HS giỏi / sinh viên muốn đọc chuyên đề nâng cao.', url:'https://arxiv.org/list/math/recent', tags:['Preprint','Nâng cao'] },
+  { cat:'lookup', icon:'🌐', color:'#dbeafe', title:'International Mathematical Union', source:'IMU', desc:'Liên đoàn Toán học quốc tế: tin Olympic, ICM và chính sách Toán toàn cầu.', url:'https://www.mathunion.org', tags:['IMU','Quốc tế'] },
+  { cat:'lookup', icon:'📕', color:'#fee2e2', title:'American Mathematical Society', source:'AMS', desc:'Hội Toán học Mỹ: sách, tạp chí, Open Math Notes và tài nguyên sinh viên.', url:'https://www.ams.org', tags:['AMS','Hội'] },
+  { cat:'lookup', icon:'📗', color:'#d1fae5', title:'Mathematical Association of America', source:'MAA', desc:'Hội Toán Mỹ thiên về dạy học: AMC, bài báo sư phạm, tài nguyên giáo viên–học sinh.', url:'https://maa.org', tags:['MAA','Dạy học'] },
+  { cat:'lookup', icon:'📚', color:'#fef3c7', title:'SLMath (MSRI) — Lecture notes', source:'Simons Laufer / Berkeley', desc:'Viện Toán MSRI/SLMath: lecture notes, video workshop — sách chuyên đề do viện nghiên cứu Berkeley xuất.', url:'https://www.slmath.org', tags:['MSRI','Notes'] },
+  { cat:'lookup', icon:'🌍', color:'#dbeafe', title:'ICTP Mathematics', source:'ICTP Trieste', desc:'Trung tâm Vật lý lý thuyết quốc tế: lecture notes Toán–Vật miễn phí, nhiều khóa cho sinh viên đang phát triển.', url:'https://www.ictp.it', tags:['ICTP','Notes'] },
+  { cat:'lookup', icon:'🍎', color:'#e0e7ff', title:'Isaac Newton Institute', source:'Univ. of Cambridge', desc:'Viện Newton Cambridge: video seminar, notes chương trình chuyên đề Toán — nguồn học thuật mở.', url:'https://www.newton.ac.uk', tags:['Cambridge','Seminar'] },
+  { cat:'lookup', icon:'🍁', color:'#dcfce7', title:'Fields Institute', source:'Univ. of Toronto', desc:'Viện Fields Toronto: notes, video hội thảo Toán Canada — bổ sung sách chuyên đề nâng cao.', url:'https://www.fields.utoronto.ca', tags:['Fields','Notes'] },
+  { cat:'lookup', icon:'🏅', color:'#fce7f3', title:'MCCME — sách Toán Nga', source:'Moscow Center for Continuous Math Education', desc:'Kho sách Olympic và chuyên đề Toán Moskva (Kvant, prasolov…): nhiều PDF giáo trình kinh điển.', url:'https://www.mccme.ru', tags:['Olympiad','Sách'] }
+];
+
+let EXTRA = [];
+let activeCat = 'all';
+const GRID_PAGE = 10;
+let gridShow = GRID_PAGE;
+let db = null;
+try { db = DH_CFG.createDb(); } catch (e) { db = null; }
+
+const meUser = sessionStorage.getItem('dh_user') || '';
+const meRole = sessionStorage.getItem('dh_role') || '';
+let meName = sessionStorage.getItem('dh_name') || '';
+let meClass = sessionStorage.getItem('dh_class') || '';
+
+function allResources() {
+  const pack = window.VN_LIB_PACK || [];
+  const merged = EXTRA.concat(RESOURCES, pack);
+  const seen = new Set();
+  return merged.filter(r => {
+    const k = (r.url || '').replace(/\/+$/, '').toLowerCase();
+    if (!k || seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+}
+function updateHeroTotal() {
+  document.getElementById('libHeroTotal').textContent = allResources().length;
+}
+updateHeroTotal();
+
+function catCount(id) {
+  const list = allResources();
+  return id === 'all' ? list.length : list.filter(r => r.cat === id).length;
+}
+
+function renderChips() {
+  document.getElementById('libChips').innerHTML = CATS.map(c =>
+    `<button type="button" class="lib-chip${c.id===activeCat?' active':''}" data-cat="${c.id}">${c.label} · ${catCount(c.id)}</button>`
+  ).join('');
+}
+
+function matches(item, q) {
+  if (!q) return true;
+  const hay = (item.title + ' ' + item.source + ' ' + item.desc + ' ' + (item.tags||[]).join(' ')).toLowerCase();
+  return hay.includes(q);
+}
+
+function esc(s) {
+  return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function renderGrid() {
+  const q = (document.getElementById('libSearch').value || '').trim().toLowerCase();
+  const pool = allResources();
+  const list = pool.filter(r => (activeCat === 'all' || r.cat === activeCat) && matches(r, q));
+  const grid = document.getElementById('libGrid');
+  const empty = document.getElementById('libEmpty');
+  const bar = document.getElementById('libCountBar');
+  const moreWrap = document.getElementById('libGridMoreWrap');
+  if (gridShow < GRID_PAGE) gridShow = GRID_PAGE;
+  const slice = list.slice(0, gridShow);
+  const left = list.length - slice.length;
+  empty.hidden = list.length > 0;
+  bar.textContent = list.length ? `Đang hiện ${slice.length} / ${list.length} nguồn` : '';
+  grid.innerHTML = slice.map(r => `
+    <article class="lib-card">
+      <a class="lib-card-main" href="${esc(r.url)}" target="_blank" rel="noopener noreferrer">
+        <div class="lib-card-top">
+          <div class="lib-ico" style="background:${esc(r.color)}">${r.icon}</div>
+          <span class="lib-src">${esc(r.source)}</span>
+        </div>
+        <h3>${esc(r.title)}${r.extra ? ' <span class="lib-new">Mới</span>' : ''}</h3>
+        <p>${esc(r.desc)}</p>
+        ${r.suggestedBy ? `<div class="lib-by">👤 Đề xuất bởi <b>${esc(r.suggestedBy)}</b></div>` : ''}
+      </a>
+      <div class="lib-card-foot">
+        <div class="lib-tags">${(r.tags||[]).filter(t => t !== 'Học sinh đề xuất' || !r.suggestedBy).map(t => `<span class="lib-tag">${esc(t)}</span>`).join('')}</div>
+        <div class="lib-card-actions">
+          <button type="button" class="lib-flag" data-rpt-url="${esc(r.url)}" data-rpt-title="${esc(r.title)}" data-rpt-id="${r.extraId || ''}">Báo cáo</button>
+          <a href="${esc(r.url)}" target="_blank" rel="noopener noreferrer">Mở nguồn ↗</a>
+        </div>
+      </div>
+    </article>
+  `).join('');
+  if (left > 0 || slice.length > GRID_PAGE) {
+    moreWrap.innerHTML = `<div class="lib-more-row">
+      ${left > 0 ? `<button type="button" class="lib-more" id="libGridMore">Xem thêm (${left})</button>` : ''}
+      ${slice.length > GRID_PAGE ? `<button type="button" class="lib-more" id="libGridLess">Thu gọn</button>` : ''}
+    </div>`;
+    document.getElementById('libGridMore')?.addEventListener('click', () => {
+      gridShow += GRID_PAGE;
+      renderGrid();
+    });
+    document.getElementById('libGridLess')?.addEventListener('click', () => {
+      gridShow = GRID_PAGE;
+      renderGrid();
+      document.getElementById('libCountBar')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  } else {
+    moreWrap.innerHTML = '';
+  }
+}
+
+async function loadExtra() {
+  if (!db) return;
+  const { data, error } = await db.from('library_resources').select('*').eq('active', true).order('created_at', { ascending: false });
+  if (error) return;
+  const sugIds = [...new Set((data || []).map(r => r.suggestion_id).filter(Boolean))];
+  const nameBySug = {};
+  if (sugIds.length) {
+    const { data: suggs } = await db.from('library_suggestions').select('id,student_name,username').in('id', sugIds);
+    const users = [...new Set((suggs || []).map(s => s.username).filter(Boolean))];
+    const nameByUser = {};
+    if (users.length) {
+      const { data: sts } = await db.from('students').select('username,full_name').in('username', users);
+      (sts || []).forEach(st => { if (st.full_name) nameByUser[st.username] = st.full_name.trim(); });
+    }
+    (suggs || []).forEach(s => {
+      nameBySug[s.id] = (nameByUser[s.username] || s.student_name || '').trim();
+    });
+  }
+  EXTRA = (data || []).map(r => ({
+    cat: r.category || 'open',
+    icon: r.icon || '✨',
+    color: r.color || '#fef3c7',
+    title: r.title,
+    source: r.source || 'Admin thêm',
+    desc: r.description || '',
+    url: r.url,
+    tags: String(r.tags || 'Mới').split(',').map(t => t.trim()).filter(Boolean),
+    extra: true,
+    extraId: r.id,
+    suggestedBy: r.suggestion_id ? (nameBySug[r.suggestion_id] || '') : ''
+  }));
+  updateHeroTotal();
+  renderChips();
+  renderGrid();
+}
+
+document.getElementById('libChips').addEventListener('click', e => {
+  const btn = e.target.closest('.lib-chip');
+  if (!btn) return;
+  activeCat = btn.dataset.cat;
+  gridShow = GRID_PAGE;
+  renderChips();
+  renderGrid();
+});
+document.getElementById('libSearch').addEventListener('input', () => {
+  gridShow = GRID_PAGE;
+  renderGrid();
+});
+
+const sugCat = document.getElementById('sugCat');
+sugCat.innerHTML = CATS.filter(c => c.id !== 'all').map(c => `<option value="${c.id}">${c.label}</option>`).join('');
+
+async function loadStudentProfile() {
+  const box = document.getElementById('sugWhoBox');
+  const btn = document.getElementById('sugSubmit');
+  if (meRole !== 'student' || !meUser) {
+    box.innerHTML = 'Cần <a href="login.html">đăng nhập tài khoản học sinh</a> — hệ thống lấy đúng họ tên trên hồ sơ, không nhập tay.';
+    btn.disabled = true;
+    return false;
+  }
+  if (db) {
+    try {
+      const { data: st } = await db.from('students').select('full_name,class_name').eq('username', meUser).maybeSingle();
+      if (st) {
+        meName = (st.full_name || '').trim() || meName;
+        meClass = (st.class_name || '').trim() || meClass;
+        if (meName) sessionStorage.setItem('dh_name', meName);
+        if (meClass) sessionStorage.setItem('dh_class', meClass);
+      }
+    } catch (e) { /* giữ tên session nếu mất mạng */ }
+  }
+  if (!meName) {
+    box.textContent = 'Không tìm thấy họ tên trên hồ sơ. Liên hệ giáo viên cập nhật tài khoản.';
+    btn.disabled = true;
+    return false;
+  }
+  box.innerHTML =
+    `<span>${esc(meName)}</span>` +
+    (meClass ? `<span class="lib-who-meta">· ${esc(meClass)}</span>` : '') +
+    `<span class="lib-who-meta">· ${esc(meUser)}</span>` +
+    `<span class="lib-who-meta" style="margin-left:auto">Từ hồ sơ học sinh</span>`;
+  syncSugSubmit();
+  return true;
+}
+
+function pledgesOk() {
+  return !!(document.getElementById('sugOkLegal')?.checked
+    && document.getElementById('sugOkResp')?.checked
+    && document.getElementById('sugOkSafe')?.checked);
+}
+function canSubmitSuggest() {
+  return meRole === 'student' && !!meUser && !!meName && pledgesOk();
+}
+async function checkSuggestLimit() {
+  try {
+    const { data, error } = await db.from('library_suggestions').select('id,status,created_at').eq('username', meUser).order('created_at', { ascending: false }).limit(40);
+    if (error) return '';
+    const rows = data || [];
+    const now = Date.now();
+    if (rows.filter(s => s.status === 'pending').length >= 3)
+      return 'Bạn đang có 3 đề xuất chờ duyệt. Đợi admin xử lý rồi gửi tiếp.';
+    const last = rows[0];
+    if (last) {
+      const wait = 5 * 60 * 1000 - (now - new Date(last.created_at).getTime());
+      if (wait > 0) return `Gửi quá nhanh. Thử lại sau ${Math.ceil(wait / 60000)} phút.`;
+    }
+    if (rows.filter(s => now - new Date(s.created_at).getTime() < 24 * 60 * 60 * 1000).length >= 8)
+      return 'Hôm nay bạn đã gửi đủ 8 đề xuất. Mai gửi tiếp nhé.';
+  } catch (e) {}
+  return '';
+}
+function syncSugSubmit() {
+  const btn = document.getElementById('sugSubmit');
+  if (!btn) return;
+  btn.disabled = !canSubmitSuggest();
+  btn.title = btn.disabled ? 'Hãy tick đủ 3 cam kết rồi mới gửi' : '';
+}
+['sugOkLegal','sugOkResp','sugOkSafe'].forEach(id => {
+  document.getElementById(id)?.addEventListener('change', syncSugSubmit);
+});
+syncSugSubmit();
+loadStudentProfile();
+
+function setSugMsg(text, ok) {
+  const el = document.getElementById('sugMsg');
+  el.textContent = text;
+  el.style.color = ok ? '#166534' : '#b91c1c';
+}
+
+function normUrl(u) {
+  try {
+    const x = new URL(u.trim());
+    if (x.protocol !== 'http:' && x.protocol !== 'https:') return '';
+    return x.href;
+  } catch (e) { return ''; }
+}
+
+const MINE_PAGE = 5;
+let mineAll = [];
+let mineShow = MINE_PAGE;
+let mineResBySug = {};
+let mineResOk = false;
+
+function mineInfo(s) {
+  const res = mineResBySug[s.id];
+  if (s.status === 'pending') return { cls: 'pending', label: 'Chờ duyệt', hint: 'Admin đang kiểm tra đề xuất của bạn.' };
+  if (s.status === 'rejected') return { cls: 'rejected', label: 'Từ chối', hint: s.admin_note || 'Đề xuất không được duyệt.' };
+  if (s.status === 'removed' || (s.status === 'approved' && res && res.active === false))
+    return { cls: 'removed', label: 'Đề xuất đã bị gỡ', hint: s.admin_note || 'Đề xuất đã bị gỡ khỏi thư viện.' };
+  if (s.status === 'deleted' || (s.status === 'approved' && mineResOk && !res))
+    return { cls: 'deleted', label: 'Đã xóa khỏi thư viện', hint: s.admin_note || 'Đề xuất này đã bị xóa khỏi thư viện.' };
+  if (s.status === 'approved')
+    return { cls: 'approved', label: 'Đề xuất đã thêm', hint: 'Đề xuất đã được thêm vào thư viện.' };
+  return { cls: s.status, label: s.status, hint: s.admin_note || '' };
+}
+
+function renderMine() {
+  const box = document.getElementById('libMine');
+  if (!mineAll.length) { box.innerHTML = ''; return; }
+  const slice = mineAll.slice(0, mineShow);
+  const left = mineAll.length - slice.length;
+  box.innerHTML = '<div style="font-size:.78rem;font-weight:800;margin:.2rem 0 .15rem">Đề xuất của bạn</div>' + slice.map(s => {
+    const info = mineInfo(s);
+    return `
+    <div class="lib-mine-item">
+      <span class="lib-st ${esc(info.cls)}">${esc(info.label)}</span>
+      <b style="margin-left:.35rem">${esc(s.title)}</b>
+      ${info.hint ? `<div class="lib-mine-hint">${esc(info.hint)}</div>` : ''}
+    </div>`;
+  }).join('') + ((left > 0 || slice.length > MINE_PAGE)
+    ? `<div class="lib-more-row">
+        ${left > 0 ? `<button type="button" class="lib-more" id="libMineMore">Xem thêm (${left})</button>` : ''}
+        ${slice.length > MINE_PAGE ? `<button type="button" class="lib-more" id="libMineLess">Thu gọn</button>` : ''}
+      </div>`
+    : '');
+  document.getElementById('libMineMore')?.addEventListener('click', () => {
+    mineShow += MINE_PAGE;
+    renderMine();
+  });
+  document.getElementById('libMineLess')?.addEventListener('click', () => {
+    mineShow = MINE_PAGE;
+    renderMine();
+  });
+}
+
+async function loadMine() {
+  const box = document.getElementById('libMine');
+  if (!db || !meUser) { box.innerHTML = ''; mineAll = []; return; }
+  const { data } = await db.from('library_suggestions').select('*').eq('username', meUser).order('created_at', { ascending: false }).limit(100);
+  mineAll = data || [];
+  if (!mineAll.length) { box.innerHTML = ''; return; }
+  mineResBySug = {};
+  mineResOk = false;
+  const ids = mineAll.map(s => s.id);
+  const { data: res, error: re } = await db.from('library_resources').select('id,suggestion_id,active').in('suggestion_id', ids);
+  if (!re) {
+    mineResOk = true;
+    (res || []).forEach(r => { mineResBySug[r.suggestion_id] = r; });
+  }
+  if (mineShow < MINE_PAGE) mineShow = MINE_PAGE;
+  renderMine();
+}
+
+document.getElementById('libSuggestForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = document.getElementById('sugSubmit');
+  const title = document.getElementById('sugTitle').value.trim();
+  const url = normUrl(document.getElementById('sugUrl').value);
+  if (meRole !== 'student' || !meUser) {
+    setSugMsg('Đăng nhập tài khoản học sinh để gửi đề xuất.', false);
+    return;
+  }
+  if (!title || !url) { setSugMsg('Nhập tên nguồn và link https:// hợp lệ.', false); return; }
+  if (!pledgesOk()) {
+    setSugMsg('Hãy tick đủ 3 cam kết trước khi gửi.', false);
+    syncSugSubmit();
+    return;
+  }
+  const exists = allResources().some(r => (r.url || '').replace(/\/$/, '') === url.replace(/\/$/, ''));
+  if (exists) { setSugMsg('Nguồn này đã có trong thư viện.', false); return; }
+  if (!db) { setSugMsg('Không kết nối được hệ thống. Thử lại sau.', false); return; }
+  const limitMsg = await checkSuggestLimit();
+  if (limitMsg) { setSugMsg(limitMsg, false); return; }
+  btn.disabled = true;
+  let displayName = '';
+  let className = meClass || null;
+  const { data: st } = await db.from('students').select('full_name,class_name').eq('username', meUser).maybeSingle();
+  if (st) {
+    displayName = (st.full_name || '').trim();
+    className = (st.class_name || '').trim() || className;
+    meName = displayName || meName;
+    meClass = className || meClass;
+  }
+  if (!displayName) {
+    syncSugSubmit();
+    setSugMsg('Không lấy được họ tên trên hồ sơ học sinh. Liên hệ giáo viên.', false);
+    loadStudentProfile();
+    return;
+  }
+  const { error } = await db.from('library_suggestions').insert({
+    title,
+    url,
+    source: document.getElementById('sugSource').value.trim() || null,
+    category: document.getElementById('sugCat').value || 'open',
+    description: document.getElementById('sugDesc').value.trim() || null,
+    note: (() => {
+      const n = document.getElementById('sugNote').value.trim();
+      const pledge = 'Đã cam kết: nguồn hợp pháp, không vi phạm bản quyền; chịu trách nhiệm theo điều khoản; link an toàn, không mã độc / lừa đảo.';
+      return n ? n + '\n' + pledge : pledge;
+    })(),
+    student_name: displayName,
+    username: meUser,
+    class_name: className,
+    status: 'pending'
+  });
+  syncSugSubmit();
+  if (error) {
+    setSugMsg(error.message && error.message.includes('library_suggestions')
+      ? 'Admin chưa tạo bảng thư viện. Hãy chạy file supabase_library.sql.'
+      : 'Gửi chưa được. Kiểm tra mạng hoặc báo giáo viên.', false);
+    return;
+  }
+  document.getElementById('libSuggestForm').reset();
+  sugCat.value = 'open';
+  loadStudentProfile();
+  setSugMsg('Đã gửi. Admin sẽ kiểm tra rồi quyết định duyệt trước khi hiển thị công khai.', true);
+  loadMine();
+});
+
+const REPORT_LABEL = {
+  broken: 'Link hỏng / không mở được',
+  unsuitable: 'Không phù hợp hoặc vi phạm',
+  scam: 'Có dấu hiệu lừa đảo / mã độc',
+  other: 'Khác'
+};
+let pendingReport = null;
+const reportModal = document.getElementById('libReportModal');
+function openReport(btn) {
+  if (meRole !== 'student' || !meUser) {
+    setSugMsg('Đăng nhập tài khoản học sinh để báo cáo nguồn.', false);
+    document.getElementById('libSuggestBox')?.scrollIntoView({ behavior: 'smooth' });
+    return;
+  }
+  pendingReport = {
+    url: btn.dataset.rptUrl || '',
+    title: btn.dataset.rptTitle || '',
+    resourceId: btn.dataset.rptId ? Number(btn.dataset.rptId) : null
+  };
+  document.getElementById('libReportTitle').textContent = pendingReport.title
+    ? 'Báo cáo: ' + pendingReport.title
+    : 'Chọn lý do — admin sẽ kiểm tra rồi gỡ nếu không phù hợp.';
+  document.getElementById('libReportNote').value = '';
+  document.getElementById('libReportReason').value = 'broken';
+  const msg = document.getElementById('libReportMsg');
+  msg.textContent = '';
+  reportModal.classList.add('open');
+  reportModal.setAttribute('aria-hidden', 'false');
+}
+function closeReport() {
+  reportModal.classList.remove('open');
+  reportModal.setAttribute('aria-hidden', 'true');
+  pendingReport = null;
+}
+document.getElementById('libGrid').addEventListener('click', e => {
+  const btn = e.target.closest('.lib-flag');
+  if (!btn) return;
+  e.preventDefault();
+  e.stopPropagation();
+  openReport(btn);
+});
+document.getElementById('libReportCancel').addEventListener('click', closeReport);
+reportModal.addEventListener('click', e => { if (e.target === reportModal) closeReport(); });
+document.getElementById('libReportSend').addEventListener('click', async () => {
+  const msg = document.getElementById('libReportMsg');
+  const send = document.getElementById('libReportSend');
+  if (!pendingReport || !pendingReport.url) { msg.style.color = '#b91c1c'; msg.textContent = 'Thiếu đường dẫn.'; return; }
+  if (!db) { msg.style.color = '#b91c1c'; msg.textContent = 'Không kết nối được hệ thống.'; return; }
+  send.disabled = true;
+  try {
+    const { data: olds, error: qe } = await db.from('library_reports').select('id,url,status,created_at').eq('username', meUser).order('created_at', { ascending: false }).limit(40);
+    if (qe) {
+      msg.style.color = '#b91c1c';
+      msg.textContent = qe.message && qe.message.includes('library_reports')
+        ? 'Admin chưa tạo bảng báo cáo. Chạy file supabase_library.sql.'
+        : 'Không gửi được báo cáo.';
+      send.disabled = false;
+      return;
+    }
+    const rows = olds || [];
+    const now = Date.now();
+    const key = pendingReport.url.replace(/\/$/, '');
+    if (rows.some(r => r.status === 'pending' && (r.url || '').replace(/\/$/, '') === key)) {
+      msg.style.color = '#b91c1c'; msg.textContent = 'Bạn đã báo cáo nguồn này, đang chờ admin xem.'; send.disabled = false; return;
+    }
+    if (rows.filter(r => r.status === 'pending').length >= 5) {
+      msg.style.color = '#b91c1c'; msg.textContent = 'Bạn đang có 5 báo cáo chờ xử lý. Đợi admin xem rồi gửi tiếp.'; send.disabled = false; return;
+    }
+    if (rows.filter(r => now - new Date(r.created_at).getTime() < 24 * 60 * 60 * 1000).length >= 8) {
+      msg.style.color = '#b91c1c'; msg.textContent = 'Hôm nay bạn đã gửi đủ 8 báo cáo.'; send.disabled = false; return;
+    }
+    const reason = document.getElementById('libReportReason').value;
+    const { error } = await db.from('library_reports').insert({
+      resource_id: pendingReport.resourceId || null,
+      url: pendingReport.url,
+      title: pendingReport.title || null,
+      reason: REPORT_LABEL[reason] || reason,
+      note: document.getElementById('libReportNote').value.trim() || null,
+      student_name: meName || null,
+      username: meUser,
+      class_name: meClass || null,
+      status: 'pending'
+    });
+    send.disabled = false;
+    if (error) {
+      msg.style.color = '#b91c1c';
+      msg.textContent = error.message && error.message.includes('library_reports')
+        ? 'Admin chưa tạo bảng báo cáo. Chạy file supabase_library.sql.'
+        : 'Gửi chưa được. Thử lại sau.';
+      return;
+    }
+    closeReport();
+    setSugMsg('Đã gửi báo cáo. Admin sẽ kiểm tra nguồn này.', true);
+  } catch (e) {
+    send.disabled = false;
+    msg.style.color = '#b91c1c';
+    msg.textContent = 'Gửi chưa được. Thử lại sau.';
+  }
+});
+
+renderChips();
+renderGrid();
+loadExtra();
+loadMine();
+
+if (db) {
+  db.channel('lib-live')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'library_resources' }, () => { loadExtra(); loadMine(); })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'library_suggestions' }, () => loadMine())
+    .subscribe();
+}
+
+(function sidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const backdrop = document.getElementById('sidebarBackdrop');
+  document.getElementById('menuToggle').addEventListener('click', () => {
+    sidebar.classList.add('open');
+    backdrop.classList.add('open');
+  });
+  backdrop.addEventListener('click', () => {
+    sidebar.classList.remove('open');
+    backdrop.classList.remove('open');
+  });
+  document.getElementById('sidebarClose').addEventListener('click', () => {
+    if (window.innerWidth <= 900) {
+      sidebar.classList.remove('open');
+      backdrop.classList.remove('open');
+    } else {
+      const mini = document.body.classList.toggle('sidebar-mini');
+      sessionStorage.setItem('st_sidebar_mini', mini ? '1' : '0');
+    }
+  });
+  if (sessionStorage.getItem('st_sidebar_mini') === '1') document.body.classList.add('sidebar-mini');
+  document.getElementById('sidebarMiniReopen').addEventListener('click', () => {
+    document.body.classList.remove('sidebar-mini');
+    sessionStorage.setItem('st_sidebar_mini', '0');
+  });
+})();
+
+(function dark() {
+  const btn = document.getElementById('studentDarkBtn');
+  const on = localStorage.getItem('st_dark') === '1';
+  if (on) { document.body.classList.add('dark-mode'); btn.textContent = '☀️'; }
+  btn.addEventListener('click', () => {
+    const next = document.body.classList.toggle('dark-mode');
+    btn.textContent = next ? '☀️' : '🌙';
+    localStorage.setItem('st_dark', next ? '1' : '0');
+  });
+})();
+
+(function sparks() {
+  var wrap = document.getElementById('ttDashSpark');
+  if (!wrap || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var n = window.innerWidth < 700 ? 10 : 18, html = '';
+  for (var i = 0; i < n; i++) {
+    html += '<i style="--x:' + (Math.random()*100) + '%;--d:' + (12+Math.random()*14) + 's;--delay:' + (-Math.random()*16) + 's;--drift:' + (Math.random()*40-20) + 'px;--s:' + (2+Math.random()*3) + 'px"></i>';
+  }
+  wrap.innerHTML = html;
+})();
+</script>
+</body>
+</html>

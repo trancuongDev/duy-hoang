@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Nhóm trao đổi - DHDT LMS</title>
+  <link rel="icon" type="image/png" href="icons/icon-192.png"/>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="css/trungthu-dashboard.css?v=1.5.2"/>
+  <link rel="manifest" href="manifest.json"/>
+  <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="config.js"></script>
+  <meta name="theme-color" content="#1a1440"/>
+  <script>
+    if (sessionStorage.getItem('dh_role') !== 'student' || !sessionStorage.getItem('dh_user') || !sessionStorage.getItem('dh_token')) {
+      location.replace('login.html');
+    } else {
+      document.documentElement.dataset.zgAuth = '1';
+    }
+  </script>
+  <style>
+    html:not([data-zg-auth]) body{visibility:hidden}
+    .zg-hero{
+      position:relative;overflow:hidden;border-radius:20px;padding:1.6rem 1.5rem 1.4rem;margin-bottom:1.25rem;color:#fff;
+      background:
+        radial-gradient(ellipse 50% 80% at 90% 12%, rgba(0,104,255,.28), transparent 55%),
+        linear-gradient(135deg,#0a0820 0%,#1a1440 40%,#0b3a78 100%);
+    }
+    .zg-hero h1{font-size:clamp(1.35rem,3vw,1.7rem);font-weight:800;letter-spacing:-.4px;margin:0 0 .4rem}
+    .zg-hero p{margin:0;font-size:.88rem;line-height:1.7;color:rgba(255,255,255,.72);max-width:560px}
+    .zg-badge{
+      display:inline-flex;align-items:center;gap:.4rem;background:rgba(0,168,255,.16);
+      border:1px solid rgba(106,196,255,.4);border-radius:999px;padding:.3rem .8rem;
+      font-size:.72rem;font-weight:700;color:#7dd3fc;margin-bottom:.8rem
+    }
+    .zg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:.9rem}
+    .zg-card{
+      background:var(--card);border:1.5px solid var(--border);border-radius:18px;padding:1.2rem;
+      box-shadow:var(--shadow);display:flex;flex-direction:column;min-height:100%
+    }
+    .zg-card:hover{border-color:rgba(0,104,255,.35)}
+    .zg-ico{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin-bottom:.75rem}
+    .zg-card h3{margin:0 0 .35rem;font-size:1.02rem;font-weight:800}
+    .zg-card p{margin:0 0 .9rem;font-size:.82rem;color:var(--muted);line-height:1.6;flex:1}
+    .zg-cls{font-size:.68rem;font-weight:800;background:var(--bg);color:var(--muted);border-radius:999px;padding:.18rem .55rem}
+    .zg-btn{
+      width:100%;border:none;cursor:pointer;font-family:inherit;font-weight:800;font-size:.88rem;
+      padding:.72rem 1rem;border-radius:12px;color:#fff;
+      background:linear-gradient(135deg,#0068ff,#00a2ff);box-shadow:0 8px 18px rgba(0,104,255,.28)
+    }
+    .zg-btn:hover{filter:brightness(1.06)}
+    .zg-empty{text-align:center;padding:2.4rem 1rem;color:var(--muted);background:var(--card);border:1.5px dashed var(--border);border-radius:18px}
+    .zg-modal{display:none;position:fixed;inset:0;z-index:80;background:rgba(11,16,38,.55);align-items:center;justify-content:center;padding:1rem}
+    .zg-modal.open{display:flex}
+    .zg-dialog{
+      width:100%;max-width:420px;background:var(--card);border-radius:20px;padding:1.4rem 1.35rem 1.3rem;
+      border:1.5px solid var(--border);box-shadow:0 24px 60px rgba(0,0,0,.28)
+    }
+    .zg-dialog h3{margin:0 0 .3rem;font-size:1.1rem;font-weight:800}
+    .zg-dialog .sub{font-size:.82rem;color:var(--muted);line-height:1.55;margin-bottom:1rem}
+    .zg-dialog label{display:block;font-size:.75rem;font-weight:800;color:var(--muted);margin-bottom:.35rem}
+    .zg-dialog input{
+      width:100%;padding:.75rem .9rem;border:1.5px solid var(--border);border-radius:12px;font-size:1.05rem;
+      font-weight:700;letter-spacing:.08em;text-align:center;background:var(--bg);color:var(--text);outline:none
+    }
+    .zg-dialog input:focus{border-color:#0068ff;box-shadow:0 0 0 4px rgba(0,104,255,.18)}
+    .zg-err{min-height:1.2rem;font-size:.8rem;font-weight:700;color:#b91c1c;margin:.5rem 0 .75rem}
+    .zg-actions{display:flex;gap:.5rem}
+    .zg-actions .zg-btn{flex:1}
+    .zg-ghost{flex:0 0 auto;background:var(--bg);color:var(--text);box-shadow:none;border:1.5px solid var(--border)}
+    .zg-suggest{
+      margin-top:1.4rem;background:var(--card);border:1.5px solid var(--border);border-radius:18px;
+      padding:1.25rem 1.3rem;box-shadow:var(--shadow)
+    }
+    .zg-suggest h2{font-size:1.05rem;font-weight:800;margin:0 0 .3rem}
+    .zg-suggest .hint{font-size:.8rem;color:var(--muted);line-height:1.55;margin:0 0 1rem}
+    .zg-form{display:grid;grid-template-columns:1fr 1fr;gap:.7rem}
+    .zg-form .full{grid-column:1/-1}
+    .zg-form label{display:block;font-size:.75rem;font-weight:800;color:var(--muted);margin-bottom:.3rem}
+    .zg-form input,.zg-form select,.zg-form textarea{
+      width:100%;padding:.65rem .8rem;border:1.5px solid var(--border);border-radius:12px;
+      background:var(--bg);color:var(--text);font-size:.88rem;outline:none;font-family:inherit
+    }
+    .zg-form textarea{min-height:76px;resize:vertical}
+    .zg-form input:focus,.zg-form select:focus,.zg-form textarea:focus{border-color:#0068ff;box-shadow:0 0 0 4px rgba(0,104,255,.14)}
+    .zg-outline{
+      display:inline-flex;align-items:center;justify-content:center;gap:.35rem;
+      background:var(--card);color:#1d4ed8;border:1.5px solid #93c5fd;border-radius:12px;
+      padding:.65rem 1rem;font-size:.84rem;font-weight:800;cursor:pointer;text-decoration:none;white-space:nowrap
+    }
+    .zg-mine{margin-top:1rem;display:flex;flex-direction:column;gap:.4rem}
+    .zg-mine-item{font-size:.8rem;padding:.6rem .75rem;border-radius:10px;border:1px solid var(--border);background:var(--bg)}
+    .zg-st{font-size:.68rem;font-weight:800;border-radius:999px;padding:.12rem .45rem}
+    .zg-st.pending{background:#fef3c7;color:#92400e}
+    .zg-st.approved{background:#dcfce7;color:#166534}
+    .zg-st.rejected{background:#fee2e2;color:#991b1b}
+    .zg-st.removed{background:#ffedd5;color:#9a3412}
+    .zg-st.deleted{background:#e2e8f0;color:#334155}
+    .zg-mine-hint{color:var(--muted);margin-top:.28rem;font-size:.75rem;line-height:1.45;font-weight:600}
+    .zg-who{
+      display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;
+      padding:.65rem .8rem;border:1.5px solid var(--border);border-radius:10px;
+      background:var(--bg);font-size:.88rem;font-weight:800;min-height:42px
+    }
+    .zg-who-meta{font-weight:600;color:var(--muted);font-size:.78rem}
+    .zg-pledge{
+      grid-column:1/-1;background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1.5px solid #93c5fd;
+      border-radius:14px;padding:.95rem 1.05rem
+    }
+    body.dark-mode .zg-pledge{background:#1e3a5f22;border-color:#1d4ed8}
+    .zg-pledge h3{margin:0 0 .35rem;font-size:.86rem;font-weight:800;color:#1e3a8a}
+    body.dark-mode .zg-pledge h3{color:#bfdbfe}
+    .zg-pledge p{margin:0 0 .7rem;font-size:.78rem;color:#1e40af;line-height:1.55}
+    body.dark-mode .zg-pledge p{color:#93c5fd}
+    .zg-check{display:flex;align-items:flex-start;gap:.6rem;margin:.45rem 0;cursor:pointer;font-size:.8rem;line-height:1.5;font-weight:600}
+    .zg-check input{width:18px;height:18px;padding:0;margin-top:.12rem;flex-shrink:0;accent-color:#2563eb;cursor:pointer}
+    .zg-pledge-note{
+      margin:.75rem 0 0;padding:.6rem .75rem;border-radius:10px;
+      background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;font-size:.76rem;line-height:1.55;font-weight:600
+    }
+    .zg-btn:disabled{opacity:.55;cursor:not-allowed}
+    .zg-more{
+      border:1.5px solid var(--border);background:var(--card);color:var(--text);
+      border-radius:10px;padding:.45rem .85rem;font-size:.78rem;font-weight:800;cursor:pointer;font-family:inherit
+    }
+    .zg-more:hover{border-color:#60a5fa}
+    .zg-more-row{display:flex;flex-wrap:wrap;gap:.45rem;margin-top:.55rem}
+    @media(max-width:640px){ .zg-form{grid-template-columns:1fr} }
+  </style>
+</head>
+<body class="dashboard-page trungthu-dash">
+  <div class="tt-dash-spark" id="ttDashSpark" aria-hidden="true"></div>
+  <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-brand-icon"><img src="icons/icon-192.png" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:8px"/></div>
+      <span class="sidebar-brand-text">DHDT LMS</span>
+      <button id="sidebarClose" class="sidebar-mini-toggle" title="Thu gọn" style="margin-left:auto;background:none;border:none;color:rgba(255,255,255,.5);cursor:pointer;font-size:1rem;padding:.25rem .4rem;border-radius:6px;flex-shrink:0">◀</button>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="student.html" class="slink" data-label="Trang chủ"><span class="slink-icon">🏠</span><span class="slink-label">Trang Học Sinh</span></a>
+      <a href="homework.html" class="slink" data-label="Bài Tập"><span class="slink-icon">📝</span><span class="slink-label">Bài Tập</span></a>
+      <a href="library.html" class="slink" data-label="Thư viện số"><span class="slink-icon">🏛️</span><span class="slink-label">Thư viện số</span></a>
+      <a href="groups.html" class="slink active" data-label="Nhóm trao đổi"><span class="slink-icon">💬</span><span class="slink-label">Nhóm trao đổi</span></a>
+    </nav>
+    <a href="login.html" class="slink slink-logout" data-label="Đăng xuất"><span class="slink-icon">🚪</span><span class="slink-label">Đăng xuất</span></a>
+    <a href="index.html" style="display:flex;align-items:center;gap:.6rem;margin:.3rem .75rem .5rem;padding:.45rem .85rem;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:rgba(255,255,255,.5);font-size:.78rem;font-weight:600;text-decoration:none">
+      <span>🌐</span><span class="slink-label">Về trang chủ</span>
+    </a>
+    <div class="sidebar-version" style="padding:.6rem 1.25rem;font-size:.7rem;color:rgba(255,255,255,.3);font-weight:600">v1.5.0</div>
+    <div class="sidebar-mini-reopen">
+      <button id="sidebarMiniReopen" class="sidebar-mini-toggle" title="Mở rộng">▶</button>
+    </div>
+  </aside>
+
+  <div class="dash-main">
+    <header class="topbar">
+      <button class="menu-toggle" id="menuToggle">☰</button>
+      <div style="font-weight:700;font-size:.95rem;color:var(--text);display:flex;align-items:center;gap:.5rem">
+        <img src="icons/icon-192.png" alt="" style="width:24px;height:24px;border-radius:6px"/> DHDT LMS
+      </div>
+      <div class="topbar-right">
+        <button id="studentDarkBtn" title="Chế độ tối" style="background:none;border:1.5px solid var(--border);color:var(--text);width:36px;height:36px;border-radius:10px;cursor:pointer;font-size:1.1rem">🌙</button>
+      </div>
+    </header>
+
+    <section class="page active">
+      <div class="zg-hero">
+        <div class="zg-badge">Zalo lớp học</div>
+        <h1>Nhóm trao đổi</h1>
+        <p>Chọn nhóm của lớp, nhập <b>mã học viên</b> đúng với hồ sơ. Hệ thống sẽ mở Zalo và đưa bạn vào nhóm.</p>
+        <a href="#zgSuggestBox" class="zg-outline" style="display:inline-flex;margin-top:1rem;background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.28)">💡 Đề xuất mở nhóm</a>
+      </div>
+      <div class="zg-grid" id="zgGrid"></div>
+      <div id="zgGridMoreWrap" class="zg-more-row"></div>
+      <div class="zg-empty" id="zgEmpty" hidden>Chưa có nhóm trao đổi. Hãy đề xuất mở nhóm bên dưới — giáo viên sẽ nhận và tạo nhóm Zalo.</div>
+
+      <div class="zg-suggest" id="zgSuggestBox">
+        <h2>💡 Đề xuất mở nhóm</h2>
+        <p class="hint">Lớp chưa có nhóm Zalo, hoặc bạn muốn nhóm theo chủ đề (ôn thi, HSG, hỏi bài)? Gửi đề xuất — admin sẽ nhận và mở nhóm nếu phù hợp.</p>
+        <form class="zg-form" id="zgSuggestForm">
+          <div class="full">
+            <label>Tên nhóm đề xuất <span style="color:#ef4444">*</span></label>
+            <input id="sugGName" required maxlength="120" placeholder="VD: Toán 12A — hỏi bài tối"/>
+          </div>
+          <div>
+            <label>Lớp</label>
+            <input id="sugGClass" maxlength="80" placeholder="VD: 12A"/>
+          </div>
+          <div class="full">
+            <label>Vì sao nên mở nhóm? <span style="color:#ef4444">*</span></label>
+            <textarea id="sugGReason" required maxlength="400" placeholder="VD: Lớp chưa có nhóm trao đổi, cần chỗ hỏi bài buổi tối..."></textarea>
+          </div>
+          <div class="full" id="sugGNameWrap">
+            <label>Người đề xuất</label>
+            <div class="zg-who" id="sugGWhoBox">Đang lấy tên từ tài khoản học sinh…</div>
+          </div>
+          <div class="zg-pledge">
+            <h3>🛡️ Cam kết trước khi gửi</h3>
+            <p>Chỉ đề xuất nhóm <b>học tập</b> (hỏi bài, ôn thi, thông báo lớp). Không spam, không nhóm ngoài mục đích học.</p>
+            <label class="zg-check">
+              <input type="checkbox" id="sugGOkStudy" required/>
+              <span>Tôi xác nhận đây là nhóm <b>phục vụ học tập</b>, không vi phạm nội quy lớp / nhà trường.</span>
+            </label>
+            <label class="zg-check">
+              <input type="checkbox" id="sugGOkResp" required/>
+              <span>Tôi <b>chịu trách nhiệm</b> về đề xuất này. Admin có quyền từ chối, ẩn hoặc xóa nhóm nếu không phù hợp.</span>
+            </label>
+            <p class="zg-pledge-note">⚠️ Việc gửi đề xuất không đồng nghĩa nhóm sẽ được mở. Giáo viên kiểm tra rồi quyết định.</p>
+          </div>
+          <div class="full" style="display:flex;align-items:center;gap:.7rem;flex-wrap:wrap">
+            <button type="submit" class="zg-btn" style="width:auto;padding:.7rem 1.15rem" id="sugGSubmit" disabled>Gửi đề xuất mở nhóm</button>
+            <span id="sugGMsg" style="font-size:.82rem;font-weight:600"></span>
+          </div>
+          <p class="full" style="margin:0;font-size:.72rem;color:var(--muted);font-weight:600">Tối đa 3 đề xuất đang chờ duyệt, 8 đề xuất mỗi ngày, cách nhau ít nhất 5 phút.</p>
+        </form>
+        <div class="zg-mine" id="zgMine"></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="zg-modal" id="zgModal">
+    <div class="zg-dialog" role="dialog" aria-modal="true">
+      <h3 id="zgModalTitle">Vào nhóm Zalo</h3>
+      <p class="sub">Nhập đúng <b>mã học viên (Mã HV)</b> trên hồ sơ / phiếu tài khoản để xác nhận rồi chuyển sang Zalo.</p>
+      <label for="zgCode">Mã học viên</label>
+      <input id="zgCode" maxlength="20" autocomplete="off" placeholder="VD: A2k9p" />
+      <div class="zg-err" id="zgErr"></div>
+      <div class="zg-actions">
+        <button type="button" class="zg-btn zg-ghost" id="zgCancel">Hủy</button>
+        <button type="button" class="zg-btn" id="zgGo">Vào nhóm Zalo</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+const _ENC_KEY = 'DHDTCT-LMS-2025-SECURE-KEY-32BYT';
+async function _getKey() {
+  const raw = new TextEncoder().encode(_ENC_KEY.slice(0,32).padEnd(32,'0'));
+  return crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt','decrypt']);
+}
+async function decryptUrl(enc) {
+  if (!enc || !enc.startsWith('ENC:')) return enc;
+  try {
+    const key = await _getKey();
+    const combined = Uint8Array.from(atob(enc.slice(4)), c => c.charCodeAt(0));
+    const iv = combined.slice(0,12), data = combined.slice(12);
+    const dec = await crypto.subtle.decrypt({ name:'AES-GCM', iv }, key, data);
+    return new TextDecoder().decode(dec);
+  } catch { return enc; }
+}
+
+let db = null;
+try { db = DH_CFG.createDb(); } catch (e) {}
+const meUser = sessionStorage.getItem('dh_user') || '';
+const meToken = sessionStorage.getItem('dh_token') || '';
+if (sessionStorage.getItem('dh_role') !== 'student' || !meUser || !meToken) {
+  location.replace('login.html');
+}
+let myCodes = [];
+let myClasses = [];
+let myName = '';
+let pendingGroup = null;
+
+function studentClassesOf(s) {
+  const a = (s.class_name || '').split(',').map(c => c.trim()).filter(Boolean);
+  return a;
+}
+
+async function loadMe() {
+  if (!meUser || sessionStorage.getItem('dh_role') !== 'student') {
+    location.replace('login.html');
+    return false;
+  }
+  if (!db) return true;
+  try {
+    const { data } = await db.from('students').select('id,student_code,full_name,class_name,active,session_token').eq('username', meUser).maybeSingle();
+    if (!data || data.active === false || (data.session_token && data.session_token !== meToken)) {
+      sessionStorage.clear();
+      location.replace('login.html');
+      return false;
+    }
+    if (data.student_code) myCodes = [String(data.student_code)];
+    myName = data.full_name || '';
+    myClasses = studentClassesOf(data);
+    const { data: sc } = await db.from('student_classes').select('class_name').eq('student_id', data.id);
+    (sc || []).forEach(r => { if (r.class_name && !myClasses.includes(r.class_name)) myClasses.push(r.class_name); });
+    const clsInp = document.getElementById('sugGClass');
+    if (clsInp && myClasses[0] && !clsInp.value) clsInp.value = myClasses[0];
+    const who = document.getElementById('sugGWhoBox');
+    if (who) {
+      if (myName) {
+        who.innerHTML = `<span>${esc(myName)}</span>` +
+          (myClasses[0] ? `<span class="zg-who-meta">· ${esc(myClasses[0])}</span>` : '') +
+          `<span class="zg-who-meta">· ${esc(meUser)}</span>` +
+          `<span class="zg-who-meta" style="margin-left:auto">Từ hồ sơ học sinh</span>`;
+      } else {
+        who.textContent = 'Không tìm thấy họ tên trên hồ sơ. Liên hệ giáo viên.';
+      }
+    }
+    syncZgSubmit();
+    return true;
+  } catch (e) {
+    return true;
+  }
+}
+
+function classOk(groupClass) {
+  if (!groupClass) return true;
+  if (!myClasses.length) return true;
+  return myClasses.includes(groupClass);
+}
+
+let zgAll = [];
+const ZG_PAGE = 10;
+let zgShow = ZG_PAGE;
+
+function renderZgGrid() {
+  const grid = document.getElementById('zgGrid');
+  const empty = document.getElementById('zgEmpty');
+  const moreWrap = document.getElementById('zgGridMoreWrap');
+  if (zgShow < ZG_PAGE) zgShow = ZG_PAGE;
+  const slice = zgAll.slice(0, zgShow);
+  const left = zgAll.length - slice.length;
+  empty.hidden = zgAll.length > 0;
+  grid.innerHTML = slice.map(g => `
+    <article class="zg-card">
+      <div class="zg-ico" style="background:${esc(g.color || '#dbeafe')}">${g.icon || '💬'}</div>
+      <div style="display:flex;justify-content:space-between;gap:.4rem;align-items:flex-start">
+        <h3>${esc(g.name)}</h3>
+        <span class="zg-cls">${esc(g.class_name || 'Mọi lớp')}</span>
+      </div>
+      <p>${esc(g.description || 'Nhập mã HV để vào nhóm Zalo của lớp.')}</p>
+      <button type="button" class="zg-btn" data-join="${g.id}" data-name="${esc(g.name)}">Vào nhóm Zalo</button>
+    </article>
+  `).join('');
+  if (left > 0 || slice.length > ZG_PAGE) {
+    moreWrap.innerHTML =
+      (left > 0 ? `<button type="button" class="zg-more" id="zgGridMore">Xem thêm (${left})</button>` : '') +
+      (slice.length > ZG_PAGE ? `<button type="button" class="zg-more" id="zgGridLess">Thu gọn</button>` : '');
+    document.getElementById('zgGridMore')?.addEventListener('click', () => { zgShow += ZG_PAGE; renderZgGrid(); });
+    document.getElementById('zgGridLess')?.addEventListener('click', () => { zgShow = ZG_PAGE; renderZgGrid(); });
+  } else moreWrap.innerHTML = '';
+}
+
+async function loadGroups() {
+  const grid = document.getElementById('zgGrid');
+  const empty = document.getElementById('zgEmpty');
+  const moreWrap = document.getElementById('zgGridMoreWrap');
+  if (sessionStorage.getItem('dh_role') !== 'student' || !meUser) {
+    grid.innerHTML = '';
+    if (moreWrap) moreWrap.innerHTML = '';
+    empty.hidden = false;
+    empty.textContent = 'Hãy đăng nhập bằng tài khoản học viên để xem nhóm.';
+    return;
+  }
+  if (!db) {
+    empty.hidden = false;
+    empty.textContent = 'Không kết nối được hệ thống.';
+    return;
+  }
+  const { data, error } = await db.from('discussion_groups').select('id,name,description,class_name,icon,color,active').eq('active', true).order('sort_order').order('created_at', { ascending: false });
+  if (error) {
+    empty.hidden = false;
+    empty.innerHTML = 'Chưa có bảng nhóm. Admin hãy chạy file <b>supabase_zalo_groups.sql</b>.';
+    return;
+  }
+  zgAll = (data || []).filter(g => classOk(g.class_name));
+  renderZgGrid();
+}
+
+function esc(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function openModal(id, name) {
+  pendingGroup = { id, name };
+  document.getElementById('zgModalTitle').textContent = name;
+  document.getElementById('zgCode').value = '';
+  document.getElementById('zgErr').textContent = '';
+  document.getElementById('zgModal').classList.add('open');
+  setTimeout(() => document.getElementById('zgCode').focus(), 50);
+}
+function closeModal() {
+  document.getElementById('zgModal').classList.remove('open');
+  pendingGroup = null;
+}
+
+function isZaloUrl(u) {
+  try {
+    const x = new URL(u);
+    const h = x.hostname.replace(/^www\./, '').toLowerCase();
+    return x.protocol === 'https:' && (h === 'zalo.me' || h === 'zaloapp.com' || h.endsWith('.zalo.me'));
+  } catch { return false; }
+}
+
+function codesMatch(a, b) {
+  return String(a || '').trim() === String(b || '').trim();
+}
+
+async function joinGroup() {
+  const err = document.getElementById('zgErr');
+  const btn = document.getElementById('zgGo');
+  const code = document.getElementById('zgCode').value.trim();
+  err.textContent = '';
+  if (!code) { err.textContent = 'Hãy nhập mã học viên.'; return; }
+  if (!meUser) { err.textContent = 'Hãy đăng nhập để vào nhóm.'; return; }
+  if (!pendingGroup) return;
+  btn.disabled = true;
+
+  const { data: st } = await db.from('students').select('id,username,full_name,student_code,class_name,active').eq('student_code', code).maybeSingle();
+  if (!st || !st.active) {
+    btn.disabled = false;
+    err.textContent = 'Mã học viên không đúng hoặc tài khoản đã khóa.';
+    return;
+  }
+  if (meUser && st.username !== meUser) {
+    btn.disabled = false;
+    err.textContent = 'Mã HV không khớp tài khoản đang đăng nhập.';
+    return;
+  }
+  if (meUser && myCodes.length && !myCodes.some(c => codesMatch(c, code))) {
+    btn.disabled = false;
+    err.textContent = 'Mã HV không khớp hồ sơ của bạn.';
+    return;
+  }
+
+  const { data: group, error } = await db.from('discussion_groups').select('id,name,class_name,zalo_url,active').eq('id', pendingGroup.id).maybeSingle();
+  if (error || !group || !group.active) {
+    btn.disabled = false;
+    err.textContent = 'Nhóm không còn hoạt động.';
+    return;
+  }
+
+  const stClasses = studentClassesOf(st);
+  if (group.class_name) {
+    const { data: sc } = await db.from('student_classes').select('class_name').eq('student_id', st.id);
+    const classes = [...stClasses, ...((sc || []).map(r => r.class_name).filter(Boolean))];
+    if (!classes.includes(group.class_name)) {
+      btn.disabled = false;
+      err.textContent = 'Mã HV này không thuộc lớp của nhóm.';
+      return;
+    }
+  }
+
+  const url = await decryptUrl(group.zalo_url);
+  if (!isZaloUrl(url)) {
+    btn.disabled = false;
+    err.textContent = 'Link Zalo chưa hợp lệ. Báo giáo viên kiểm tra lại.';
+    return;
+  }
+
+  await db.from('discussion_group_joins').insert({
+    group_id: group.id,
+    username: st.username,
+    student_code: st.student_code,
+    student_name: st.full_name,
+    class_name: st.class_name || group.class_name || null
+  });
+
+  err.style.color = '#166534';
+  err.textContent = 'Đúng mã HV — đang mở Zalo...';
+  setTimeout(() => { window.location.href = url; }, 350);
+}
+
+document.getElementById('zgGrid').addEventListener('click', e => {
+  const btn = e.target.closest('[data-join]');
+  if (!btn) return;
+  openModal(Number(btn.dataset.join), btn.dataset.name);
+});
+document.getElementById('zgCancel').onclick = closeModal;
+document.getElementById('zgModal').addEventListener('click', e => { if (e.target.id === 'zgModal') closeModal(); });
+document.getElementById('zgGo').onclick = joinGroup;
+document.getElementById('zgCode').addEventListener('keydown', e => { if (e.key === 'Enter') joinGroup(); });
+
+(function sidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const backdrop = document.getElementById('sidebarBackdrop');
+  document.getElementById('menuToggle').addEventListener('click', () => { sidebar.classList.add('open'); backdrop.classList.add('open'); });
+  backdrop.addEventListener('click', () => { sidebar.classList.remove('open'); backdrop.classList.remove('open'); });
+  document.getElementById('sidebarClose').addEventListener('click', () => {
+    if (window.innerWidth <= 900) { sidebar.classList.remove('open'); backdrop.classList.remove('open'); }
+    else {
+      const mini = document.body.classList.toggle('sidebar-mini');
+      sessionStorage.setItem('st_sidebar_mini', mini ? '1' : '0');
+    }
+  });
+  if (sessionStorage.getItem('st_sidebar_mini') === '1') document.body.classList.add('sidebar-mini');
+  document.getElementById('sidebarMiniReopen').addEventListener('click', () => {
+    document.body.classList.remove('sidebar-mini');
+    sessionStorage.setItem('st_sidebar_mini', '0');
+  });
+})();
+(function dark() {
+  const btn = document.getElementById('studentDarkBtn');
+  if (localStorage.getItem('st_dark') === '1') { document.body.classList.add('dark-mode'); btn.textContent = '☀️'; }
+  btn.addEventListener('click', () => {
+    const on = document.body.classList.toggle('dark-mode');
+    btn.textContent = on ? '☀️' : '🌙';
+    localStorage.setItem('st_dark', on ? '1' : '0');
+  });
+})();
+(function sparks() {
+  var wrap = document.getElementById('ttDashSpark');
+  if (!wrap || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var n = window.innerWidth < 700 ? 10 : 16, html = '';
+  for (var i = 0; i < n; i++) html += '<i style="--x:'+(Math.random()*100)+'%;--d:'+(12+Math.random()*14)+'s;--delay:'+(-Math.random()*16)+'s;--drift:'+(Math.random()*40-20)+'px;--s:'+(2+Math.random()*3)+'px"></i>';
+  wrap.innerHTML = html;
+})();
+
+loadMe().then(ok => { if (ok) { loadGroups(); loadMySuggestions(); } });
+
+const MINE_PAGE = 5;
+let zgMineAll = [];
+let zgMineShow = MINE_PAGE;
+let zgGroupById = {};
+
+function zgPledgesOk() {
+  return !!(document.getElementById('sugGOkStudy')?.checked && document.getElementById('sugGOkResp')?.checked);
+}
+function syncZgSubmit() {
+  const btn = document.getElementById('sugGSubmit');
+  if (!btn) return;
+  btn.disabled = !(myName && zgPledgesOk());
+  btn.title = btn.disabled ? 'Hãy tick đủ cam kết rồi mới gửi' : '';
+}
+['sugGOkStudy','sugGOkResp'].forEach(id => {
+  document.getElementById(id)?.addEventListener('change', syncZgSubmit);
+});
+syncZgSubmit();
+
+async function checkZgSuggestLimit() {
+  try {
+    const { data, error } = await db.from('discussion_group_suggestions').select('id,status,created_at').eq('username', meUser).order('created_at', { ascending: false }).limit(40);
+    if (error) return '';
+    const rows = data || [];
+    const now = Date.now();
+    if (rows.filter(s => s.status === 'pending').length >= 3)
+      return 'Bạn đang có 3 đề xuất chờ duyệt. Đợi giáo viên xử lý rồi gửi tiếp.';
+    const last = rows[0];
+    if (last) {
+      const wait = 5 * 60 * 1000 - (now - new Date(last.created_at).getTime());
+      if (wait > 0) return `Gửi quá nhanh. Thử lại sau ${Math.ceil(wait / 60000)} phút.`;
+    }
+    if (rows.filter(s => now - new Date(s.created_at).getTime() < 24 * 60 * 60 * 1000).length >= 8)
+      return 'Hôm nay bạn đã gửi đủ 8 đề xuất. Mai gửi tiếp nhé.';
+  } catch (e) {}
+  return '';
+}
+
+function zgMineInfo(s) {
+  const g = s.group_id ? zgGroupById[s.group_id] : null;
+  if (s.status === 'pending') return { cls: 'pending', label: 'Chờ duyệt', hint: 'Giáo viên đang xem đề xuất của bạn.' };
+  if (s.status === 'rejected') return { cls: 'rejected', label: 'Từ chối', hint: s.admin_note || 'Đề xuất không được duyệt.' };
+  if (s.status === 'removed' || (s.status === 'approved' && g && g.active === false))
+    return { cls: 'removed', label: 'Nhóm đã bị ẩn', hint: s.admin_note || 'Nhóm đã bị ẩn khỏi trang trao đổi.' };
+  if (s.status === 'deleted' || (s.status === 'approved' && s.group_id && !g))
+    return { cls: 'deleted', label: 'Nhóm đã bị xóa', hint: s.admin_note || 'Nhóm này đã bị xóa.' };
+  if (s.status === 'approved')
+    return { cls: 'approved', label: 'Đề xuất đã mở nhóm', hint: 'Giáo viên đã mở nhóm từ đề xuất của bạn.' };
+  return { cls: s.status, label: s.status, hint: s.admin_note || '' };
+}
+
+function renderZgMine() {
+  const box = document.getElementById('zgMine');
+  if (!zgMineAll.length) { box.innerHTML = ''; return; }
+  const slice = zgMineAll.slice(0, zgMineShow);
+  const left = zgMineAll.length - slice.length;
+  box.innerHTML = '<div style="font-size:.78rem;font-weight:800;margin:.15rem 0">Đề xuất của bạn</div>' + slice.map(s => {
+    const info = zgMineInfo(s);
+    return `<div class="zg-mine-item">
+      <span class="zg-st ${esc(info.cls)}">${esc(info.label)}</span>
+      <b style="margin-left:.35rem">${esc(s.name)}</b>
+      ${info.hint ? `<div class="zg-mine-hint">${esc(info.hint)}</div>` : ''}
+    </div>`;
+  }).join('') + ((left > 0 || slice.length > MINE_PAGE)
+    ? `<div class="zg-more-row">
+        ${left > 0 ? `<button type="button" class="zg-more" id="zgMineMore">Xem thêm (${left})</button>` : ''}
+        ${slice.length > MINE_PAGE ? `<button type="button" class="zg-more" id="zgMineLess">Thu gọn</button>` : ''}
+      </div>` : '');
+  document.getElementById('zgMineMore')?.addEventListener('click', () => { zgMineShow += MINE_PAGE; renderZgMine(); });
+  document.getElementById('zgMineLess')?.addEventListener('click', () => { zgMineShow = MINE_PAGE; renderZgMine(); });
+}
+
+async function loadMySuggestions() {
+  const box = document.getElementById('zgMine');
+  if (!db || !meUser) { box.innerHTML = ''; zgMineAll = []; return; }
+  const { data } = await db.from('discussion_group_suggestions').select('*').eq('username', meUser).order('created_at', { ascending: false }).limit(100);
+  zgMineAll = data || [];
+  zgGroupById = {};
+  const gids = [...new Set(zgMineAll.map(s => s.group_id).filter(Boolean))];
+  if (gids.length) {
+    const { data: gs } = await db.from('discussion_groups').select('id,active').in('id', gids);
+    (gs || []).forEach(g => { zgGroupById[g.id] = g; });
+  }
+  if (zgMineShow < MINE_PAGE) zgMineShow = MINE_PAGE;
+  renderZgMine();
+}
+
+document.getElementById('zgSuggestForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const msg = document.getElementById('sugGMsg');
+  const btn = document.getElementById('sugGSubmit');
+  const name = document.getElementById('sugGName').value.trim();
+  const reason = document.getElementById('sugGReason').value.trim();
+  msg.textContent = '';
+  if (!myName) { msg.style.color = '#b91c1c'; msg.textContent = 'Không lấy được họ tên hồ sơ. Liên hệ giáo viên.'; return; }
+  if (!name || !reason) { msg.style.color = '#b91c1c'; msg.textContent = 'Nhập tên nhóm và lý do.'; return; }
+  if (!zgPledgesOk()) { msg.style.color = '#b91c1c'; msg.textContent = 'Hãy tick đủ cam kết trước khi gửi.'; syncZgSubmit(); return; }
+  if (!db) { msg.style.color = '#b91c1c'; msg.textContent = 'Không kết nối được hệ thống.'; return; }
+  const limitMsg = await checkZgSuggestLimit();
+  if (limitMsg) { msg.style.color = '#b91c1c'; msg.textContent = limitMsg; return; }
+  btn.disabled = true;
+  const { error } = await db.from('discussion_group_suggestions').insert({
+    name,
+    reason,
+    class_name: document.getElementById('sugGClass').value.trim() || (myClasses[0] || null),
+    student_name: myName,
+    username: meUser,
+    student_code: myCodes[0] || null,
+    status: 'pending'
+  });
+  syncZgSubmit();
+  if (error) {
+    msg.style.color = '#b91c1c';
+    msg.textContent = error.message && error.message.includes('discussion_group_suggestions')
+      ? 'Admin chưa chạy SQL đề xuất nhóm (supabase_zalo_groups.sql).'
+      : 'Gửi chưa được. Thử lại sau.';
+    return;
+  }
+  document.getElementById('zgSuggestForm').reset();
+  if (myClasses[0]) document.getElementById('sugGClass').value = myClasses[0];
+  syncZgSubmit();
+  msg.style.color = '#166534';
+  msg.textContent = 'Đã gửi. Giáo viên sẽ kiểm tra rồi quyết định mở nhóm.';
+  loadMySuggestions();
+});
+
+if (db) {
+  db.channel('zg-sug-live')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'discussion_group_suggestions' }, () => loadMySuggestions())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'discussion_groups' }, () => loadGroups())
+    .subscribe();
+}
+</script>
+</body>
+</html>

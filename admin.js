@@ -387,6 +387,8 @@ function showPage(name) {
   if (name === 'classes')        renderClasses();
   if (name === 'schedule')       { populateClassFilters(); renderSchedule(); }
   if (name === 'files')          initFileManager();
+  if (name === 'library')        renderLibraryAdmin();
+  if (name === 'groups')         renderZaloGroupsAdmin();
   if (name === 'guide')          adminRenderGuide();
   if (name === 'attendance-admin') { populateAttAdminClassFilter(); loadAttAdminSessions(); }
 }
@@ -441,7 +443,7 @@ async function populateClassFilters() {
     const cur = el.value; el.innerHTML = filterOpts; el.value = cur;
   });
   const lcs = document.getElementById('lClassSelect'); if (lcs) { const cur=lcs.value; lcs.innerHTML=modalOpts; lcs.value=cur; }
-  ['addClass','esClass','groupClassSelect','scheduleClass','schedSlotClass'].forEach(id => {
+  ['addClass','esClass','groupClassSelect','scheduleClass','schedSlotClass','zgClass'].forEach(id => {
     const el = document.getElementById(id); if (!el) return;
     const cur = el.value; el.innerHTML = modalOpts; el.value = cur;
   });
@@ -977,6 +979,9 @@ async function renderOverview() {
     }
   });
   document.getElementById('classExpiryNotices').innerHTML = notices.join('');
+
+  refreshLibBadge().catch(() => {});
+  refreshZgBadge().catch(() => {});
 
   // Render online students
   renderOnlineStudents();
@@ -3439,10 +3444,12 @@ document.getElementById('clearAlertsBtn').addEventListener('click', async ()=>{
 });
 
 // ---- Init ----
-const _validPages = ['overview','lessons','lesson-groups','create-student','students','classes','security','devices','access-stats','login-history','announcements','files','schedule','profile','attendance-admin'];
+const _validPages = ['overview','lessons','lesson-groups','create-student','students','classes','security','devices','access-stats','login-history','announcements','files','library','groups','schedule','profile','attendance-admin'];
 const _savedPage = sessionStorage.getItem('dh_page');
 populateClassFilters().then(() => {
   showPage(_validPages.includes(_savedPage) ? _savedPage : 'overview');
+  refreshLibBadge().catch(() => {});
+  refreshZgBadge().catch(() => {});
 });
 
 // ============================================================
@@ -3984,6 +3991,59 @@ db.channel('realtime-alerts')
       payload.new?.student_name
         ? `${payload.new.student_name} — ${(payload.new.reason||'').slice(0,80)}`
         : 'Có cảnh báo bảo mật mới');
+  })
+  .subscribe();
+
+db.channel('realtime-library-suggestions')
+  .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'library_suggestions' }, async (payload) => {
+    const nw = payload.new || {};
+    let who = (nw.student_name || '').trim();
+    if ((!who || who === 'Học sinh') && nw.username) {
+      try {
+        const { data: st } = await db.from('students').select('full_name').eq('username', nw.username).maybeSingle();
+        if (st?.full_name) who = st.full_name.trim();
+      } catch (e) {}
+    }
+    who = who || nw.username || 'Học sinh';
+    refreshLibBadge();
+    if (document.getElementById('pageLibrary')?.classList.contains('active')) renderLibraryAdmin();
+    _adminNotify('💡 Đề xuất thư viện', `${who} — ${(nw.title || '').slice(0, 70)}`, 'info');
+    _adminBrowserNotify('💡 Đề xuất thư viện mới',
+      `${who} đề xuất: ${(nw.title || '').slice(0, 80)}`);
+  })
+  .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'library_suggestions' }, () => {
+    refreshLibBadge();
+    if (document.getElementById('pageLibrary')?.classList.contains('active')) renderLibraryAdmin();
+  })
+  .subscribe();
+
+db.channel('realtime-library-reports')
+  .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'library_reports' }, (payload) => {
+    const nw = payload.new || {};
+    refreshLibBadge();
+    if (document.getElementById('pageLibrary')?.classList.contains('active')) renderLibraryAdmin();
+    _adminNotify('⚠️ Báo cáo thư viện', `${nw.student_name || 'Học sinh'} — ${(nw.reason || nw.title || '').slice(0, 70)}`, 'warn');
+    _adminBrowserNotify('⚠️ Báo cáo nguồn thư viện',
+      `${nw.student_name || 'Học sinh'}: ${(nw.reason || '').slice(0, 80)}`);
+  })
+  .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'library_reports' }, () => {
+    refreshLibBadge();
+    if (document.getElementById('pageLibrary')?.classList.contains('active')) renderLibraryAdmin();
+  })
+  .subscribe();
+
+db.channel('realtime-zg-suggestions')
+  .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'discussion_group_suggestions' }, (payload) => {
+    const nw = payload.new || {};
+    refreshZgBadge();
+    if (document.getElementById('pageGroups')?.classList.contains('active')) renderZaloGroupsAdmin();
+    _adminNotify('💬 Đề xuất mở nhóm', `${nw.student_name || 'Học sinh'} — ${(nw.name || '').slice(0, 70)}`, 'info');
+    _adminBrowserNotify('💬 Đề xuất mở nhóm',
+      `${nw.student_name || 'Học sinh'} đề xuất: ${(nw.name || '').slice(0, 80)}`);
+  })
+  .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'discussion_group_suggestions' }, () => {
+    refreshZgBadge();
+    if (document.getElementById('pageGroups')?.classList.contains('active')) renderZaloGroupsAdmin();
   })
   .subscribe();
 
@@ -6835,7 +6895,28 @@ const _ADMIN_GUIDE_DATA = [
     'Chọn lớp → Phân tích → Bấm <b>Đồng bộ</b>',
     'Tự thêm lớp phụ và gửi thông báo cho học sinh',
   ]},
-  // ── BÀI HỌC ──
+  // ── THƯ VIỆN SỐ ──
+  { cat:'file', icon:'💬', title:'Tạo nhóm trao đổi Zalo', steps:[
+    'Sidebar → <b>Nhóm trao đổi</b>',
+    'Trên Zalo: mở nhóm → Quản lý → <b>Liên kết tham gia</b> → copy link zalo.me',
+    'Dán link, đặt tên nhóm, chọn lớp (hoặc tất cả lớp)',
+    'Học sinh vào trang Nhóm trao đổi → chọn nhóm → nhập <b>đúng mã HV</b> → tự mở Zalo vào nhóm',
+    'Học sinh cũng có thể <b>đề xuất mở nhóm</b> nếu lớp chưa có nhóm',
+  ]},
+  { cat:'file', icon:'💡', title:'Duyệt đề xuất mở nhóm Zalo', steps:[
+    'Học sinh gửi đề xuất ở trang <b>Nhóm trao đổi</b>',
+    'Admin nhận thông báo ngay (popup + badge trên menu)',
+    'Sidebar → <b>Nhóm trao đổi</b> → bấm <b>Mở nhóm</b> để điền sẵn form',
+    'Tạo nhóm trên Zalo, dán link zalo.me, chỉnh tên/lớp nếu cần → <b>Lưu nhóm</b>',
+    'Đề xuất chuyển sang Đã mở — học sinh thấy nhóm mới trên trang của mình',
+  ]},
+  { cat:'file', icon:'🏛️', title:'Duyệt đề xuất thư viện số', steps:[
+    'Học sinh gửi nguồn ở trang <b>Thư viện số</b>',
+    'Admin nhận thông báo ngay (popup + badge trên menu)',
+    'Sidebar → <b>Thư viện số → Chờ duyệt</b>',
+    'Kiểm tra link, chỉnh tên/mô tả nếu cần → <b>Thêm vào thư viện</b>',
+    'Nguồn hiện ngay trên trang học sinh với nhãn <b>Mới</b>',
+  ]},
   { cat:'lesson', icon:'📂', title:'Tạo nhóm bài học', steps:[
     'Sidebar → <b>Nhóm bài học → Thêm nhóm</b>',
     'Nhập tên nhóm, chọn lớp, giới hạn học sinh nếu cần',
@@ -7320,4 +7401,863 @@ document.getElementById('attAdminModal')?.addEventListener('click', e => {
 });
 document.getElementById('attDetailModal')?.addEventListener('click', e => {
   if (e.target === document.getElementById('attDetailModal')) document.getElementById('attDetailModal').style.display = 'none';
+});
+
+// ============================================================
+// THƯ VIỆN SỐ — đề xuất học sinh & admin thêm nguồn
+// ============================================================
+const LIB_CATS = [
+  { id:'sgk', label:'SGK & chương trình' },
+  { id:'exam', label:'Ôn thi THPT' },
+  { id:'vn', label:'Viện & đại học VN' },
+  { id:'olympiad', label:'Olympic & HSG' },
+  { id:'open', label:'Học liệu quốc tế' },
+  { id:'video', label:'Video bài giảng' },
+  { id:'tool', label:'Công cụ toán' },
+  { id:'lookup', label:'Tra cứu' },
+  { id:'other', label:'Khác' }
+];
+let _libTab = 'pending';
+
+function libEsc(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function libCatLabel(id) {
+  return (LIB_CATS.find(c => c.id === id) || {}).label || id || '';
+}
+function libSafeUrl(u) {
+  try {
+    const x = new URL((u || '').trim());
+    if (x.protocol === 'http:' || x.protocol === 'https:') return x.href;
+  } catch (e) {}
+  return '';
+}
+function libWhoFromAccount(s, st) {
+  const name = (st?.full_name || s?.student_name || '').trim() || s?.username || 'Học sinh';
+  const cls = (st?.class_name || s?.class_name || '').trim();
+  const user = (s?.username || '').trim();
+  return { name, cls, user };
+}
+function libWhoHtml(s, st) {
+  if (!s) return '';
+  const w = libWhoFromAccount(s, st);
+  return `<div class="lib-who-admin">
+    <span class="lib-who-kicker">Học viên đề xuất</span>
+    <b>${libEsc(w.name)}</b>
+    ${w.cls ? `<span>· ${libEsc(w.cls)}</span>` : ''}
+    ${w.user ? `<span>· ${libEsc(w.user)}</span>` : ''}
+  </div>`;
+}
+async function libStudentMap(suggestions) {
+  const usernames = [...new Set((suggestions || []).map(s => s.username).filter(Boolean))];
+  const map = {};
+  if (!usernames.length) return map;
+  try {
+    const { data } = await db.from('students').select('username,full_name,class_name').in('username', usernames);
+    (data || []).forEach(st => { map[st.username] = st; });
+  } catch (e) {}
+  return map;
+}
+
+async function refreshLibBadge() {
+  const box = document.getElementById('libNavBadge');
+  const ov = document.getElementById('libPendingOverview');
+  const tabBadge = document.getElementById('libReportTabBadge');
+  try {
+    const [sug, rpt] = await Promise.all([
+      db.from('library_suggestions').select('*', { count:'exact', head:true }).eq('status', 'pending'),
+      db.from('library_reports').select('*', { count:'exact', head:true }).eq('status', 'pending')
+    ]);
+    const nSug = sug.error ? 0 : (sug.count || 0);
+    const nRpt = rpt.error ? 0 : (rpt.count || 0);
+    const n = nSug + nRpt;
+    if (box) { box.style.display = n ? 'inline' : 'none'; box.textContent = n; }
+    if (tabBadge) { tabBadge.style.display = nRpt ? 'inline' : 'none'; tabBadge.textContent = nRpt; }
+    if (ov) {
+      const bits = [];
+      if (nSug) bits.push(`<b>${nSug}</b> đề xuất nguồn đang chờ duyệt`);
+      if (nRpt) bits.push(`<b>${nRpt}</b> báo cáo link`);
+      ov.innerHTML = bits.length
+        ? `<div style="background:#fef3c7;border-left:4px solid #f59e0b;padding:.75rem 1rem;border-radius:8px;font-size:.88rem">💡 ${bits.join(' · ')}. <a href="#" class="link-blue" onclick="showPage('library');return false">Xem ngay →</a></div>`
+        : '';
+    }
+  } catch (e) {
+    if (box) box.style.display = 'none';
+  }
+}
+
+const LIB_ICONS = ['✨','📘','📗','🎬','🧮','🏅','🏫','📐','🔎','🇻🇳','🎓','🧩','📈','🔬','💡','📜'];
+const LIB_COLORS = ['#fef3c7','#dbeafe','#d1fae5','#fce7f3','#ede9fe','#ffedd5','#e0f2fe','#fee2e2'];
+
+function libSetTabs() {
+  document.querySelectorAll('#libAdminTabs [data-libtab]').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.libtab === _libTab);
+  });
+}
+
+function libPickerRow(kind, values, current, prefix) {
+  return values.map(v => {
+    const on = v === current ? ' active' : '';
+    if (kind === 'icon') return `<button type="button" class="lib-ico-btn${on}" data-lib-pick="${prefix}" data-val="${libEsc(v)}">${v}</button>`;
+    return `<button type="button" class="lib-color-btn${on}" data-lib-pick="${prefix}" data-val="${libEsc(v)}" style="background:${libEsc(v)}"></button>`;
+  }).join('');
+}
+
+async function renderLibraryAdmin() {
+  libSetTabs();
+  const listEl = document.getElementById('libAdminList');
+  const manEl = document.getElementById('libAdminManual');
+  const statsEl = document.getElementById('libAdminStats');
+  if (!listEl) return;
+
+  const [{ data: suggs, error: e1 }, { data: allRes, error: e2 }, rptRes] = await Promise.all([
+    db.from('library_suggestions').select('*').order('created_at', { ascending: false }).limit(200),
+    db.from('library_resources').select('*').order('created_at', { ascending: false }).limit(300),
+    db.from('library_reports').select('*').order('created_at', { ascending: false }).limit(200)
+  ]);
+  if (e1 || e2) {
+    listEl.style.display = 'block';
+    manEl.style.display = 'none';
+    listEl.innerHTML = `<div class="lib-empty">Chưa có bảng thư viện trên Supabase.<br/>Chạy file <b>supabase_library.sql</b> rồi tải lại trang.</div>`;
+    return;
+  }
+  const reportsOk = !rptRes.error;
+  const reports = reportsOk ? (rptRes.data || []) : [];
+  const extras = (allRes || []).filter(r => r.active !== false);
+  const hidden = (allRes || []).filter(r => r.active === false);
+  const hiddenBySug = {};
+  hidden.forEach(r => { if (r.suggestion_id) hiddenBySug[r.suggestion_id] = r; });
+
+  const all = suggs || [];
+  const pending = all.filter(s => s.status === 'pending').length;
+  const approved = all.filter(s => s.status === 'approved').length;
+  const closed = all.filter(s => ['rejected', 'removed', 'deleted'].includes(s.status)).length;
+  const extraN = (extras || []).length;
+  const nameByUser = await libStudentMap(all);
+  const sugById = {};
+  all.forEach(s => { sugById[s.id] = s; });
+  statsEl.innerHTML = [
+    ['Chờ duyệt', pending, '#d97706'],
+    ['Đã thêm', approved, '#059669'],
+    ['Từ chối / gỡ', closed, '#dc2626'],
+    ['Nguồn mới', extraN, '#4f46e5']
+  ].map(([label, n, color]) =>
+    `<div class="lib-stat"><b style="color:${color}">${n}</b><span>${label}</span></div>`
+  ).join('');
+
+  const isManual = _libTab === 'manual';
+  listEl.style.display = isManual ? 'none' : 'block';
+  manEl.style.display = isManual ? 'block' : 'none';
+  if (isManual) {
+    renderLibManualForm();
+    return;
+  }
+
+  if (_libTab === 'reports') {
+    if (!reportsOk) {
+      listEl.innerHTML = `<div class="lib-empty">Chưa có bảng báo cáo.<br/>Chạy lại file <b>supabase_library.sql</b> (phần library_reports) rồi tải lại trang.</div>`;
+      return;
+    }
+    if (!reports.length) { listEl.innerHTML = '<div class="lib-empty">Chưa có báo cáo từ học sinh.</div>'; return; }
+    listEl.innerHTML = reports.map(r => {
+      const when = r.created_at ? new Date(r.created_at).toLocaleString('vi-VN') : '';
+      const pending = r.status === 'pending';
+      return `
+      <div class="lib-card">
+        <div style="display:flex;justify-content:space-between;gap:.6rem;flex-wrap:wrap;margin-bottom:.35rem">
+          <div style="font-weight:800">${libEsc(r.title || r.url || 'Nguồn')}</div>
+          <span style="font-size:.72rem;color:var(--muted);font-weight:600">${when}</span>
+        </div>
+        <div style="margin-bottom:.55rem">
+          <span style="font-size:.68rem;font-weight:800;border-radius:999px;padding:.12rem .5rem;background:${pending ? '#fef3c7' : '#e2e8f0'};color:${pending ? '#92400e' : '#334155'}">${pending ? 'Chờ xem' : 'Đã xử lý'}</span>
+          <span style="font-size:.68rem;font-weight:800;border-radius:999px;padding:.12rem .5rem;margin-left:.3rem;background:#fee2e2;color:#991b1b">${libEsc(r.reason || '')}</span>
+        </div>
+        <div class="lib-who-admin">
+          <span class="lib-who-kicker">Học viên báo cáo</span>
+          <b>${libEsc(r.student_name || r.username || 'Học sinh')}</b>
+          ${r.class_name ? `<span>· ${libEsc(r.class_name)}</span>` : ''}
+          ${r.username ? `<span>· ${libEsc(r.username)}</span>` : ''}
+        </div>
+        <a href="${libEsc(r.url)}" target="_blank" rel="noopener noreferrer" style="font-size:.8rem;color:#4f46e5;word-break:break-all">${libEsc(r.url)}</a>
+        ${r.note ? `<p style="font-size:.8rem;margin:.4rem 0 0;color:#92400e;background:#fffbeb;border-radius:10px;padding:.45rem .7rem">${libEsc(r.note)}</p>` : ''}
+        ${r.admin_note ? `<p style="font-size:.8rem;margin:.4rem 0 0;color:var(--muted)">Admin: ${libEsc(r.admin_note)}</p>` : ''}
+        ${pending ? `
+          <div style="display:flex;gap:.45rem;flex-wrap:wrap;margin-top:.85rem">
+            <button class="lib-gold-btn" style="padding:.55rem 1rem;font-size:.82rem" data-lib-rpt-ok="${r.id}">Đã xem</button>
+            ${r.resource_id ? `<button class="btn-sm btn-outline" data-lib-rpt-hide="${r.resource_id}" data-lib-rpt-id="${r.id}">Gỡ nguồn</button>` : ''}
+          </div>
+        ` : ''}
+      </div>`;
+    }).join('');
+    return;
+  }
+
+  if (_libTab === 'approved') {
+    const rows = extras || [];
+    if (!rows.length) { listEl.innerHTML = '<div class="lib-empty">Chưa có nguồn nào do admin thêm.</div>'; return; }
+    listEl.innerHTML = rows.map(r => {
+      const sug = r.suggestion_id ? sugById[r.suggestion_id] : null;
+      const st = sug?.username ? nameByUser[sug.username] : null;
+      return `
+      <div class="lib-card">
+        <div style="display:flex;justify-content:space-between;gap:.75rem;flex-wrap:wrap;align-items:flex-start">
+          <div style="display:flex;gap:.8rem;min-width:0;flex:1">
+            <div class="lib-preview-ico" style="background:${libEsc(r.color || '#fef3c7')}">${r.icon || '✨'}</div>
+            <div style="min-width:0">
+              <div style="font-weight:800">${libEsc(r.title)}</div>
+              ${sug ? libWhoHtml(sug, st) : `<div class="lib-who-admin"><span class="lib-who-kicker">Admin thêm</span><b>${libEsc(r.added_by || 'Admin')}</b></div>`}
+              <div style="font-size:.78rem;color:var(--muted);margin-top:.2rem">${libEsc(libCatLabel(r.category))} · ${libEsc(r.source || '')}</div>
+              <a href="${libEsc(r.url)}" target="_blank" rel="noopener noreferrer" style="font-size:.78rem;color:#4f46e5;word-break:break-all">${libEsc(r.url)}</a>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:.4rem">
+            <button class="btn-sm btn-outline" data-lib-hide="${r.id}">Gỡ khỏi thư viện</button>
+            <button class="btn-sm btn-outline" data-lib-del="${r.id}" style="border-color:#ef4444;color:#991b1b">Xóa khỏi thư viện</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+    return;
+  }
+
+  const filtered = _libTab === 'rejected'
+    ? all.filter(s => ['rejected', 'removed', 'deleted'].includes(s.status))
+    : all.filter(s => s.status === _libTab);
+  const orphans = _libTab === 'rejected' ? hidden.filter(r => !r.suggestion_id) : [];
+  if (!filtered.length && !orphans.length) {
+    listEl.innerHTML = `<div class="lib-empty">${_libTab === 'pending' ? 'Chưa có đề xuất mới — học sinh gửi từ trang Thư viện số.' : 'Không có mục nào.'}</div>`;
+    return;
+  }
+
+  const stBadge = {
+    pending: ['Chờ duyệt', '#92400e', '#fef3c7'],
+    approved: ['Đề xuất đã thêm', '#166534', '#dcfce7'],
+    rejected: ['Từ chối', '#991b1b', '#fee2e2'],
+    removed: ['Đề xuất đã bị gỡ', '#9a3412', '#ffedd5'],
+    deleted: ['Đã xóa khỏi thư viện', '#334155', '#e2e8f0']
+  };
+
+  const orphanHtml = orphans.map(r => `
+      <div class="lib-card">
+        <div style="font-weight:800;font-size:1.02rem;margin-bottom:.4rem">${libEsc(r.title)}</div>
+        <div style="margin-bottom:.55rem"><span style="font-size:.68rem;font-weight:800;border-radius:999px;padding:.12rem .5rem;background:#ffedd5;color:#9a3412">Đã gỡ khỏi thư viện</span></div>
+        <a href="${libEsc(r.url)}" target="_blank" rel="noopener noreferrer" style="font-size:.8rem;color:#4f46e5;word-break:break-all">${libEsc(r.url)}</a>
+        <div style="margin-top:.85rem">
+          <button class="lib-gold-btn" style="padding:.55rem 1rem;font-size:.82rem" data-lib-restore="${r.id}">Khôi phục vào thư viện</button>
+        </div>
+      </div>`).join('');
+
+  listEl.innerHTML = orphanHtml + filtered.map(s => {
+    const when = s.created_at ? new Date(s.created_at).toLocaleString('vi-VN') : '';
+    const editId = 'libEdit_' + s.id;
+    const st = s.username ? nameByUser[s.username] : null;
+    const [bl, bc, bg] = stBadge[s.status] || [s.status, '#475569', '#e2e8f0'];
+    return `
+      <div class="lib-card">
+        <div style="display:flex;justify-content:space-between;gap:.6rem;flex-wrap:wrap;margin-bottom:.2rem">
+          <div style="font-weight:800;font-size:1.02rem">${libEsc(s.title)}</div>
+          <span style="font-size:.72rem;color:var(--muted);font-weight:600">${when}</span>
+        </div>
+        <div style="margin-bottom:.55rem"><span style="font-size:.68rem;font-weight:800;border-radius:999px;padding:.12rem .5rem;background:${bg};color:${bc}">${libEsc(bl)}</span></div>
+        ${libWhoHtml(s, st)}
+        <div style="font-size:.8rem;color:var(--muted);margin-bottom:.4rem">${libEsc(libCatLabel(s.category))}</div>
+        <a href="${libEsc(s.url)}" target="_blank" rel="noopener noreferrer" style="font-size:.8rem;color:#4f46e5;word-break:break-all">${libEsc(s.url)}</a>
+        ${s.description ? `<p style="font-size:.84rem;margin:.5rem 0 0;line-height:1.55">${libEsc(s.description)}</p>` : ''}
+        ${s.note ? `<p style="font-size:.8rem;margin:.4rem 0 0;color:#92400e;background:#fffbeb;border-radius:10px;padding:.45rem .7rem">💡 ${libEsc(s.note)}</p>` : ''}
+        ${s.admin_note ? `<p style="font-size:.8rem;margin:.4rem 0 0;color:var(--muted)">Ghi chú admin: ${libEsc(s.admin_note)}</p>` : ''}
+        ${s.status === 'removed' && hiddenBySug[s.id] ? `
+          <div style="margin-top:.85rem">
+            <button class="lib-gold-btn" style="padding:.55rem 1rem;font-size:.82rem" data-lib-restore="${hiddenBySug[s.id].id}">Khôi phục vào thư viện</button>
+          </div>
+        ` : ''}
+        ${s.status === 'pending' ? `
+          <div style="display:flex;gap:.45rem;flex-wrap:wrap;margin-top:.85rem">
+            <button class="lib-gold-btn" style="padding:.55rem 1rem;font-size:.82rem" data-lib-open="${s.id}">Chỉnh &amp; thêm vào thư viện</button>
+            <button class="btn-sm btn-outline" data-lib-reject="${s.id}">Từ chối</button>
+          </div>
+          <div id="${editId}" style="display:none;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)">
+            ${libEditFields(s)}
+            <div style="display:flex;gap:.45rem;margin-top:.9rem">
+              <button class="lib-gold-btn" data-lib-save="${s.id}">Thêm vào thư viện</button>
+              <button class="btn-outline" onclick="document.getElementById('${editId}').style.display='none'">Hủy</button>
+            </div>
+          </div>
+        ` : ''}
+      </div>`;
+  }).join('');
+}
+
+function libEditFields(s, prefix) {
+  const p = prefix || ('s' + (s.id || 'new'));
+  const icon = s.icon || '✨';
+  const color = s.color || '#fef3c7';
+  const catOpts = LIB_CATS.map(c => `<option value="${c.id}" ${c.id===(s.category||'open')?'selected':''}>${c.label}</option>`).join('');
+  return `
+    <div class="lib-fields">
+      <div class="lib-field full"><label>Tên nguồn</label><input id="${p}_title" value="${libEsc(s.title||'')}" placeholder="VD: NRICH Cambridge"/></div>
+      <div class="lib-field full"><label>Link website</label><input id="${p}_url" value="${libEsc(s.url||'')}" placeholder="https://"/></div>
+      <div class="lib-field"><label>Đơn vị phát hành</label><input id="${p}_source" value="${libEsc(s.source||'')}" placeholder="Bộ GDĐT, MIT, Cambridge..."/></div>
+      <div class="lib-field"><label>Nhóm</label><select id="${p}_cat">${catOpts}</select></div>
+      <div class="lib-field full"><label>Mô tả ngắn</label><textarea id="${p}_desc" rows="3" placeholder="Học sinh dùng nguồn này để làm gì?">${libEsc(s.description||'')}</textarea></div>
+      <div class="lib-field full"><label>Tags (cách nhau bởi dấu phẩy)</label><input id="${p}_tags" value="${libEsc(s.tags || 'Mới, Học sinh đề xuất')}"/></div>
+      <div class="lib-field full">
+        <label>Icon</label>
+        <input type="hidden" id="${p}_icon" value="${libEsc(icon)}"/>
+        <div class="lib-ico-row" data-lib-icons="${p}">${libPickerRow('icon', LIB_ICONS, icon, p)}</div>
+      </div>
+      <div class="lib-field full">
+        <label>Màu thẻ</label>
+        <input type="hidden" id="${p}_color" value="${libEsc(color)}"/>
+        <div class="lib-color-row" data-lib-colors="${p}">${libPickerRow('color', LIB_COLORS, color, p)}</div>
+      </div>
+    </div>`;
+}
+
+function libReadFields(prefix) {
+  return {
+    title: (document.getElementById(prefix + '_title')?.value || '').trim(),
+    url: libSafeUrl(document.getElementById(prefix + '_url')?.value || ''),
+    source: (document.getElementById(prefix + '_source')?.value || '').trim(),
+    category: document.getElementById(prefix + '_cat')?.value || 'open',
+    description: (document.getElementById(prefix + '_desc')?.value || '').trim(),
+    tags: (document.getElementById(prefix + '_tags')?.value || 'Mới').trim(),
+    icon: (document.getElementById(prefix + '_icon')?.value || '✨').trim() || '✨',
+    color: (document.getElementById(prefix + '_color')?.value || '#fef3c7').trim() || '#fef3c7'
+  };
+}
+
+function libUpdatePreview(prefix) {
+  const title = document.getElementById(prefix + '_title')?.value.trim() || 'Tên nguồn sẽ hiện ở đây';
+  const source = document.getElementById(prefix + '_source')?.value.trim() || 'Đơn vị phát hành';
+  const desc = document.getElementById(prefix + '_desc')?.value.trim() || 'Mô tả ngắn để học sinh biết nên dùng khi nào.';
+  const icon = document.getElementById(prefix + '_icon')?.value || '✨';
+  const color = document.getElementById(prefix + '_color')?.value || '#fef3c7';
+  const ico = document.getElementById(prefix + '_prevIco');
+  const src = document.getElementById(prefix + '_prevSrc');
+  const t = document.getElementById(prefix + '_prevTitle');
+  const d = document.getElementById(prefix + '_prevDesc');
+  if (ico) { ico.style.background = color; ico.textContent = icon; }
+  if (src) src.textContent = source;
+  if (t) t.textContent = title;
+  if (d) d.textContent = desc;
+}
+
+function libBindForm(prefix) {
+  const wrap = document.getElementById(prefix + '_title')?.closest('.lib-sheet-body, .lib-fields, #libAdminManual, #libAdminList');
+  const root = wrap || document.getElementById('pageLibrary');
+  root?.addEventListener('input', () => libUpdatePreview(prefix));
+  root?.addEventListener('change', () => libUpdatePreview(prefix));
+  libUpdatePreview(prefix);
+}
+
+function renderLibManualForm() {
+  const manEl = document.getElementById('libAdminManual');
+  manEl.innerHTML = `
+    <div class="lib-sheet">
+      <div class="lib-sheet-head">
+        <h3>Thêm nguồn thủ công</h3>
+        <p>Điền thông tin bên trái — xem trước thẻ học sinh sẽ thấy bên phải.</p>
+      </div>
+      <div class="lib-sheet-body">
+        <div class="lib-form-grid">
+          <div>
+            ${libEditFields({ category:'open', tags:'Mới, Admin thêm', icon:'✨', color:'#fef3c7' }, 'm')}
+            <div style="margin-top:1.1rem;display:flex;align-items:center;gap:.7rem;flex-wrap:wrap">
+              <button type="button" class="lib-gold-btn" id="libManualSave">Thêm vào thư viện</button>
+              <span id="libManualMsg" style="font-size:.82rem;font-weight:600"></span>
+            </div>
+          </div>
+          <div class="lib-preview">
+            <div class="lib-preview-kicker">Xem trước</div>
+            <div class="lib-preview-card">
+              <div class="lib-preview-top">
+                <div class="lib-preview-ico" id="m_prevIco" style="background:#fef3c7">✨</div>
+                <span class="lib-preview-src" id="m_prevSrc">Đơn vị phát hành</span>
+              </div>
+              <h4 id="m_prevTitle">Tên nguồn sẽ hiện ở đây</h4>
+              <p id="m_prevDesc">Mô tả ngắn để học sinh biết nên dùng khi nào.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  libBindForm('m');
+  document.getElementById('libManualSave').onclick = async () => {
+    const f = libReadFields('m');
+    const msg = document.getElementById('libManualMsg');
+    if (!f.title || !f.url) { msg.textContent = 'Nhập tên và link https://'; msg.style.color = '#b91c1c'; return; }
+    const { error } = await db.from('library_resources').insert({
+      ...f, added_by: sessionStorage.getItem('dh_name') || sessionStorage.getItem('dh_user') || 'admin', active: true
+    });
+    if (error) { msg.textContent = error.message; msg.style.color = '#b91c1c'; return; }
+    showToast('Đã thêm vào thư viện số');
+    _libTab = 'approved';
+    renderLibraryAdmin();
+  };
+}
+
+document.getElementById('libAdminTabs')?.addEventListener('click', e => {
+  const btn = e.target.closest('[data-libtab]');
+  if (!btn) return;
+  _libTab = btn.dataset.libtab;
+  renderLibraryAdmin();
+});
+
+document.getElementById('pageLibrary')?.addEventListener('click', e => {
+  const pick = e.target.closest('[data-lib-pick]');
+  if (!pick) return;
+  e.preventDefault();
+  const prefix = pick.dataset.libPick;
+  const val = pick.dataset.val;
+  const row = pick.parentElement;
+  if (row?.classList.contains('lib-ico-row')) {
+    const inp = document.getElementById(prefix + '_icon');
+    if (inp) inp.value = val;
+    row.querySelectorAll('.lib-ico-btn').forEach(b => b.classList.toggle('active', b === pick));
+  } else {
+    const inp = document.getElementById(prefix + '_color');
+    if (inp) inp.value = val;
+    row.querySelectorAll('.lib-color-btn').forEach(b => b.classList.toggle('active', b === pick));
+  }
+  libUpdatePreview(prefix);
+});
+
+document.getElementById('libAdminList')?.addEventListener('click', async e => {
+  const openBtn = e.target.closest('[data-lib-open]');
+  const saveBtn = e.target.closest('[data-lib-save]');
+  const rejectBtn = e.target.closest('[data-lib-reject]');
+  const hideBtn = e.target.closest('[data-lib-hide]');
+  const delBtn = e.target.closest('[data-lib-del]');
+  const restoreBtn = e.target.closest('[data-lib-restore]');
+  const rptOk = e.target.closest('[data-lib-rpt-ok]');
+  const rptHide = e.target.closest('[data-lib-rpt-hide]');
+
+  if (openBtn) {
+    const box = document.getElementById('libEdit_' + openBtn.dataset.libOpen);
+    if (box) box.style.display = box.style.display === 'none' ? 'block' : 'none';
+    return;
+  }
+  if (restoreBtn) {
+    showConfirm('Khôi phục nguồn này lên trang thư viện học sinh?', async () => {
+      const { data: rec } = await db.from('library_resources').select('suggestion_id').eq('id', restoreBtn.dataset.libRestore).maybeSingle();
+      await db.from('library_resources').update({ active: true }).eq('id', restoreBtn.dataset.libRestore);
+      if (rec?.suggestion_id) {
+        await db.from('library_suggestions').update({
+          status: 'approved',
+          admin_note: 'Đã khôi phục vào thư viện.',
+          reviewed_at: new Date().toISOString()
+        }).eq('id', rec.suggestion_id);
+      }
+      showToast('Đã khôi phục vào thư viện');
+      renderLibraryAdmin();
+    }, { title: 'Khôi phục', icon: '🏛️', okText: 'Khôi phục' });
+    return;
+  }
+  if (rptOk) {
+    await db.from('library_reports').update({
+      status: 'reviewed',
+      admin_note: 'Đã xem — giữ nguồn trên thư viện.'
+    }).eq('id', rptOk.dataset.libRptOk);
+    showToast('Đã đánh dấu đã xem');
+    refreshLibBadge();
+    renderLibraryAdmin();
+    return;
+  }
+  if (rptHide) {
+    showConfirm('Gỡ nguồn này khỏi thư viện theo báo cáo của học sinh?', async () => {
+      const rid = rptHide.dataset.libRptHide;
+      const { data: rec } = await db.from('library_resources').select('suggestion_id').eq('id', rid).maybeSingle();
+      await db.from('library_resources').update({ active: false }).eq('id', rid);
+      if (rec?.suggestion_id) {
+        await db.from('library_suggestions').update({
+          status: 'removed',
+          admin_note: 'Đề xuất đã bị gỡ khỏi thư viện (từ báo cáo).',
+          reviewed_at: new Date().toISOString()
+        }).eq('id', rec.suggestion_id);
+      }
+      await db.from('library_reports').update({
+        status: 'reviewed',
+        admin_note: 'Đã gỡ nguồn khỏi thư viện.'
+      }).eq('id', rptHide.dataset.libRptId);
+      showToast('Đã gỡ nguồn theo báo cáo');
+      refreshLibBadge();
+      renderLibraryAdmin();
+    }, { title: 'Gỡ nguồn', icon: '⚠️', okText: 'Gỡ' });
+    return;
+  }
+  if (hideBtn) {
+    showConfirm('Gỡ nguồn này khỏi trang thư viện học sinh? Học sinh sẽ thấy “Đề xuất đã bị gỡ”.', async () => {
+      const { data: rec } = await db.from('library_resources').select('suggestion_id').eq('id', hideBtn.dataset.libHide).maybeSingle();
+      await db.from('library_resources').update({ active: false }).eq('id', hideBtn.dataset.libHide);
+      if (rec?.suggestion_id) {
+        await db.from('library_suggestions').update({
+          status: 'removed',
+          admin_note: 'Đề xuất đã bị gỡ khỏi thư viện.',
+          reviewed_at: new Date().toISOString()
+        }).eq('id', rec.suggestion_id);
+      }
+      showToast('Đã gỡ khỏi thư viện');
+      renderLibraryAdmin();
+    }, { title: 'Gỡ nguồn', icon: '🏛️', okText: 'Gỡ' });
+    return;
+  }
+  if (delBtn) {
+    showConfirm('Xóa hẳn nguồn này khỏi thư viện? Học sinh sẽ thấy “Đề xuất này đã bị xóa khỏi thư viện”.', async () => {
+      const { data: rec } = await db.from('library_resources').select('suggestion_id').eq('id', delBtn.dataset.libDel).maybeSingle();
+      await db.from('library_resources').delete().eq('id', delBtn.dataset.libDel);
+      if (rec?.suggestion_id) {
+        await db.from('library_suggestions').update({
+          status: 'deleted',
+          admin_note: 'Đề xuất này đã bị xóa khỏi thư viện.',
+          reviewed_at: new Date().toISOString()
+        }).eq('id', rec.suggestion_id);
+      }
+      showToast('Đã xóa khỏi thư viện');
+      renderLibraryAdmin();
+    }, { title: 'Xóa nguồn', icon: '🗑️', okText: 'Xóa' });
+    return;
+  }
+  if (rejectBtn) {
+    const note = window.prompt('Lý do từ chối (tuỳ chọn):') || '';
+    await db.from('library_suggestions').update({
+      status: 'rejected',
+      admin_note: note || 'Không phù hợp / chưa đủ uy tín',
+      reviewed_at: new Date().toISOString()
+    }).eq('id', rejectBtn.dataset.libReject);
+    showToast('Đã từ chối đề xuất');
+    refreshLibBadge();
+    renderLibraryAdmin();
+    return;
+  }
+  if (saveBtn) {
+    const id = saveBtn.dataset.libSave;
+    const f = libReadFields('s' + id);
+    if (!f.title || !f.url) { showToast('Nhập tên và link hợp lệ', false); return; }
+    const { data: sug } = await db.from('library_suggestions').select('student_name,username').eq('id', id).maybeSingle();
+    let who = (sug?.student_name || '').trim();
+    if (sug?.username) {
+      const { data: st } = await db.from('students').select('full_name').eq('username', sug.username).maybeSingle();
+      if (st?.full_name) who = st.full_name.trim();
+    }
+    const tags = f.tags
+      .split(',')
+      .map(t => t.trim())
+      .filter(t => t && t !== 'Học sinh đề xuất');
+    if (who && !tags.some(t => t.includes(who))) tags.push('Đề xuất bởi ' + who);
+    const { error } = await db.from('library_resources').insert({
+      ...f,
+      tags: tags.join(', ') || f.tags,
+      color: '#fef3c7',
+      suggestion_id: Number(id),
+      added_by: sessionStorage.getItem('dh_name') || sessionStorage.getItem('dh_user') || 'admin',
+      active: true
+    });
+    if (error) { showToast(error.message, false); return; }
+    await db.from('library_suggestions').update({
+      status: 'approved',
+      reviewed_at: new Date().toISOString()
+    }).eq('id', id);
+    showToast('Đã thêm vào thư viện số — học sinh thấy ngay');
+    refreshLibBadge();
+    _libTab = 'approved';
+    renderLibraryAdmin();
+  }
+});
+
+// ============================================================
+// NHÓM TRAO ĐỔI ZALO
+// ============================================================
+const ZG_ICONS = ['💬','📘','🏫','⭐','🔥','📢','🧮','🎓'];
+let _zgEditId = null;
+let _zgSuggestId = null;
+
+async function refreshZgBadge() {
+  const box = document.getElementById('zgNavBadge');
+  const ov = document.getElementById('zgPendingOverview');
+  try {
+    const { count, error } = await db.from('discussion_group_suggestions').select('*', { count:'exact', head:true }).eq('status', 'pending');
+    if (error) throw error;
+    const n = count || 0;
+    if (box) { box.style.display = n ? 'inline' : 'none'; box.textContent = n; }
+    if (ov) {
+      ov.innerHTML = n
+        ? `<div style="background:#dbeafe;border-left:4px solid #2563eb;padding:.75rem 1rem;border-radius:8px;font-size:.88rem">💬 Có <b>${n}</b> đề xuất mở nhóm đang chờ. <a href="#" class="link-blue" onclick="showPage('groups');return false">Xem ngay →</a></div>`
+        : '';
+    }
+  } catch (e) {
+    if (box) box.style.display = 'none';
+  }
+}
+
+function isZaloUrl(u) {
+  try {
+    const x = new URL((u || '').trim());
+    const h = x.hostname.replace(/^www\./, '').toLowerCase();
+    return x.protocol === 'https:' && (h === 'zalo.me' || h === 'zaloapp.com' || h.endsWith('.zalo.me'));
+  } catch { return false; }
+}
+
+function renderZgIcons(current) {
+  const row = document.getElementById('zgIconRow');
+  if (!row) return;
+  const cur = current || document.getElementById('zgIcon')?.value || '💬';
+  row.innerHTML = ZG_ICONS.map(ico =>
+    `<button type="button" class="lib-ico-btn${ico===cur?' active':''}" data-zg-ico="${ico}">${ico}</button>`
+  ).join('');
+}
+
+function resetZgForm() {
+  _zgEditId = null;
+  _zgSuggestId = null;
+  document.getElementById('zgFormTitle').textContent = 'Tạo nhóm mới';
+  document.getElementById('zgName').value = '';
+  document.getElementById('zgUrl').value = '';
+  document.getElementById('zgDesc').value = '';
+  document.getElementById('zgClass').value = '';
+  document.getElementById('zgIcon').value = '💬';
+  document.getElementById('zgResetBtn').style.display = 'none';
+  document.getElementById('zgFormMsg').textContent = '';
+  renderZgIcons('💬');
+}
+
+function zgSetClass(cls) {
+  const sel = document.getElementById('zgClass');
+  if (!sel) return;
+  const v = (cls || '').trim();
+  if (v && ![...sel.options].some(o => o.value === v)) {
+    const opt = document.createElement('option');
+    opt.value = v;
+    opt.textContent = v;
+    sel.appendChild(opt);
+  }
+  sel.value = v;
+}
+
+async function zgFillFromSuggest(s) {
+  await populateClassFilters();
+  _zgEditId = null;
+  _zgSuggestId = s.id;
+  document.getElementById('zgFormTitle').textContent = 'Tạo nhóm từ đề xuất';
+  document.getElementById('zgName').value = s.name || '';
+  document.getElementById('zgUrl').value = '';
+  document.getElementById('zgDesc').value = s.reason || '';
+  zgSetClass(s.class_name || '');
+  document.getElementById('zgIcon').value = '💬';
+  document.getElementById('zgResetBtn').style.display = '';
+  document.getElementById('zgFormMsg').textContent = 'Tạo nhóm Zalo rồi dán link vào đây.';
+  document.getElementById('zgFormMsg').style.color = '#92400e';
+  renderZgIcons('💬');
+  document.getElementById('zgUrl').focus();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function renderZgPending() {
+  const box = document.getElementById('zgPendingList');
+  if (!box) return;
+  const { data, error } = await db.from('discussion_group_suggestions').select('*').eq('status', 'pending').order('created_at', { ascending: false }).limit(50);
+  if (error || !data || !data.length) { box.innerHTML = ''; return; }
+  const nameByUser = {};
+  const users = [...new Set(data.map(s => s.username).filter(Boolean))];
+  if (users.length) {
+    const { data: sts } = await db.from('students').select('username,full_name,class_name').in('username', users);
+    (sts || []).forEach(st => { nameByUser[st.username] = st; });
+  }
+  box.innerHTML = `
+    <div class="lib-sheet" style="margin-bottom:1.15rem;border-color:#93c5fd">
+      <div class="lib-sheet-head" style="background:#eff6ff">
+        <h3>Đề xuất mở nhóm (${data.length})</h3>
+        <p>Học sinh gửi từ trang Nhóm trao đổi. Bấm <b>Mở nhóm</b> để điền form bên dưới.</p>
+      </div>
+      <div class="lib-sheet-body" style="display:flex;flex-direction:column;gap:.75rem">
+        ${data.map(s => {
+          const when = s.created_at ? new Date(s.created_at).toLocaleString('vi-VN') : '';
+          const st = s.username ? nameByUser[s.username] : null;
+          const who = (st?.full_name || s.student_name || s.username || 'Học sinh').trim();
+          const cls = (st?.class_name || s.class_name || '').trim();
+          return `
+            <div class="lib-card" style="margin:0">
+              <div style="display:flex;justify-content:space-between;gap:.6rem;flex-wrap:wrap;align-items:flex-start">
+                <div style="min-width:0">
+                  <div style="font-weight:800;font-size:1.02rem">${libEsc(s.name)}</div>
+                  <div class="lib-who-admin" style="margin:.4rem 0 .45rem">
+                    <span class="lib-who-kicker">Học viên đề xuất</span>
+                    <b>${libEsc(who)}</b>
+                    ${cls ? `<span>· ${libEsc(cls)}</span>` : ''}
+                    ${s.username ? `<span>· ${libEsc(s.username)}</span>` : ''}
+                    ${s.student_code ? `<span>· mã ${libEsc(s.student_code)}</span>` : ''}
+                  </div>
+                  ${when ? `<div style="font-size:.75rem;color:var(--muted);margin-bottom:.35rem">${libEsc(when)}</div>` : ''}
+                  ${s.reason ? `<p style="font-size:.84rem;margin:0;line-height:1.55">${libEsc(s.reason)}</p>` : ''}
+                </div>
+                <div style="display:flex;gap:.4rem;flex-wrap:wrap">
+                  <button type="button" class="lib-gold-btn" style="padding:.5rem .9rem;font-size:.82rem;width:auto" data-zg-open="${s.id}">Mở nhóm</button>
+                  <button type="button" class="btn-sm btn-outline" data-zg-reject="${s.id}">Từ chối</button>
+                </div>
+              </div>
+            </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+}
+
+async function renderZaloGroupsAdmin() {
+  populateClassFilters();
+  renderZgIcons(document.getElementById('zgIcon')?.value);
+  refreshZgBadge().catch(() => {});
+  await renderZgPending();
+  const listEl = document.getElementById('zgAdminList');
+  const { data, error } = await db.from('discussion_groups').select('*').order('created_at', { ascending: false });
+  if (error) {
+    listEl.innerHTML = '<div class="lib-empty">Chưa có bảng nhóm. Chạy file <b>supabase_zalo_groups.sql</b> rồi tải lại trang.</div>';
+    return;
+  }
+  const groups = data || [];
+  if (!groups.length) {
+    listEl.innerHTML = '<div class="lib-empty">Chưa có nhóm nào. Tạo nhóm và dán link Zalo ở form trên, hoặc duyệt đề xuất của học sinh.</div>';
+    return;
+  }
+  const ids = groups.map(g => g.id);
+  const { data: joins } = await db.from('discussion_group_joins').select('group_id').in('group_id', ids);
+  const counts = {};
+  (joins || []).forEach(j => { counts[j.group_id] = (counts[j.group_id] || 0) + 1; });
+
+  listEl.innerHTML = groups.map(g => `
+    <div class="lib-card">
+      <div style="display:flex;justify-content:space-between;gap:.75rem;flex-wrap:wrap;align-items:flex-start">
+        <div style="display:flex;gap:.8rem;min-width:0">
+          <div class="lib-preview-ico" style="background:${libEsc(g.color || '#dbeafe')}">${g.icon || '💬'}</div>
+          <div>
+            <div style="font-weight:800">${libEsc(g.name)} ${g.active ? '' : '<span style="font-size:.72rem;color:#b91c1c">· Ẩn</span>'}</div>
+            <div style="font-size:.78rem;color:var(--muted);margin-top:.2rem">${libEsc(g.class_name || 'Mọi lớp')} · ${counts[g.id] || 0} lượt vào</div>
+            <div style="font-size:.8rem;margin-top:.25rem;color:var(--text)">${libEsc(g.description || '')}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:.4rem;flex-wrap:wrap">
+          <button class="btn-sm btn-outline" data-zg-edit="${g.id}">Sửa</button>
+          <button class="btn-sm btn-outline" data-zg-toggle="${g.id}" data-on="${g.active ? '1' : '0'}">${g.active ? 'Ẩn' : 'Hiện'}</button>
+          <button class="btn-sm btn-outline" data-zg-del="${g.id}" style="color:#ef4444;border-color:#fca5a5">Xóa</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+document.getElementById('zgIconRow')?.addEventListener('click', e => {
+  const btn = e.target.closest('[data-zg-ico]');
+  if (!btn) return;
+  document.getElementById('zgIcon').value = btn.dataset.zgIco;
+  renderZgIcons(btn.dataset.zgIco);
+});
+
+document.getElementById('zgResetBtn')?.addEventListener('click', resetZgForm);
+
+document.getElementById('zgSaveBtn')?.addEventListener('click', async () => {
+  const msg = document.getElementById('zgFormMsg');
+  const name = (document.getElementById('zgName').value || '').trim();
+  const rawUrl = (document.getElementById('zgUrl').value || '').trim();
+  if (!name) { msg.textContent = 'Nhập tên nhóm.'; msg.style.color = '#b91c1c'; return; }
+  if (!isZaloUrl(rawUrl)) { msg.textContent = 'Link phải là https://zalo.me/...'; msg.style.color = '#b91c1c'; return; }
+  const zalo_url = await encryptUrl(rawUrl);
+  const payload = {
+    name,
+    zalo_url,
+    description: (document.getElementById('zgDesc').value || '').trim() || null,
+    class_name: document.getElementById('zgClass').value || null,
+    icon: document.getElementById('zgIcon').value || '💬',
+    color: '#dbeafe',
+    active: true
+  };
+  let error, createdId = _zgEditId;
+  const suggestId = _zgSuggestId;
+  if (_zgEditId) {
+    ({ error } = await db.from('discussion_groups').update(payload).eq('id', _zgEditId));
+  } else {
+    const ins = await db.from('discussion_groups').insert(payload).select('id').single();
+    error = ins.error;
+    createdId = ins.data?.id;
+  }
+  if (error) { msg.textContent = error.message; msg.style.color = '#b91c1c'; return; }
+  if (suggestId) {
+    const upd = { status: 'approved', reviewed_at: new Date().toISOString(), admin_note: 'Đã mở nhóm từ đề xuất.' };
+    if (createdId) upd.group_id = createdId;
+    const { error: e2 } = await db.from('discussion_group_suggestions').update(upd).eq('id', suggestId);
+    if (e2 && createdId) {
+      delete upd.group_id;
+      await db.from('discussion_group_suggestions').update(upd).eq('id', suggestId);
+    }
+  }
+  showToast(_zgEditId ? 'Đã cập nhật nhóm' : (suggestId ? 'Đã mở nhóm từ đề xuất' : 'Đã tạo nhóm trao đổi'));
+  resetZgForm();
+  renderZaloGroupsAdmin();
+});
+
+document.getElementById('zgPendingList')?.addEventListener('click', async e => {
+  const open = e.target.closest('[data-zg-open]');
+  const reject = e.target.closest('[data-zg-reject]');
+  if (open) {
+    const { data: s } = await db.from('discussion_group_suggestions').select('*').eq('id', open.dataset.zgOpen).maybeSingle();
+    if (!s) return;
+    zgFillFromSuggest(s);
+    return;
+  }
+  if (reject) {
+    const note = window.prompt('Lý do từ chối (tuỳ chọn):') || '';
+    await db.from('discussion_group_suggestions').update({
+      status: 'rejected',
+      admin_note: note || 'Chưa phù hợp lúc này',
+      reviewed_at: new Date().toISOString()
+    }).eq('id', reject.dataset.zgReject);
+    showToast('Đã từ chối đề xuất mở nhóm');
+    if (_zgSuggestId === Number(reject.dataset.zgReject)) resetZgForm();
+    refreshZgBadge();
+    renderZaloGroupsAdmin();
+  }
+});
+
+document.getElementById('zgAdminList')?.addEventListener('click', async e => {
+  const edit = e.target.closest('[data-zg-edit]');
+  const del = e.target.closest('[data-zg-del]');
+  const tog = e.target.closest('[data-zg-toggle]');
+  if (edit) {
+    const { data: g } = await db.from('discussion_groups').select('*').eq('id', edit.dataset.zgEdit).maybeSingle();
+    if (!g) return;
+    _zgEditId = g.id;
+    _zgSuggestId = null;
+    document.getElementById('zgFormTitle').textContent = 'Sửa nhóm';
+    document.getElementById('zgName').value = g.name || '';
+    document.getElementById('zgUrl').value = await decryptUrl(g.zalo_url);
+    document.getElementById('zgDesc').value = g.description || '';
+    document.getElementById('zgClass').value = g.class_name || '';
+    document.getElementById('zgIcon').value = g.icon || '💬';
+    document.getElementById('zgResetBtn').style.display = '';
+    renderZgIcons(g.icon || '💬');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
+  if (tog) {
+    const on = tog.dataset.on === '1';
+    const gid = tog.dataset.zgToggle;
+    await db.from('discussion_groups').update({ active: !on }).eq('id', gid);
+    await db.from('discussion_group_suggestions').update({
+      status: on ? 'removed' : 'approved',
+      admin_note: on ? 'Nhóm đã bị ẩn khỏi trang trao đổi.' : 'Đã hiện lại nhóm trên trang trao đổi.',
+      reviewed_at: new Date().toISOString()
+    }).eq('group_id', gid);
+    renderZaloGroupsAdmin();
+    return;
+  }
+  if (del) {
+    showConfirm('Xóa nhóm này? Học sinh sẽ không vào được nữa.', async () => {
+      const gid = del.dataset.zgDel;
+      await db.from('discussion_group_suggestions').update({
+        status: 'deleted',
+        admin_note: 'Nhóm này đã bị xóa.',
+        reviewed_at: new Date().toISOString()
+      }).eq('group_id', gid);
+      await db.from('discussion_groups').delete().eq('id', gid);
+      showToast('Đã xóa nhóm');
+      if (_zgEditId === Number(gid)) resetZgForm();
+      renderZaloGroupsAdmin();
+    }, { title: 'Xóa nhóm', icon: '💬', okText: 'Xóa' });
+  }
 });

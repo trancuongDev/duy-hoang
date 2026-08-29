@@ -134,3 +134,154 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
   ALTER PUBLICATION supabase_realtime ADD TABLE file_folders;
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+-- ────────────────────────────────────────────────────────────────
+-- PHẦN 5: Thư viện số — đề xuất học sinh + nguồn admin duyệt
+-- ────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS library_suggestions (
+  id            bigint generated always as identity primary key,
+  title         text not null,
+  url           text not null,
+  source        text,
+  category      text default 'open',
+  description   text,
+  note          text,
+  student_name  text,
+  username      text,
+  class_name    text,
+  status        text default 'pending',
+  admin_note    text,
+  reviewed_at   timestamptz,
+  created_at    timestamptz default now()
+);
+
+CREATE TABLE IF NOT EXISTS library_resources (
+  id             bigint generated always as identity primary key,
+  title          text not null,
+  url            text not null,
+  source         text,
+  category       text default 'open',
+  description    text,
+  tags           text default 'Mới',
+  icon           text default '✨',
+  color          text default '#fef3c7',
+  suggestion_id  bigint references library_suggestions(id) on delete set null,
+  added_by       text,
+  active         boolean default true,
+  created_at     timestamptz default now()
+);
+
+ALTER TABLE library_suggestions DISABLE ROW LEVEL SECURITY;
+ALTER TABLE library_resources   DISABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE library_suggestions;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE library_resources;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+CREATE TABLE IF NOT EXISTS library_reports (
+  id             bigint generated always as identity primary key,
+  resource_id    bigint,
+  url            text not null,
+  title          text,
+  reason         text not null,
+  note           text,
+  student_name   text,
+  username       text,
+  class_name     text,
+  status         text default 'pending',
+  admin_note     text,
+  created_at     timestamptz default now()
+);
+
+ALTER TABLE library_reports DISABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE library_reports;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+-- ────────────────────────────────────────────────────────────────
+-- PHẦN 6: Nhóm trao đổi Zalo
+-- ────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS discussion_groups (
+  id           bigint generated always as identity primary key,
+  name         text not null,
+  description  text,
+  class_name   text,
+  zalo_url     text not null,
+  icon         text default '💬',
+  color        text default '#dbeafe',
+  active       boolean default true,
+  sort_order   int default 0,
+  created_at   timestamptz default now()
+);
+
+CREATE TABLE IF NOT EXISTS discussion_group_joins (
+  id            bigint generated always as identity primary key,
+  group_id      bigint references discussion_groups(id) on delete cascade,
+  username      text,
+  student_code  text,
+  student_name  text,
+  class_name    text,
+  created_at    timestamptz default now()
+);
+
+ALTER TABLE discussion_groups      DISABLE ROW LEVEL SECURITY;
+ALTER TABLE discussion_group_joins DISABLE ROW LEVEL SECURITY;
+
+CREATE INDEX IF NOT EXISTS idx_dg_joins_group ON discussion_group_joins(group_id);
+
+CREATE TABLE IF NOT EXISTS discussion_group_suggestions (
+  id            bigint generated always as identity primary key,
+  name          text not null,
+  class_name    text,
+  reason        text,
+  zalo_url      text,
+  student_name  text,
+  username      text,
+  student_code  text,
+  status        text default 'pending',
+  admin_note    text,
+  reviewed_at   timestamptz,
+  created_at    timestamptz default now()
+);
+
+ALTER TABLE discussion_group_suggestions DISABLE ROW LEVEL SECURITY;
+ALTER TABLE discussion_group_suggestions ADD COLUMN IF NOT EXISTS group_id bigint;
+CREATE INDEX IF NOT EXISTS idx_dg_sug_status ON discussion_group_suggestions(status);
+
+DO $$ BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE discussion_group_suggestions;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE discussion_groups;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+-- ────────────────────────────────────────────────────────────────
+-- PHẦN 7: Tiến độ bài học — đánh dấu đã học / học tiếp
+-- ────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS lesson_progress (
+  id             bigint generated always as identity primary key,
+  username       text not null,
+  lesson_id      bigint not null references lessons(id) on delete cascade,
+  status         text not null default 'in_progress',
+  last_opened_at timestamptz default now(),
+  completed_at   timestamptz,
+  unique(username, lesson_id)
+);
+ALTER TABLE lesson_progress ADD COLUMN IF NOT EXISTS username       text;
+ALTER TABLE lesson_progress ADD COLUMN IF NOT EXISTS lesson_id      bigint;
+ALTER TABLE lesson_progress ADD COLUMN IF NOT EXISTS status         text default 'in_progress';
+ALTER TABLE lesson_progress ADD COLUMN IF NOT EXISTS last_opened_at timestamptz default now();
+ALTER TABLE lesson_progress ADD COLUMN IF NOT EXISTS completed_at   timestamptz;
+UPDATE lesson_progress SET last_opened_at = now() WHERE last_opened_at IS NULL;
+UPDATE lesson_progress SET status = 'in_progress' WHERE status IS NULL;
+ALTER TABLE lesson_progress DISABLE ROW LEVEL SECURITY;
+CREATE UNIQUE INDEX IF NOT EXISTS lesson_progress_username_lesson_id_key
+  ON lesson_progress(username, lesson_id);
+CREATE INDEX IF NOT EXISTS idx_lp_user ON lesson_progress(username);
+CREATE INDEX IF NOT EXISTS idx_lp_user_opened ON lesson_progress(username, last_opened_at DESC);
