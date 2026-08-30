@@ -2484,12 +2484,10 @@ document.getElementById('attModal')?.addEventListener('click', e => {
 // ════════════════════════════════════════════════════════════════
 // GÓP Ý BUỔI HỌC
 // ════════════════════════════════════════════════════════════════
-const FB_STAR_LABEL = ['', 'Chưa ổn', 'Tạm được', 'Ổn', 'Hài lòng', 'Rất tốt'];
 const FB_PACE = { slow: 'Chậm', ok: 'Vừa', fast: 'Nhanh' };
 const FB_UND  = { low: 'Chưa rõ', ok: 'Tạm ổn', high: 'Nắm chắc' };
 
 let _fbFormId = null;
-let _fbRating = 0;
 let _fbPace = '';
 let _fbUnderstood = '';
 let _fbCanEdit = true;
@@ -2586,7 +2584,6 @@ function _fbCard(s, rec, compact) {
     : (done
       ? `<span style="font-size:.75rem;font-weight:700;color:#15803d;background:#dcfce7;padding:.25rem .65rem;border-radius:20px">Đã gửi</span>`
       : `<span style="font-size:.75rem;font-weight:700;color:var(--muted);background:var(--bg);padding:.25rem .65rem;border-radius:20px">Đã đóng</span>`);
-  const stars = rec?.rating ? '★'.repeat(rec.rating) + '☆'.repeat(5 - rec.rating) : '';
   return `
     <div class="fb-card ${canOpen && !done ? 'open' : ''}">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.75rem;flex-wrap:wrap">
@@ -2597,7 +2594,7 @@ function _fbCard(s, rec, compact) {
             <span>📚 ${escHtml(s.class_name)}</span>
             ${s.is_open ? '<span style="color:#b45309;font-weight:700">● Đang mở</span>' : '<span>● Đã đóng</span>'}
           </div>
-          ${done && !compact ? `<div style="margin-top:.45rem;font-size:.78rem;color:var(--text)">Đánh giá: <b style="color:#b45309">${stars}</b> · Tempo: ${escHtml(FB_PACE[rec.pace]||'—')} · Hiểu bài: ${escHtml(FB_UND[rec.understood]||'—')}</div>` : ''}
+          ${done && !compact ? `<div style="margin-top:.45rem;font-size:.78rem;color:var(--text)">Tempo: ${escHtml(FB_PACE[rec.pace]||'—')} · Hiểu bài: ${escHtml(FB_UND[rec.understood]||'—')}</div>` : ''}
         </div>
         ${btn}
       </div>
@@ -2612,7 +2609,6 @@ async function openFbForm(id) {
     const rec = replyMap[id];
     _fbFormId = id;
     _fbCanEdit = !!s.is_open;
-    _fbRating = rec?.rating || 0;
     _fbPace = rec?.pace || '';
     _fbUnderstood = rec?.understood || '';
     document.getElementById('fbModalTitle').textContent = s.title;
@@ -2624,7 +2620,6 @@ async function openFbForm(id) {
     document.getElementById('fbSubmitBtn').style.display = _fbCanEdit ? '' : 'none';
     document.getElementById('fbWantReview').disabled = !_fbCanEdit;
     document.getElementById('fbComment').disabled = !_fbCanEdit;
-    _renderFbStars();
     _syncFbOpts();
     document.getElementById('fbModal').style.display = '';
   } catch (e) {
@@ -2637,20 +2632,6 @@ function closeFbModal() {
   _fbFormId = null;
 }
 
-function _renderFbStars() {
-  const row = document.getElementById('fbStarRow');
-  if (!row) return;
-  row.innerHTML = [1,2,3,4,5].map(n =>
-    `<span class="fb-star ${_fbRating>=n?'on':''}" onclick="setFbRating(${n})">★</span>`
-  ).join('');
-  document.getElementById('fbStarLabel').textContent = _fbRating ? FB_STAR_LABEL[_fbRating] : 'Chọn số sao';
-}
-
-function setFbRating(n) {
-  if (!_fbCanEdit) return;
-  _fbRating = n;
-  _renderFbStars();
-}
 function setFbPace(v) {
   if (!_fbCanEdit) return;
   _fbPace = v;
@@ -2672,7 +2653,6 @@ async function submitStudentFeedback() {
   err.style.display = 'none';
   if (!_fbFormId) return;
   if (!_fbCanEdit) { showErr('Buổi này đã đóng góp ý.'); return; }
-  if (!_fbRating) { showErr('Hãy chọn mức hài lòng (1–5 sao).'); return; }
   if (!_fbPace) { showErr('Hãy chọn tốc độ giảng.'); return; }
   if (!_fbUnderstood) { showErr('Hãy chọn mức nắm bài.'); return; }
   const comment = (document.getElementById('fbComment').value || '').trim();
@@ -2688,7 +2668,7 @@ async function submitStudentFeedback() {
       username: currentUser,
       student_name: currentName,
       class_name: myClass || (myClasses[0] || ''),
-      rating: _fbRating,
+      rating: null,
       pace: _fbPace,
       understood: _fbUnderstood,
       want_review: want || null,

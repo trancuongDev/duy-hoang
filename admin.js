@@ -6987,7 +6987,7 @@ const _ADMIN_GUIDE_DATA = [
   { cat:'system', icon:'💡', title:'Góp ý buổi học', steps:[
     'Sidebar → <b>Góp ý buổi học → Mở góp ý buổi mới</b>',
     'Có thể lấy sẵn từ buổi điểm danh, hoặc nhập tiêu đề / lớp / ngày',
-    'Học viên vào mục Góp ý, đánh giá sao + tốc độ + mức hiểu bài + viết ý kiến',
+    'Học viên vào mục Góp ý, chọn tốc độ + mức hiểu bài + viết ý kiến',
     'Bấm <b>Tổng hợp</b> để xem điểm TB, biểu đồ, danh sách góp ý, học viên chưa gửi',
     'Ghi chú điều chỉnh buổi sau ngay trong chi tiết — xuất CSV nếu cần',
   ]},
@@ -8344,12 +8344,11 @@ async function loadFbAdminSessions() {
     return;
   }
   const ids = sessions.map(s => s.id);
-  const { data: replies } = await db.from('session_feedback_replies').select('feedback_id,rating').in('feedback_id', ids);
+  const { data: replies } = await db.from('session_feedback_replies').select('feedback_id').in('feedback_id', ids);
   const recMap = {};
   (replies || []).forEach(r => {
-    if (!recMap[r.feedback_id]) recMap[r.feedback_id] = { n: 0, sum: 0 };
+    if (!recMap[r.feedback_id]) recMap[r.feedback_id] = { n: 0 };
     recMap[r.feedback_id].n++;
-    recMap[r.feedback_id].sum += Number(r.rating) || 0;
   });
   _updateFbAdminStats(sessions, replies || []);
   const badge = document.getElementById('fbNavBadge');
@@ -8359,8 +8358,7 @@ async function loadFbAdminSessions() {
     badge.textContent = openN || '';
   }
   listEl.innerHTML = sessions.map(s => {
-    const rec = recMap[s.id] || { n: 0, sum: 0 };
-    const avg = rec.n ? (rec.sum / rec.n).toFixed(1) : '—';
+    const rec = recMap[s.id] || { n: 0 };
     return `
       <div class="att-session-row ${s.is_open ? 'open' : ''}">
         <div style="width:46px;height:46px;border-radius:13px;background:${s.is_open?'#fef3c7':'var(--primary-light,#eef2ff)'};display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0">${s.is_open?'💡':'📋'}</div>
@@ -8374,7 +8372,6 @@ async function loadFbAdminSessions() {
             <span>📚 ${_fbEsc(s.class_name)}</span>
           </div>
           <div style="display:flex;gap:.4rem;flex-wrap:wrap">
-            <span class="att-mini-stat" style="background:#fffbeb;color:#92400e">★ ${avg}/5</span>
             <span class="att-mini-stat" style="background:#eef2ff;color:var(--primary)">✉️ ${rec.n} góp ý</span>
           </div>
         </div>
@@ -8393,9 +8390,6 @@ function _updateFbAdminStats(sessions, replies) {
   if (el('fbStatTotal'))   el('fbStatTotal').textContent = sessions.length;
   if (el('fbStatOpen'))    el('fbStatOpen').textContent = sessions.filter(s => s.is_open).length;
   if (el('fbStatReplies')) el('fbStatReplies').textContent = replies.length;
-  const rated = replies.filter(r => r.rating);
-  const avg = rated.length ? (rated.reduce((a, r) => a + Number(r.rating), 0) / rated.length).toFixed(1) : '—';
-  if (el('fbStatAvg')) el('fbStatAvg').textContent = avg;
 }
 
 async function openFbAdminCreateModal() {
@@ -8506,7 +8500,6 @@ async function viewFbDetail(id) {
   const { data: replies } = await db.from('session_feedback_replies').select('*').eq('feedback_id', id).order('created_at', { ascending: false });
   _fbDetailReplies = replies || [];
   const n = _fbDetailReplies.length;
-  const avg = n ? (_fbDetailReplies.reduce((a, r) => a + (Number(r.rating) || 0), 0) / n).toFixed(1) : '—';
   const paceN = { slow: 0, ok: 0, fast: 0 };
   const undN  = { low: 0, ok: 0, high: 0 };
   _fbDetailReplies.forEach(r => {
@@ -8520,7 +8513,7 @@ async function viewFbDetail(id) {
 
   const cell = (v, l) => `<div style="padding:.85rem 1rem;text-align:center;border-right:1px solid var(--border)"><div style="font-size:1.25rem;font-weight:900">${v}</div><div style="font-size:.68rem;color:var(--muted);font-weight:700;margin-top:.15rem">${l}</div></div>`;
   document.getElementById('fbDetailStats').innerHTML =
-    cell(avg, 'Điểm TB') + cell(n, 'Đã gửi') + cell(totalHs || '—', 'Sĩ số lớp') + cell((totalHs ? pct : '—') + (totalHs ? '%' : ''), 'Tỷ lệ phản hồi');
+    cell(n, 'Đã gửi') + cell(totalHs || '—', 'Sĩ số lớp') + cell((totalHs ? pct : '—') + (totalHs ? '%' : ''), 'Tỷ lệ phản hồi');
 
   document.getElementById('fbDetailBars').innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem">
@@ -8545,7 +8538,6 @@ async function viewFbDetail(id) {
       <div style="border:1.5px solid var(--border);border-radius:12px;padding:.85rem 1rem;margin-bottom:.55rem">
         <div style="display:flex;justify-content:space-between;gap:.5rem;flex-wrap:wrap;margin-bottom:.35rem">
           <b style="font-size:.88rem">${_fbEsc(r.student_name || r.username)}</b>
-          <span style="font-size:.75rem;color:#b45309;font-weight:800">${'★'.repeat(r.rating||0)}${'☆'.repeat(5-(r.rating||0))}</span>
         </div>
         <div style="font-size:.72rem;color:var(--muted);margin-bottom:.4rem">Tempo: ${FB_PACE_A[r.pace]||'—'} · Hiểu: ${FB_UND_A[r.understood]||'—'} · ${r.created_at ? new Date(r.created_at).toLocaleString('vi-VN') : ''}</div>
         ${r.want_review ? `<div style="font-size:.8rem;margin-bottom:.3rem"><b>Ôn lại:</b> ${_fbEsc(r.want_review)}</div>` : ''}
@@ -8576,9 +8568,9 @@ async function saveFbAdminNote() {
 
 function exportFbCSV() {
   if (!_fbDetailReplies.length) { showToast('Chưa có góp ý để xuất', false); return; }
-  const rows = [['Họ tên', 'Tài khoản', 'Sao', 'Tốc độ', 'Nắm bài', 'Ôn lại', 'Góp ý', 'Thời gian']];
+  const rows = [['Họ tên', 'Tài khoản', 'Tốc độ', 'Nắm bài', 'Ôn lại', 'Góp ý', 'Thời gian']];
   _fbDetailReplies.forEach(r => rows.push([
-    r.student_name || '', r.username || '', r.rating || '',
+    r.student_name || '', r.username || '',
     FB_PACE_A[r.pace] || r.pace || '', FB_UND_A[r.understood] || r.understood || '',
     r.want_review || '', (r.comment || '').replace(/"/g, '""'),
     r.created_at ? new Date(r.created_at).toLocaleString('vi-VN') : ''
