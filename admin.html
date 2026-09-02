@@ -1883,6 +1883,14 @@
         <!-- Bản viết tay links -->
         <label style="font-size:.83rem;margin-top:.5rem">✍️ Link bản viết tay <span class="muted">(mỗi dòng 1 link)</span></label>
         <textarea id="lInlineHwLinks" placeholder="https://drive.google.com/file/d/..." rows="3" style="resize:vertical;width:100%;padding:.5rem .75rem;border:1.5px solid var(--border);border-radius:10px;font-size:.85rem;background:var(--bg);color:var(--text);outline:none;box-sizing:border-box"></textarea>
+        <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.75rem">
+          <label style="display:flex;align-items:center;gap:.45rem;cursor:pointer;font-size:.8rem;font-weight:600;padding:.45rem .7rem;border:1.5px solid var(--border);border-radius:9px;background:var(--bg)">
+            <input type="checkbox" id="lInlineVideoAllowDl" style="width:15px;height:15px;accent-color:var(--primary)"/> Cho phép tải video
+          </label>
+          <label style="display:flex;align-items:center;gap:.45rem;cursor:pointer;font-size:.8rem;font-weight:600;padding:.45rem .7rem;border:1.5px solid var(--border);border-radius:9px;background:var(--bg)">
+            <input type="checkbox" id="lInlineDocAllowDl" checked style="width:15px;height:15px;accent-color:var(--primary)"/> Cho phép tải tài liệu
+          </label>
+        </div>
       </div>
 
       <div id="lError" class="error-msg"></div>
@@ -1896,7 +1904,7 @@
   <!-- MODAL: Upload Video bài học -->
   <div class="modal-overlay" id="lessonVideoModal">
     <div class="modal">
-      <h2>Thêm video vào bài học</h2>
+      <h2 id="lessonVideoModalTitle">Thêm video vào bài học</h2>
       <!-- Tab chọn loại -->
       <div class="tab-row" style="margin-bottom:1rem">
         <button class="tab-btn active" id="tabVideoFile">📁 Upload file</button>
@@ -1906,7 +1914,7 @@
       <!-- Upload file -->
       <div id="videoFileSection">
         <div class="preview-wrap"><video id="lessonPreviewVideo" controls></video></div>
-        <label style="margin-top:.5rem">Chọn file video</label>
+        <label style="margin-top:.5rem">Chọn file video <span id="lvFileHint" class="muted"></span></label>
         <input type="file" id="lessonVideoFileInput" accept="video/*" style="margin-bottom:.5rem"/>
       </div>
       <!-- Dán link -->
@@ -1922,6 +1930,10 @@
       </div>
       <label>Tiêu đề video</label>
       <input type="text" id="lvTitleInput" placeholder="VD: Bài 1 — Phương trình bậc 2"/>
+      <label style="display:flex;align-items:center;gap:.55rem;margin-top:.85rem;cursor:pointer;user-select:none;padding:.6rem .85rem;border:1.5px solid var(--border);border-radius:10px;background:var(--bg);font-size:.85rem;font-weight:600">
+        <input type="checkbox" id="lvAllowDownload" style="width:16px;height:16px;accent-color:var(--primary);cursor:pointer"/>
+        <span>Cho phép học viên <b>tải video xuống</b> <span style="color:var(--muted);font-weight:400">(tắt = chỉ xem trên web)</span></span>
+      </label>
       <div class="modal-actions">
         <button id="lvCancelBtn" class="btn-outline">Hủy</button>
         <button id="lvSaveBtn" class="btn-primary">Lưu</button>
@@ -1932,7 +1944,7 @@
   <!-- MODAL: Upload Tài liệu bài học -->
   <div class="modal-overlay" id="lessonDocModal">
     <div class="modal">
-      <h2>Thêm tài liệu vào bài học</h2>
+      <h2 id="lessonDocModalTitle">Thêm tài liệu vào bài học</h2>
       <div class="tab-row" style="margin-bottom:1rem">
         <button class="tab-btn active" id="tabDocFile">📁 Upload file</button>
         <button class="tab-btn" id="tabDocLink">🔗 Tài liệu</button>
@@ -1955,7 +1967,14 @@
       </div>
       <!-- Bản viết tay riêng (ẩn, giữ để tương thích) -->
       <div id="docHandwrittenSection" style="display:none"></div>
-      <input type="text" id="ldTitleInput" placeholder="Tên tài liệu..." style="display:none"/>
+      <div id="ldTitleWrap" style="display:none;margin-top:.65rem">
+        <label>Tên tài liệu</label>
+        <input type="text" id="ldTitleInput" placeholder="Tên tài liệu..."/>
+      </div>
+      <label style="display:flex;align-items:center;gap:.55rem;margin-top:.75rem;cursor:pointer;user-select:none;padding:.6rem .85rem;border:1.5px solid var(--border);border-radius:10px;background:var(--bg);font-size:.85rem;font-weight:600">
+        <input type="checkbox" id="ldAllowDownload" checked style="width:16px;height:16px;accent-color:var(--primary);cursor:pointer"/>
+        <span>Cho phép học viên <b>tải tài liệu xuống</b> <span style="color:var(--muted);font-weight:400">(tắt = chỉ xem trên web)</span></span>
+      </label>
       <div class="modal-actions">
         <button id="ldCancelBtn" class="btn-outline">Hủy</button>
         <button id="ldSaveBtn" class="btn-primary">Tải lên</button>

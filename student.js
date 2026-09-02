@@ -757,6 +757,98 @@ function getDownloadUrl(url) {
   return null;
 }
 
+// Che nút "mở tab mới" (pop-out) của Google Drive — nằm trong iframe nên chỉ che được từ ngoài
+function coverDrivePopout(host, opts) {
+  if (!host) return null;
+  const kind = opts?.kind || 'video';
+  const allowDownload = !!opts?.allowDownload;
+  const isDoc = kind === 'doc';
+  host.style.position = host.style.position || 'relative';
+  host.style.overflow = 'hidden';
+  const el = document.createElement('div');
+  el.className = 'drive-popout-cover';
+  el.setAttribute('aria-hidden', 'true');
+  const w = isDoc ? (allowDownload ? 80 : 210) : 72;
+  const h = isDoc ? 58 : 72;
+  const bg = isDoc ? '#f8f9fa' : '#000';
+  el.style.cssText = `position:absolute;top:0;right:0;width:${w}px;height:${h}px;z-index:8;background:${bg};cursor:default`;
+  const stop = e => { e.preventDefault(); e.stopPropagation(); };
+  el.addEventListener('click', stop);
+  el.addEventListener('mousedown', stop);
+  el.addEventListener('pointerdown', stop);
+  host.appendChild(el);
+  return el;
+}
+
+// Điện thoại ngang: Drive dùng UI cảm ứng quá to → giả lập màn desktop rồi scale xuống
+function layoutDriveIframe(iframe, wrap, coverEl) {
+  if (!iframe || !wrap) return () => {};
+  const VW = 1280, VH = 720;
+  const apply = () => {
+    const cw = wrap.clientWidth || 0;
+    const ch = wrap.clientHeight || 0;
+    if (!cw || !ch) return;
+    const landscapeMobile = cw > ch && ch < 520;
+    if (!landscapeMobile) {
+      iframe.style.position = 'absolute';
+      iframe.style.left = '0';
+      iframe.style.top = '0';
+      iframe.style.width = '100%';
+      iframe.style.height = '100%';
+      iframe.style.transform = 'none';
+      iframe.style.maxWidth = '';
+      iframe.style.maxHeight = '';
+      if (coverEl && coverEl.classList.contains('drive-popout-cover')) {
+        coverEl.style.top = '0';
+        coverEl.style.right = '0';
+        coverEl.style.width = '56px';
+        coverEl.style.height = '56px';
+      }
+      return;
+    }
+    const scale = Math.min(cw / VW, ch / VH);
+    iframe.style.position = 'absolute';
+    iframe.style.width = VW + 'px';
+    iframe.style.height = VH + 'px';
+    iframe.style.maxWidth = 'none';
+    iframe.style.maxHeight = 'none';
+    iframe.style.left = '50%';
+    iframe.style.top = '50%';
+    iframe.style.transformOrigin = 'center center';
+    iframe.style.transform = `translate(-50%, -50%) scale(${scale})`;
+    if (coverEl) {
+      const dispW = VW * scale;
+      const right = Math.max(0, (cw - dispW) / 2);
+      const top = Math.max(0, (ch - VH * scale) / 2);
+      const size = Math.max(40, Math.round(56 * scale));
+      coverEl.style.top = top + 'px';
+      coverEl.style.right = right + 'px';
+      coverEl.style.width = size + 'px';
+      coverEl.style.height = size + 'px';
+    }
+  };
+  apply();
+  requestAnimationFrame(apply);
+  const ro = (typeof ResizeObserver !== 'undefined') ? new ResizeObserver(apply) : null;
+  if (ro) ro.observe(wrap);
+  const onWin = () => apply();
+  window.addEventListener('resize', onWin);
+  window.addEventListener('orientationchange', onWin);
+  return () => {
+    if (ro) ro.disconnect();
+    window.removeEventListener('resize', onWin);
+    window.removeEventListener('orientationchange', onWin);
+  };
+}
+
+// Video mặc định không tải; tài liệu mặc định được tải (khi cột SQL chưa có / null)
+function mediaAllowDownload(item, kind) {
+  if (!item) return false;
+  if (item.allow_download === true) return true;
+  if (item.allow_download === false) return false;
+  return kind === 'doc';
+}
+
 // ---- Chi tiết bài học ----
 // ---- Ghi log truy cap ----
 function logAccess(lessonId, lessonName, contentId, contentTitle, contentType) {
@@ -939,7 +1031,7 @@ async function openLessonDetail(id) {
         </div>
         <div class="video-info">
           <div class="video-title">${v.title}</div>
-          <div style="font-size:.75rem;color:var(--muted);margin-top:.2rem">Bài ${idx+1}</div>
+          <div style="font-size:.75rem;color:var(--muted);margin-top:.2rem">Bài ${idx+1}${mediaAllowDownload(v, 'video') ? ' · Có thể tải' : ''}</div>
         </div>`;
     } else {
       card.innerHTML = `
@@ -952,13 +1044,13 @@ async function openLessonDetail(id) {
         </div>
         <div class="video-info">
           <div class="video-title">${v.title}</div>
-          <div style="font-size:.75rem;color:var(--muted);margin-top:.2rem">Bài ${idx+1}</div>
+          <div style="font-size:.75rem;color:var(--muted);margin-top:.2rem">Bài ${idx+1}${mediaAllowDownload(v, 'video') ? ' · Có thể tải' : ''}</div>
         </div>`;
     }
     card.querySelector('.video-thumb').addEventListener('click', () => {
       logAccess(id, l.name, v.id, v.title, 'video');
       _currentLessonGroup = l.group_name || '';
-      openViewer(v.title, url, v.file_name, isLink ? 'link' : 'video');
+      openViewer(v.title, url, v.file_name, isLink ? 'link' : 'video', mediaAllowDownload(v, 'video'));
     });
     vGrid.appendChild(card);
   });
@@ -986,15 +1078,15 @@ async function openLessonDetail(id) {
       <div style="width:42px;height:42px;background:${bg};border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0">${icon}</div>
       <div style="flex:1;min-width:0">
         <div style="font-weight:700;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.title}</div>
-        <div style="font-size:.75rem;color:${color};font-weight:600;margin-top:.15rem">${label}</div>
+        <div style="font-size:.75rem;color:${color};font-weight:600;margin-top:.15rem">${label}${mediaAllowDownload(d, 'doc') ? ' · Có thể tải' : ''}</div>
       </div>
-      <div style="background:${bg};color:${color};padding:.35rem .75rem;border-radius:8px;font-size:.78rem;font-weight:700;flex-shrink:0">Xem →</div>
+      <div style="background:${bg};color:${color};padding:.35rem .75rem;border-radius:8px;font-size:.78rem;font-weight:700;flex-shrink:0">${mediaAllowDownload(d, 'doc') ? 'Xem / Tải →' : 'Xem →'}</div>
     `;
     row.addEventListener('mouseenter', () => { row.style.borderColor = color; row.style.transform = 'translateX(3px)'; });
     row.addEventListener('mouseleave', () => { row.style.borderColor = 'var(--border)'; row.style.transform = ''; });
     row.addEventListener('click', () => {
       logAccess(id, l.name, d.id, d.title, 'doc');
-      openViewer(d.title, url, d.file_name, isHandwritten?'handwritten-link':isLink?'doc-link':d.file_type);
+      openViewer(d.title, url, d.file_name, isHandwritten?'handwritten-link':isLink?'doc-link':d.file_type, mediaAllowDownload(d, 'doc'));
     });
     dList.appendChild(row);
   });
@@ -1033,11 +1125,12 @@ function _hideTabWarning() {
   if (overlay) overlay.style.display = 'none';
 }
 
-function openViewer(title, url, fileName, fileType) {
+function openViewer(title, url, fileName, fileType, allowDownload) {
   const isVideo = fileType==='video'||(fileType||'').startsWith('video/');
   const isLink = fileType==='link';
   const isDocLink = fileType==='doc-link';
   const isHandwrittenLink = fileType==='handwritten-link';
+  allowDownload = !!allowDownload;
 
   _viewerActive = true;
   _viewerIsVideo = isVideo || isLink;
@@ -1082,8 +1175,14 @@ function openViewer(title, url, fileName, fileType) {
         _currentLessonGroup.toLowerCase().includes(g.toLowerCase())
       );
       const dlUrl = isDrive ? getDownloadUrl(url) : null;
+      if (allowDownload && dlUrl) {
+        dl.style.display = '';
+        dl.href = dlUrl;
+        dl.removeAttribute('download');
+        dl.target = '_blank';
+      }
 
-      if (_skipOverlay && dlUrl) {
+      if (allowDownload && _skipOverlay && dlUrl) {
         // Banner tải xuống dự phòng cho video Drive bị lỗi quota
         const dlBanner = document.createElement('div');
         dlBanner.style.cssText = 'background:#eff6ff;border-left:3px solid #3b82f6;padding:.6rem .85rem;border-radius:8px;margin-bottom:.5rem;font-size:.82rem;color:#1e40af;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap';
@@ -1094,22 +1193,27 @@ function openViewer(title, url, fileName, fileType) {
             ⬇ Tải xuống
           </a>`;
         body.insertBefore(dlBanner, wrap);
-      } else {
-        // Tip chất lượng (chỉ hiện khi không phải Drive lỗi quota)
+      } else if (window.innerWidth > 768) {
+        // Tip chất lượng — ẩn trên điện thoại để video to hơn
         body.insertBefore(Object.assign(document.createElement('div'), {
           style: 'background:#fffbeb;border-left:3px solid #f59e0b;padding:.5rem .85rem;border-radius:8px;margin-bottom:.5rem;font-size:.8rem;color:#92400e;flex-shrink:0',
           innerHTML: '💡 Video bị mờ? Nhấn ⚙️ → <b>Chất lượng</b> → tăng lên <b>720p hoặc 1080p</b>'
         }), wrap);
       }
       const iframeWrap = document.createElement('div');
-      iframeWrap.style.cssText = 'position:relative;flex:1;min-height:0;overflow:hidden';
+      iframeWrap.className = 'viewer-fs-target';
+      iframeWrap.style.cssText = 'position:relative;flex:1;min-height:0;overflow:hidden;background:#000';
       const iframe = document.createElement('iframe');
       iframe.id = '_ytIframe_' + Date.now();
       iframe.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;border:none';
       iframe.allowFullscreen = true;
-      iframe.setAttribute('allow', 'autoplay; fullscreen; encrypted-media; picture-in-picture');
+      iframe.setAttribute('allowfullscreen', '');
+      iframe.setAttribute('webkitallowfullscreen', 'true');
+      iframe.setAttribute('allow', 'autoplay; fullscreen; encrypted-media; picture-in-picture; accelerometer; gyroscope');
       iframe.onload = hideLoading;
       iframeWrap.appendChild(iframe);
+      const driveCover = isDrive ? coverDrivePopout(iframeWrap, { kind: 'video', allowDownload }) : null;
+      const unlayoutDrive = isDrive ? layoutDriveIframe(iframe, iframeWrap, driveCover) : () => {};
 
 
 
@@ -1121,7 +1225,7 @@ function openViewer(title, url, fileName, fileType) {
         if (window._ytOpenBlocked) {
           const targetUrl = args[0] || '';
           // Cho phép link tải xuống Drive
-          if (typeof targetUrl === 'string' && (
+          if (allowDownload && typeof targetUrl === 'string' && (
             targetUrl.includes('drive.google.com/uc') ||
             targetUrl.includes('drive.google.com/file') ||
             targetUrl.includes('export=download')
@@ -1137,10 +1241,10 @@ function openViewer(title, url, fileName, fileType) {
       const _onKeyF = (e) => {
         if ((e.key === 'f' || e.key === 'F') && document.getElementById('viewerModal')?.classList.contains('open')) {
           e.preventDefault(); e.stopImmediatePropagation();
-          if (iframe.requestFullscreen)            iframe.requestFullscreen();
-          else if (iframe.webkitRequestFullscreen) iframe.webkitRequestFullscreen();
-          else if (iframe.mozRequestFullScreen)    iframe.mozRequestFullScreen();
-          else if (iframe.msRequestFullscreen)     iframe.msRequestFullscreen();
+          if (iframeWrap.requestFullscreen)            iframeWrap.requestFullscreen();
+          else if (iframeWrap.webkitRequestFullscreen) iframeWrap.webkitRequestFullscreen();
+          else if (iframeWrap.mozRequestFullScreen)    iframeWrap.mozRequestFullScreen();
+          else if (iframeWrap.msRequestFullscreen)     iframeWrap.msRequestFullscreen();
         }
       };
       document.addEventListener('keydown', _onKeyF, true);
@@ -1148,9 +1252,9 @@ function openViewer(title, url, fileName, fileType) {
       // Dọn tất cả khi đóng viewer
       iframe._cleanupF = () => {
         document.removeEventListener('keydown', _onKeyF, true);
-        // Restore window.open
         window._ytOpenBlocked = false;
         window.open = _origOpen;
+        try { unlayoutDrive(); } catch(e) {}
         if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
       };
 
@@ -1166,7 +1270,7 @@ function openViewer(title, url, fileName, fileType) {
       // Khi Drive bị lỗi quota "đạt giới hạn người xem", iframe vẫn load nhưng hiện thông báo lỗi
       // → Hiện nút tải xuống dự phòng ngay từ đầu để học viên có thể tải về xem offline
       const dlUrl = getDownloadUrl(url);
-      if (dlUrl) {
+      if (allowDownload && dlUrl) {
         // Banner thông báo tải xuống dự phòng
         const dlBanner = document.createElement('div');
         dlBanner.style.cssText = 'background:#eff6ff;border-left:3px solid #3b82f6;padding:.5rem .85rem;border-radius:8px;margin-bottom:.5rem;font-size:.8rem;color:#1e40af;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:.75rem';
@@ -1178,75 +1282,115 @@ function openViewer(title, url, fileName, fileType) {
           </a>`;
         body.insertBefore(dlBanner, wrap);
       }
+      const iframeWrap = document.createElement('div');
+      iframeWrap.className = 'viewer-fs-target';
+      iframeWrap.style.cssText = 'position:relative;flex:1;min-height:0;overflow:hidden;background:#000';
       const iframe = document.createElement('iframe');
-      iframe.style.cssText = 'flex:1;width:100%;height:100%;border:none;border-radius:8px';
+      iframe.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:none;border-radius:8px';
+      iframe.allowFullscreen = true;
+      iframe.setAttribute('allowfullscreen', '');
+      iframe.setAttribute('webkitallowfullscreen', 'true');
+      iframe.setAttribute('allow', 'autoplay; fullscreen; encrypted-media; picture-in-picture');
       iframe.onload = hideLoading;
-      wrap.appendChild(iframe);
+      iframeWrap.appendChild(iframe);
+      const isDrive2 = url && url.includes('drive.google.com');
+      const driveCover2 = isDrive2 ? coverDrivePopout(iframeWrap, { kind: 'video', allowDownload }) : null;
+      const unlayout2 = isDrive2 ? layoutDriveIframe(iframe, iframeWrap, driveCover2) : () => {};
+      iframe._cleanupF = () => { try { unlayout2(); } catch(e) {} };
+      wrap.appendChild(iframeWrap);
       setTimeout(() => { iframe.src = url; }, 0);
     }
   } else if (isDocLink || isHandwrittenLink) {
-    const dlUrl = getDownloadUrl(url);
-    if (dlUrl) { dl.style.display=''; dl.href=dlUrl; dl.removeAttribute('download'); dl.target='_blank'; }
+    const dlUrl = getDownloadUrl(url) || url;
+    if (allowDownload && dlUrl) { dl.style.display=''; dl.href=dlUrl; dl.removeAttribute('download'); dl.target='_blank'; }
     const embed = getEmbedUrl(url);
+    const iframeWrap = document.createElement('div');
+    iframeWrap.style.cssText = 'position:relative;flex:1;min-height:0;overflow:hidden';
     const iframe = document.createElement('iframe');
-    iframe.style.cssText = 'flex:1;width:100%;height:100%;border:none;border-radius:8px';
+    iframe.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:none;border-radius:8px';
     iframe.allowFullscreen = true;
     iframe.onload = hideLoading;
-    wrap.appendChild(iframe);
+    iframeWrap.appendChild(iframe);
+    if ((url || embed || '').includes('drive.google.com')) {
+      coverDrivePopout(iframeWrap, { kind: 'doc', allowDownload });
+    }
+    wrap.appendChild(iframeWrap);
     setTimeout(() => { iframe.src = embed || url; }, 0);
   } else if (isVideo) {
     const video = document.createElement('video');
     video.controls = true;
     video.setAttribute('playsinline', '');
+    video.setAttribute('webkit-playsinline', '');
+    if (!allowDownload) {
+      video.setAttribute('controlsList', 'nodownload');
+      video.disablePictureInPicture = true;
+      video.addEventListener('contextmenu', e => e.preventDefault());
+    } else {
+      dl.style.display = '';
+      dl.href = url;
+      if (fileName) dl.download = fileName; else dl.removeAttribute('download');
+      dl.target = '_blank';
+    }
+    video.style.cssText = 'flex:1;width:100%;background:#000;position:relative;z-index:1';
+    video.oncanplay = hideLoading;
+    video.addEventListener('play', () => { _activeVideoEl = video; });
+    video.addEventListener('pause', () => { if (_activeVideoEl === video) _activeVideoEl = null; });
+    wrap.className = (wrap.className + ' viewer-fs-target').trim();
     video.style.cssText = 'flex:1;width:100%;background:#000;position:relative;z-index:1';
     video.oncanplay = hideLoading;
     video.addEventListener('play', () => { _activeVideoEl = video; });
     video.addEventListener('pause', () => { if (_activeVideoEl === video) _activeVideoEl = null; });
     wrap.appendChild(video);
     setTimeout(() => { video.src = url; }, 0);
-    if (window.innerWidth < 768 && window.innerHeight > window.innerWidth) {
-      const tip = document.createElement('div');
-      tip.style.cssText = 'background:#fff3cd;color:#856404;padding:.6rem 1rem;border-radius:8px;margin-bottom:.5rem;font-size:.85rem;text-align:center;flex-shrink:0';
-      tip.textContent = '📱 Vui lòng chuyển điện thoại sang ngang để có trải nghiệm học tốt nhất';
-      body.insertBefore(tip, wrap);
-      const onOrient = () => { if (window.innerWidth > window.innerHeight) { tip.remove(); window.removeEventListener('resize', onOrient); } };
-      window.addEventListener('resize', onOrient);
-    }
   } else if (fileType==='application/pdf') {
-    dl.style.display = '';
-    dl.href = url;
-    if (fileName) dl.download = fileName; else dl.removeAttribute('download');
-    dl.target = '_blank';
+    if (allowDownload) {
+      dl.style.display = '';
+      dl.href = url;
+      if (fileName) dl.download = fileName; else dl.removeAttribute('download');
+      dl.target = '_blank';
+    }
     const iframe = document.createElement('iframe');
     iframe.className = 'viewer-iframe';
     iframe.onload = hideLoading;
     wrap.appendChild(iframe);
     setTimeout(() => { iframe.src = url; }, 0);
   } else if ((fileType||'').startsWith('image/')) {
-    dl.style.display = '';
-    dl.href = url;
-    if (fileName) dl.download = fileName; else dl.removeAttribute('download');
-    dl.target = '_blank';
+    if (allowDownload) {
+      dl.style.display = '';
+      dl.href = url;
+      if (fileName) dl.download = fileName; else dl.removeAttribute('download');
+      dl.target = '_blank';
+    }
     const img = document.createElement('img');
     img.className = 'viewer-img';
     img.alt = title;
     img.onload = hideLoading;
+    if (!allowDownload) img.addEventListener('contextmenu', e => e.preventDefault());
     wrap.appendChild(img);
     setTimeout(() => { img.src = url; }, 0);
   } else {
-    dl.style.display = '';
-    dl.href = url;
-    if (fileName) dl.download = fileName; else dl.removeAttribute('download');
-    dl.target = '_blank';
-    body.innerHTML = '<p class="muted-center">⚠️ Không xem trực tiếp được. Vui lòng tải xuống.</p>';
+    if (allowDownload) {
+      dl.style.display = '';
+      dl.href = url;
+      if (fileName) dl.download = fileName; else dl.removeAttribute('download');
+      dl.target = '_blank';
+      body.innerHTML = '<p class="muted-center">⚠️ Không xem trực tiếp được. Vui lòng tải xuống.</p>';
+    } else {
+      body.innerHTML = '<p class="muted-center">⚠️ Không xem trực tiếp được. File này không được phép tải xuống.</p>';
+    }
   }
   document.getElementById('viewerModal').classList.add('open');
+  document.getElementById('viewerModal').classList.remove('viewer-true-fs');
   // Tạm tắt DevTools detection khi modal mở
   if (typeof _dtPaused !== 'undefined') _dtPaused = true;
-  // Hiện nút xoay trên mobile
+  const fsBtn = document.getElementById('viewerFsBtn');
+  if (fsBtn) {
+    fsBtn.style.display = (isVideo || isLink) && window.innerWidth > 768 ? '' : 'none';
+    fsBtn.textContent = '⛶ Toàn màn hình';
+  }
   const rotateBtn = document.getElementById('viewerRotateBtn');
   if (rotateBtn) {
-    rotateBtn.style.display = window.innerWidth <= 768 ? '' : 'none';
+    rotateBtn.style.display = 'none';
     rotateBtn.textContent = '🔄 Xoay ngang';
     _viewerRotated = false;
   }
@@ -1258,15 +1402,18 @@ function closeViewer() {
   _viewerIsVideo = false;
   _activeVideoEl = null;
   _hideTabWarning();
-  // Dọn listener phím F của iframe nếu có
   const body = document.getElementById('viewerBody');
   body.querySelectorAll('iframe').forEach(fr => { if (fr._cleanupF) fr._cleanupF(); });
-  document.getElementById('viewerModal').classList.remove('open'); 
+  const modal = document.getElementById('viewerModal');
+  modal.classList.remove('open');
+  modal.classList.remove('viewer-true-fs');
   body.innerHTML='';
+  const fsBtn = document.getElementById('viewerFsBtn');
+  if (fsBtn) fsBtn.style.display = 'none';
   document.getElementById('viewerRotateBtn').style.display = 'none';
   _viewerRotated = false;
   if (document.fullscreenElement) document.exitFullscreen().catch(()=>{});
-  // Resume DevTools detection
+  try { screen.orientation?.unlock?.(); } catch(e) {}
   if (typeof _dtPaused !== 'undefined') {
     _dtPaused = false;
     if (typeof _dtOpen !== 'undefined') _dtOpen = false;
@@ -1274,6 +1421,55 @@ function closeViewer() {
     document.body.style.pointerEvents = '';
   }
 }
+
+async function toggleViewerFullscreen() {
+  const modal = document.getElementById('viewerModal');
+  const video = document.querySelector('#viewerBody video');
+  const target = document.querySelector('#viewerBody .viewer-fs-target') || document.getElementById('viewerBody');
+  const fsBtn = document.getElementById('viewerFsBtn');
+  const isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+  if (document.fullscreenElement || document.webkitFullscreenElement) {
+    try { await (document.exitFullscreen || document.webkitExitFullscreen).call(document); } catch(e) {}
+    modal.classList.remove('viewer-true-fs');
+    if (fsBtn) fsBtn.textContent = '⛶ Toàn màn hình';
+    return;
+  }
+  if (modal.classList.contains('viewer-true-fs')) {
+    modal.classList.remove('viewer-true-fs');
+    if (fsBtn) fsBtn.textContent = '⛶ Toàn màn hình';
+    try { screen.orientation?.unlock?.(); } catch(e) {}
+    return;
+  }
+
+  if (video && isiOS && typeof video.webkitEnterFullscreen === 'function') {
+    try { video.webkitEnterFullscreen(); return; } catch(e) {}
+  }
+  try {
+    const req = target.requestFullscreen || target.webkitRequestFullscreen || target.webkitRequestFullScreen;
+    if (req) {
+      await req.call(target);
+      if (fsBtn) fsBtn.textContent = '⛶ Thu nhỏ';
+      try { await screen.orientation?.lock?.('landscape'); } catch(e) {}
+      return;
+    }
+  } catch(e) {}
+  modal.classList.add('viewer-true-fs');
+  if (fsBtn) fsBtn.textContent = '⛶ Thu nhỏ';
+}
+
+document.getElementById('viewerFsBtn')?.addEventListener('click', e => {
+  e.stopPropagation();
+  toggleViewerFullscreen();
+});
+document.addEventListener('fullscreenchange', () => {
+  const fsBtn = document.getElementById('viewerFsBtn');
+  if (!fsBtn) return;
+  fsBtn.textContent = document.fullscreenElement ? '⛶ Thu nhỏ' : '⛶ Toàn màn hình';
+  if (!document.fullscreenElement) {
+    document.getElementById('viewerModal')?.classList.remove('viewer-true-fs');
+  }
+});
 
 // Xoay viewer
 let _viewerRotated = false;

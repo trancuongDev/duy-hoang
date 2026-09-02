@@ -345,3 +345,11 @@ DO $$ BEGIN
   BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE session_feedback_replies;
   EXCEPTION WHEN duplicate_object THEN NULL; END;
 END $$;
+
+-- ────────────────────────────────────────────────────────────────
+-- PHẦN 9: Cho phép / không cho phép tải video & tài liệu
+-- ────────────────────────────────────────────────────────────────
+ALTER TABLE lesson_videos ADD COLUMN IF NOT EXISTS allow_download BOOLEAN DEFAULT FALSE;
+ALTER TABLE lesson_docs  ADD COLUMN IF NOT EXISTS allow_download BOOLEAN DEFAULT TRUE;
+COMMENT ON COLUMN lesson_videos.allow_download IS 'TRUE = học viên được tải video';
+COMMENT ON COLUMN lesson_docs.allow_download  IS 'TRUE = học viên được tải tài liệu';

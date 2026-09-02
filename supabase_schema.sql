@@ -76,6 +76,7 @@ create table if not exists lesson_videos (
 
 -- Migration nếu bảng đã tồn tại:
 -- alter table lesson_videos add column if not exists video_url text default null;
+-- alter table lesson_videos add column if not exists allow_download boolean default false;
 
 -- Bảng tài liệu trong bài học
 create table if not exists lesson_docs (
@@ -91,6 +92,7 @@ create table if not exists lesson_docs (
 
 -- Migration nếu bảng đã tồn tại:
 -- alter table lesson_docs add column if not exists doc_url text default null;
+-- alter table lesson_docs add column if not exists allow_download boolean default true;
 
 -- Bảng cảnh báo
 create table if not exists alerts (
