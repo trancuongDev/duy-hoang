@@ -245,6 +245,9 @@ document.getElementById('logoutBtn').addEventListener('click', async e => {
   e.preventDefault();
   await setOffline();
   sessionStorage.clear();
+  localStorage.removeItem('dh_user');
+  localStorage.removeItem('dh_role');
+  localStorage.removeItem('dh_name');
   location.href = 'login.html';
 });
 
@@ -306,15 +309,14 @@ function showPage(pg) {
   sessionStorage.removeItem('st_lesson_id'); // reset bài khi chuyển trang
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.slink').forEach(l => l.classList.remove('active'));
-  const map = { home:'Home', lessons:'Lessons', profile:'Profile', guide:'Guide', notifications:'Notifications', attendance:'Attendance' };
+  const map = { home:'Home', lessons:'Lessons', profile:'Profile', guide:'Guide', notifications:'Notifications', 'att-student':'AttStudent' };
   const el = document.getElementById('page' + (map[pg] || pg.charAt(0).toUpperCase()+pg.slice(1)));
   if (el) el.classList.add('active');
   document.querySelectorAll(`[data-page="${pg}"]`).forEach(l => l.classList.add('active'));
-  if (pg === 'home')          { renderHome(); renderHomeFeedbackBanner(); }
+  if (pg === 'home')          { renderHome(); renderHomeFeedbackBanner(); renderHomeDDBanner(); }
   if (pg === 'lessons')       renderLessonList();
   if (pg === 'notifications') renderNotifications();
   if (pg === 'schedule')      renderStudentSchedule();
-  if (pg === 'attendance')    loadAttendance();
   if (pg === 'feedback')      loadStudentFeedback();
 }
 document.querySelectorAll('.slink[data-page]').forEach(l => {
@@ -2327,357 +2329,6 @@ function openScheduleViewer(s) {
 }
 
 // ════════════════════════════════════════════════════════════════
-// ĐIỂM DANH — ATTENDANCE MODULE
-// ════════════════════════════════════════════════════════════════
-
-let _attCurrentSession = null;  // session đang điểm danh
-let _attUploadedImageUrl = null; // URL ảnh đã upload
-let _attImageFile = null;        // File ảnh chọn
-
-// Trạng thái màu sắc
-const ATT_STATUS = {
-  present: { label: 'Có mặt',   icon: '✅', cls: 'att-badge-present' },
-  late:    { label: 'Đi muộn',  icon: '⏰', cls: 'att-badge-late'    },
-  excused: { label: 'Xin nghỉ', icon: '📋', cls: 'att-badge-excused' },
-  absent:  { label: 'Vắng',     icon: '❌', cls: 'att-badge-absent'  },
-};
-
-// ── Load trang điểm danh ────────────────────────────────────────
-async function loadAttendance() {
-  const listEl  = document.getElementById('attHistoryList');
-  const openEl  = document.getElementById('attOpenSection');
-  const openList = document.getElementById('attOpenList');
-  if (!listEl) return;
-  listEl.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted);font-size:.85rem">⏳ Đang tải...</div>';
-
-  try {
-    // Lấy tất cả buổi của lớp học viên
-    const { data: sessions, error } = await db
-      .from('attendance_sessions')
-      .select('*')
-      .in('class_name', myClasses.length ? myClasses : ['__none__'])
-      .order('session_date', { ascending: false })
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    if (!sessions || !sessions.length) {
-      listEl.innerHTML = '<div style="text-align:center;padding:2.5rem;color:var(--muted)">📭 Chưa có buổi điểm danh nào.</div>';
-      openEl.style.display = 'none';
-      updateAttStats([], []);
-      return;
-    }
-
-    // Lấy điểm danh của học sinh này cho tất cả buổi
-    const sessionIds = sessions.map(s => s.id);
-    const { data: myRecords } = await db
-      .from('attendance')
-      .select('*')
-      .eq('username', currentUser)
-      .in('session_id', sessionIds);
-
-    const recordMap = Object.fromEntries((myRecords || []).map(r => [r.session_id, r]));
-
-    // Tách buổi đang mở và lịch sử
-    const today = new Date().toISOString().split('T')[0];
-    const openSessions = sessions.filter(s => s.is_active);
-    const allSessions  = sessions;
-
-    // Cập nhật thống kê
-    updateAttStats(allSessions, myRecords || []);
-
-    // Render buổi đang mở
-    if (openSessions.length) {
-      openEl.style.display = '';
-      openList.innerHTML = openSessions.map(s => {
-        const rec = recordMap[s.id];
-        const checked = rec && rec.status !== 'absent';
-        return buildOpenSessionCard(s, rec);
-      }).join('');
-    } else {
-      openEl.style.display = 'none';
-    }
-
-    // Render lịch sử
-    if (!allSessions.length) {
-      listEl.innerHTML = '<div style="text-align:center;padding:2.5rem;color:var(--muted)">📭 Chưa có lịch sử điểm danh.</div>';
-      return;
-    }
-    listEl.innerHTML = allSessions.map(s => {
-      const rec = recordMap[s.id];
-      return buildHistoryRow(s, rec);
-    }).join('');
-
-  } catch (e) {
-    listEl.innerHTML = `<div style="text-align:center;padding:2rem;color:#ef4444;font-size:.85rem">❌ Lỗi tải dữ liệu: ${e.message}</div>`;
-  }
-}
-
-// ── Cập nhật thống kê nhanh ─────────────────────────────────────
-function updateAttStats(sessions, records) {
-  const total   = sessions.length;
-  const present = records.filter(r => r.status === 'present' || r.status === 'late').length;
-  const absent  = records.filter(r => r.status === 'absent').length;
-  const rate    = total > 0 ? Math.round((present / total) * 100) : 0;
-
-  const el = id => document.getElementById(id);
-  if (el('attStatTotal'))   el('attStatTotal').textContent   = total;
-  if (el('attStatPresent')) el('attStatPresent').textContent = present;
-  if (el('attStatAbsent'))  el('attStatAbsent').textContent  = absent;
-  if (el('attStatRate'))    el('attStatRate').textContent    = rate + '%';
-}
-
-// ── Build card buổi đang mở ─────────────────────────────────────
-function buildOpenSessionCard(s, rec) {
-  const dateStr = new Date(s.session_date + 'T00:00:00').toLocaleDateString('vi-VN', { weekday:'long', day:'2-digit', month:'2-digit', year:'numeric' });
-  const timeStr = s.start_time ? `${s.start_time}${s.end_time ? ' – ' + s.end_time : ''}` : '';
-  const alreadyDone = rec && rec.status !== 'absent';
-  const statusInfo  = rec ? (ATT_STATUS[rec.status] || ATT_STATUS.absent) : null;
-
-  return `
-    <div class="att-session-card" style="border-color:#a7f3d0;background:linear-gradient(135deg,#f0fdf4,#ecfdf5)">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.75rem;flex-wrap:wrap">
-        <div style="flex:1;min-width:0">
-          <div style="font-weight:800;font-size:.95rem;color:#065f46;margin-bottom:.3rem">${s.title}</div>
-          <div style="font-size:.78rem;color:#047857;display:flex;flex-wrap:wrap;gap:.5rem">
-            <span>📅 ${dateStr}</span>
-            ${timeStr ? `<span>🕐 ${timeStr}</span>` : ''}
-            <span>📚 Lớp ${s.class_name}</span>
-          </div>
-          ${s.meet_link ? `<a href="${s.meet_link}" target="_blank" style="display:inline-flex;align-items:center;gap:.3rem;margin-top:.5rem;font-size:.78rem;color:#4f46e5;font-weight:700;text-decoration:none;background:#eef2ff;padding:.25rem .65rem;border-radius:6px">🎥 Vào Google Meet</a>` : ''}
-        </div>
-        <div>
-          ${alreadyDone
-            ? `<span class="att-badge ${statusInfo.cls}">${statusInfo.icon} ${statusInfo.label}</span>`
-            : `<button class="att-badge att-badge-open" onclick="openAttModal(${JSON.stringify(s).replace(/"/g,'&quot;')})" style="cursor:pointer;border:none">✍️ Điểm danh ngay</button>`
-          }
-        </div>
-      </div>
-      ${alreadyDone && rec.check_in_time ? `<div style="margin-top:.5rem;font-size:.72rem;color:#6b7280">Đã điểm danh lúc ${new Date(rec.check_in_time).toLocaleTimeString('vi-VN')}</div>` : ''}
-      ${alreadyDone && rec.proof_image_url ? `<img src="${rec.proof_image_url}" style="margin-top:.5rem;max-height:100px;border-radius:8px;object-fit:contain;cursor:pointer" onclick="window.open(this.src)" alt="Ảnh điểm danh"/>` : ''}
-    </div>`;
-}
-
-// ── Build row lịch sử ───────────────────────────────────────────
-function buildHistoryRow(s, rec) {
-  const dateStr = new Date(s.session_date + 'T00:00:00').toLocaleDateString('vi-VN', { weekday:'short', day:'2-digit', month:'2-digit' });
-  const statusInfo = rec ? (ATT_STATUS[rec.status] || ATT_STATUS.absent) : ATT_STATUS.absent;
-  const isOpen = s.is_active;
-
-  return `
-    <div class="att-history-row" style="${isOpen ? 'border-color:#a7f3d0' : ''}">
-      <div style="width:44px;height:44px;border-radius:12px;background:var(--primary-light);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">${statusInfo.icon}</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-weight:700;font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.title}</div>
-        <div style="font-size:.73rem;color:var(--muted);margin-top:.1rem">📅 ${dateStr} • Lớp ${s.class_name}</div>
-      </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.3rem;flex-shrink:0">
-        <span class="att-badge ${statusInfo.cls}">${statusInfo.icon} ${statusInfo.label}</span>
-        ${isOpen && (!rec || rec.status === 'absent')
-          ? `<button onclick="openAttModal(${JSON.stringify(s).replace(/"/g,'&quot;')})" style="font-size:.72rem;font-weight:700;color:var(--primary);background:var(--primary-light);border:none;border-radius:6px;padding:.2rem .55rem;cursor:pointer">✍️ Điểm danh</button>`
-          : ''
-        }
-      </div>
-    </div>`;
-}
-
-// ── Mở modal điểm danh ──────────────────────────────────────────
-function openAttModal(session) {
-  _attCurrentSession   = session;
-  _attUploadedImageUrl = null;
-  _attImageFile        = null;
-
-  // Reset form
-  document.querySelectorAll('input[name="attStatus"]').forEach(r => r.checked = false);
-  document.querySelectorAll('.att-status-opt').forEach(el => { el.style.opacity = '.5'; el.style.background = ''; });
-  document.getElementById('attUploadSection').style.display = 'none';
-  document.getElementById('attReasonSection').style.display = 'none';
-  document.getElementById('attReasonInput').value = '';
-  document.getElementById('attModalError').style.display = 'none';
-  document.getElementById('attPreviewImg').style.display = 'none';
-  document.getElementById('attUploadPrompt').style.display = '';
-  document.getElementById('attFileInput').value = '';
-  document.getElementById('attSubmitText').textContent = '✅ Xác nhận điểm danh';
-  document.getElementById('attSubmitBtn').disabled = false;
-
-  // Set tiêu đề
-  const dateStr = new Date(session.session_date + 'T00:00:00').toLocaleDateString('vi-VN', { weekday:'long', day:'2-digit', month:'2-digit', year:'numeric' });
-  document.getElementById('attModalTitle').textContent = session.title;
-  document.getElementById('attModalSub').textContent   = `📅 ${dateStr}${session.start_time ? ' • 🕐 ' + session.start_time : ''}`;
-
-  document.getElementById('attModal').style.display = '';
-}
-
-// ── Xử lý chọn trạng thái ──────────────────────────────────────
-function handleAttStatusChange(radio) {
-  document.querySelectorAll('.att-status-opt').forEach(el => { el.style.opacity = '.5'; el.style.background = ''; });
-  const active = document.querySelector(`.att-status-opt[data-val="${radio.value}"]`);
-  if (active) { active.style.opacity = '1'; active.style.background = 'rgba(99,102,241,.06)'; }
-
-  if (radio.value === 'present' || radio.value === 'late') {
-    document.getElementById('attUploadSection').style.display = '';
-    document.getElementById('attReasonSection').style.display = 'none';
-  } else if (radio.value === 'excused') {
-    document.getElementById('attUploadSection').style.display = 'none';
-    document.getElementById('attReasonSection').style.display = '';
-  }
-  document.getElementById('attModalError').style.display = 'none';
-}
-
-// ── Xử lý chọn file ảnh ─────────────────────────────────────────
-function handleAttFileChange(input) {
-  const file = input.files[0];
-  if (!file) return;
-  if (!file.type.startsWith('image/')) {
-    showAttError('Vui lòng chọn file ảnh (JPG, PNG, GIF...)');
-    return;
-  }
-  if (file.size > 5 * 1024 * 1024) {
-    showAttError('Ảnh không được lớn hơn 5MB');
-    return;
-  }
-  _attImageFile = file;
-  const reader = new FileReader();
-  reader.onload = e => {
-    const preview = document.getElementById('attPreviewImg');
-    preview.src = e.target.result;
-    preview.style.display = 'block';
-    document.getElementById('attUploadPrompt').style.display = 'none';
-  };
-  reader.readAsDataURL(file);
-  document.getElementById('attModalError').style.display = 'none';
-}
-
-// Drag & drop
-document.getElementById('attUploadZone')?.addEventListener('dragover', e => {
-  e.preventDefault();
-  document.getElementById('attUploadZone').classList.add('drag-over');
-});
-document.getElementById('attUploadZone')?.addEventListener('dragleave', () => {
-  document.getElementById('attUploadZone').classList.remove('drag-over');
-});
-document.getElementById('attUploadZone')?.addEventListener('drop', e => {
-  e.preventDefault();
-  document.getElementById('attUploadZone').classList.remove('drag-over');
-  const file = e.dataTransfer.files[0];
-  if (file) {
-    document.getElementById('attFileInput').files = e.dataTransfer.files;
-    handleAttFileChange(document.getElementById('attFileInput'));
-  }
-});
-
-function showAttError(msg) {
-  const el = document.getElementById('attModalError');
-  el.textContent = msg;
-  el.style.display = '';
-}
-
-// ── Upload ảnh lên Supabase Storage ─────────────────────────────
-async function uploadAttImage(file, sessionId) {
-  const ext  = file.name.split('.').pop() || 'jpg';
-  const path = `${currentUser}/${sessionId}/${Date.now()}.${ext}`;
-  const { data, error } = await db.storage
-    .from('attendance-images')
-    .upload(path, file, { contentType: file.type, upsert: true });
-  if (error) throw new Error('Upload ảnh thất bại: ' + error.message);
-  const { data: urlData } = db.storage.from('attendance-images').getPublicUrl(path);
-  return urlData.publicUrl;
-}
-
-// ── Submit điểm danh ─────────────────────────────────────────────
-async function submitAttendance() {
-  const statusRadio = document.querySelector('input[name="attStatus"]:checked');
-  if (!statusRadio) { showAttError('Vui lòng chọn trạng thái của bạn'); return; }
-  const status = statusRadio.value;
-
-  // Validate
-  if ((status === 'present' || status === 'late') && !_attImageFile) {
-    showAttError('Vui lòng tải lên ảnh chụp màn hình Google Meet để xác nhận');
-    return;
-  }
-  if (status === 'excused' && !document.getElementById('attReasonInput').value.trim()) {
-    showAttError('Vui lòng nhập lý do vắng');
-    return;
-  }
-
-  const btn = document.getElementById('attSubmitBtn');
-  btn.disabled = true;
-  document.getElementById('attSubmitText').textContent = '⏳ Đang gửi...';
-  document.getElementById('attModalError').style.display = 'none';
-
-  try {
-    let imageUrl = null;
-    // Upload ảnh nếu có
-    if (_attImageFile) {
-      document.getElementById('attSubmitText').textContent = '📤 Đang tải ảnh...';
-      imageUrl = await uploadAttImage(_attImageFile, _attCurrentSession.id);
-    }
-
-    // Lấy thông tin học sinh
-    const { data: studentData } = await db
-      .from('students').select('full_name,class_name').eq('username', currentUser).single();
-
-    const payload = {
-      session_id:       _attCurrentSession.id,
-      username:         currentUser,
-      student_name:     studentData?.full_name || currentName,
-      class_name:       _attCurrentSession.class_name,
-      status,
-      check_in_time:    new Date().toISOString(),
-      proof_image_url:  imageUrl,
-      absence_reason:   status === 'excused' ? document.getElementById('attReasonInput').value.trim() : null,
-      updated_at:       new Date().toISOString(),
-    };
-
-    // Upsert (insert hoặc update nếu đã tồn tại)
-    const { error } = await db
-      .from('attendance')
-      .upsert(payload, { onConflict: 'session_id,username' });
-
-    if (error) throw error;
-
-    // Đóng modal + reload
-    document.getElementById('attModal').style.display = 'none';
-    await loadAttendance();
-
-    // Toast thành báo thành công
-    _showAttToast(status === 'excused'
-      ? '📋 Đã gửi lý do vắng cho giáo viên!'
-      : '✅ Điểm danh thành công!', true);
-
-  } catch (e) {
-    showAttError('Lỗi: ' + e.message);
-    btn.disabled = false;
-    document.getElementById('attSubmitText').textContent = '✅ Xác nhận điểm danh';
-  }
-}
-
-// ── Mini toast cho điểm danh ─────────────────────────────────────
-function _showAttToast(msg, ok = true) {
-  let toast = document.getElementById('_attToast');
-  if (!toast) {
-    toast = document.createElement('div');
-    toast.id = '_attToast';
-    toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:#1e293b;color:#fff;padding:.65rem 1.25rem;border-radius:12px;font-size:.85rem;font-weight:600;z-index:99999;opacity:0;transition:all .3s;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.3)';
-    document.body.appendChild(toast);
-  }
-  toast.textContent = msg;
-  toast.style.background = ok ? '#065f46' : '#7f1d1d';
-  toast.style.opacity = '1';
-  toast.style.transform = 'translateX(-50%) translateY(0)';
-  setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transform = 'translateX(-50%) translateY(20px)';
-  }, 3500);
-}
-
-// ── Đóng modal khi click ra ngoài ────────────────────────────────
-document.getElementById('attModal')?.addEventListener('click', e => {
-  if (e.target === document.getElementById('attModal')) {
-    document.getElementById('attModal').style.display = 'none';
-  }
-});
-
-// ════════════════════════════════════════════════════════════════
 // GÓP Ý BUỔI HỌC
 // ════════════════════════════════════════════════════════════════
 const FB_PACE = { slow: 'Chậm', ok: 'Vừa', fast: 'Nhanh' };
@@ -2886,3 +2537,76 @@ async function submitStudentFeedback() {
 document.getElementById('fbModal')?.addEventListener('click', e => {
   if (e.target === document.getElementById('fbModal')) closeFbModal();
 });
+
+
+// ════════════════════════════════════════════════════════════════
+// BANNER NHẮC ĐIỂM DANH — hiện trên trang chủ học sinh
+// ════════════════════════════════════════════════════════════════
+async function renderHomeDDBanner() {
+  const box = document.getElementById('homeDDBanner');
+  if (!box) return;
+  box.style.display = 'none';
+  try {
+    if (!myClasses || !myClasses.length) return;
+    const today = new Date().toISOString().split('T')[0];
+    // Lấy buổi đang mở hôm nay của lớp học sinh
+    const { data: openSessions } = await db
+      .from('dd_sessions')
+      .select('id, title, start_time, end_time, meet_link, class_name')
+      .eq('status', 'open')
+      .eq('session_date', today)
+      .in('class_name', myClasses);
+
+    if (!openSessions || !openSessions.length) return;
+
+    // Kiểm tra học sinh đã điểm danh chưa
+    const ids = openSessions.map(s => s.id);
+    const { data: myRecs } = await db
+      .from('dd_records')
+      .select('session_id, status')
+      .eq('username', currentUser)
+      .in('session_id', ids);
+
+    const doneIds = new Set((myRecs || []).map(r => r.session_id));
+    const notDone = openSessions.filter(s => !doneIds.has(s.id));
+    if (!notDone.length) return;
+
+    // Hiện banner cho buổi đầu tiên chưa điểm danh
+    const first = notDone[0];
+    box.style.display = '';
+    box.innerHTML = `
+      <div onclick="localStorage.setItem('dh_user',sessionStorage.getItem('dh_user')||'');localStorage.setItem('dh_name',sessionStorage.getItem('dh_name')||'');localStorage.setItem('dh_role',sessionStorage.getItem('dh_role')||'');window.open('diemdanh-student.html','_blank')"
+           style="background:linear-gradient(135deg,rgba(16,185,129,.18),rgba(16,185,129,.08));border:1.5px solid rgba(16,185,129,.4);border-radius:14px;padding:1rem 1.25rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap;transition:all .2s"
+           onmouseover="this.style.background='linear-gradient(135deg,rgba(16,185,129,.25),rgba(16,185,129,.12))'"
+           onmouseout="this.style.background='linear-gradient(135deg,rgba(16,185,129,.18),rgba(16,185,129,.08))'">
+        <div style="display:flex;align-items:center;gap:.75rem">
+          <div style="width:40px;height:40px;border-radius:50%;background:rgba(16,185,129,.2);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;animation:pulse 1.5s ease-in-out infinite">✅</div>
+          <div>
+            <div style="font-weight:800;font-size:.92rem;color:#6ee7b7">
+              🔴 Buổi học đang chờ điểm danh!
+              ${notDone.length > 1 ? `<span style="font-size:.75rem;background:rgba(239,68,68,.2);color:#fca5a5;padding:.1rem .45rem;border-radius:999px;margin-left:.4rem">${notDone.length} buổi</span>` : ''}
+            </div>
+            <div style="font-size:.82rem;color:rgba(110,231,183,.75);margin-top:.2rem">${escHtml(first.title)} · ${first.start_time||''}${first.end_time ? ' – ' + first.end_time : ''}</div>
+          </div>
+        </div>
+        <span style="font-size:.82rem;font-weight:700;color:#6ee7b7;white-space:nowrap;display:flex;align-items:center;gap:.3rem">
+          Điểm danh ngay →
+        </span>
+      </div>`;
+  } catch (e) {
+    // Bảng chưa tồn tại hoặc lỗi khác → ẩn banner
+    const box2 = document.getElementById('homeDDBanner');
+    if (box2) box2.style.display = 'none';
+  }
+}
+
+// Realtime: cập nhật banner điểm danh khi admin mở/đóng buổi
+try {
+  db.channel('dd-sessions-watch')
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'dd_sessions' }, () => {
+      if (document.getElementById('pageHome')?.classList.contains('active')) {
+        renderHomeDDBanner();
+      }
+    })
+    .subscribe();
+} catch (e) { /* bảng chưa tồn tại thì bỏ qua */ }

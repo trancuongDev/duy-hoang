@@ -25,64 +25,399 @@
   <meta http-equiv="Referrer-Policy" content="no-referrer"/>
   <link rel="icon" type="image/png" href="icons/icon-192.png"/>
   <link rel="apple-touch-icon" href="icons/icon-192.png"/>
-  <link rel="stylesheet" href="css/trungthu-login.css?v=1.5.3"/>
-  <script src="trungthu-wish.js?v=1.5.1" defer></script>
   <link rel="manifest" href="manifest.json"/>
-  <meta name="theme-color" content="#0b1224"/>
+  <meta name="theme-color" content="#0f172a"/>
   <meta name="mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
   <meta name="apple-mobile-web-app-title" content="Duy Hoàng DTCT"/>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
   <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="config.js"></script>
   <style>
-#guideModal[hidden]{display:none!important}
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    #guideModal[hidden] { display: none !important; }
+
+    :root {
+      --bg: #0f172a;
+      --bg2: #1e293b;
+      --border: rgba(255,255,255,.1);
+      --text: #f1f5f9;
+      --text-2: #94a3b8;
+      --text-3: #64748b;
+      --accent: #3b82f6;
+      --accent-2: #2563eb;
+      --orange: #f97316;
+      --red: #ef4444;
+      --font: 'Be Vietnam Pro', system-ui, sans-serif;
+    }
+
+    html {
+      scrollbar-width: thin;
+      scrollbar-color: var(--accent) var(--bg2);
+    }
+    html::-webkit-scrollbar { width: 6px; }
+    html::-webkit-scrollbar-track { background: var(--bg2); }
+    html::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 3px; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 1.5rem;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      pointer-events: none;
+      z-index: 0;
+      opacity: .28;
+    }
+    .orb-a { width: 420px; height: 420px; background: #3b82f6; top: -80px; right: -80px; }
+    .orb-b { width: 320px; height: 320px; background: #f97316; bottom: -60px; left: -80px; }
+
+    /* ── LOGIN CARD ── */
+    .login-wrap {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 440px;
+      animation: cardIn .5s ease both;
+    }
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(20px) scale(.98); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    .login-card {
+      background: rgba(30, 41, 59, .85);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2.25rem 2rem 2rem;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 24px 60px rgba(0,0,0,.4);
+    }
+
+    /* Back link */
+    .back-home {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      font-size: .8rem;
+      font-weight: 600;
+      color: var(--text-2);
+      margin-bottom: 1.5rem;
+      transition: color .2s;
+    }
+    .back-home:hover { color: var(--text); }
+
+    /* Device tip */
+    .device-tip {
+      display: none;
+      margin-bottom: 1rem;
+      padding: .6rem .85rem;
+      border-radius: 10px;
+      background: rgba(249,115,22,.12);
+      border: 1px solid rgba(249,115,22,.25);
+      font-size: .78rem;
+      color: #fed7aa;
+      line-height: 1.5;
+    }
+
+    /* Brand */
+    .brand { text-align: center; margin-bottom: 1.75rem; }
+    .logo {
+      width: 64px; height: 64px;
+      border-radius: 14px;
+      margin: 0 auto 1rem;
+      overflow: hidden;
+      border: 1px solid rgba(59,130,246,.4);
+      box-shadow: 0 0 0 4px rgba(59,130,246,.1), 0 8px 24px rgba(0,0,0,.3);
+    }
+    .logo img { width: 100%; height: 100%; object-fit: cover; }
+    .brand h1 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: -.02em;
+      color: var(--text);
+      margin-bottom: .3rem;
+    }
+    .tagline { font-size: .85rem; color: var(--text-2); }
+    .ver-pill {
+      display: inline-block;
+      margin-top: .55rem;
+      font-size: .72rem;
+      font-weight: 700;
+      color: #60a5fa;
+      background: rgba(59,130,246,.12);
+      border: 1px solid rgba(59,130,246,.25);
+      padding: .2rem .6rem;
+      border-radius: 999px;
+    }
+
+    /* Form */
+    .form { display: flex; flex-direction: column; gap: 1rem; }
+    .field { display: flex; flex-direction: column; gap: .45rem; }
+    .label {
+      font-size: .72rem;
+      font-weight: 700;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      color: var(--text-3);
+    }
+    .input-wrap {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      padding: 0 14px;
+      height: 48px;
+      border-radius: 10px;
+      background: rgba(255,255,255,.06);
+      border: 1.5px solid rgba(255,255,255,.12);
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .input-wrap:focus-within {
+      border-color: rgba(59,130,246,.6);
+      box-shadow: 0 0 0 3px rgba(59,130,246,.15);
+    }
+    .field-error .input-wrap {
+      border-color: rgba(239,68,68,.6);
+      box-shadow: 0 0 0 3px rgba(239,68,68,.1);
+      animation: shake .35s ease;
+    }
+    @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
+    .ico {
+      width: 17px; height: 17px;
+      stroke: var(--text-3);
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      flex-shrink: 0;
+    }
+    .input-wrap input {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: .93rem;
+      color: var(--text);
+      font-family: inherit;
+      min-width: 0;
+    }
+    .input-wrap input::placeholder { color: var(--text-3); }
+    .eye {
+      border: none;
+      background: none;
+      cursor: pointer;
+      padding: 4px;
+      color: var(--text-3);
+      display: grid;
+      place-items: center;
+      transition: color .2s;
+    }
+    .eye:hover { color: var(--text-2); }
+    .eye svg { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+    .hint {
+      font-size: .78rem;
+      color: #fbbf24;
+      padding: .5rem .75rem;
+      border-radius: 8px;
+      background: rgba(245,158,11,.1);
+      border: 1px solid rgba(245,158,11,.2);
+    }
+
+    .row-between {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .75rem;
+      flex-wrap: wrap;
+    }
+    .remember {
+      display: inline-flex;
+      align-items: center;
+      gap: .55rem;
+      font-size: .85rem;
+      color: var(--text-2);
+      cursor: pointer;
+      user-select: none;
+    }
+    .remember input { width: 15px; height: 15px; accent-color: var(--accent); }
+    .link {
+      color: #60a5fa;
+      font-size: .85rem;
+      font-weight: 600;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      font-family: inherit;
+      transition: color .2s;
+    }
+    .link:hover { color: var(--text); }
+
+    /* Submit button */
+    .btn-login {
+      height: 50px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      color: #fff;
+      font-weight: 700;
+      font-size: .97rem;
+      font-family: inherit;
+      background: var(--accent);
+      box-shadow: 0 4px 20px rgba(59,130,246,.4);
+      transition: background .2s, transform .15s, box-shadow .2s, filter .2s;
+      position: relative;
+      overflow: hidden;
+      margin-top: .25rem;
+    }
+    .btn-login:hover {
+      background: var(--accent-2);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 28px rgba(59,130,246,.5);
+    }
+    .btn-login:active { transform: scale(.98); }
+    .btn-login.loading { pointer-events: none; filter: saturate(.8); }
+    .btn-login.loading #loginBtnText { visibility: hidden; }
+    #loginBtnLoader {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: .5rem;
+      color: #fff;
+      font-weight: 700;
+    }
+    .btn-login.loading #loginBtnLoader { display: flex !important; }
+
+    .legal {
+      text-align: center;
+      font-size: .75rem;
+      color: var(--text-3);
+      line-height: 1.55;
+    }
+
+    #loginError {
+      color: #fca5a5;
+      font-size: .82rem;
+      min-height: 1rem;
+      font-weight: 600;
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: space-between;
+      gap: .75rem;
+      flex-wrap: wrap;
+      margin-top: 1.25rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--border);
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(16px);
+      padding: .75rem 1.1rem;
+      border-radius: 12px;
+      background: var(--bg2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      box-shadow: 0 12px 32px rgba(0,0,0,.4);
+      font-size: .88rem;
+      z-index: 50;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .3s ease, transform .3s ease;
+      white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+      body { padding: 1rem .75rem; align-items: flex-start; padding-top: max(1.5rem, env(safe-area-inset-top)); }
+      .login-card { padding: 1.75rem 1.35rem 1.5rem; border-radius: 16px; }
+      .brand h1 { font-size: 1.3rem; }
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes policyPopIn {
+      from { opacity: 0; transform: translateY(28px) scale(.96); }
+      to   { opacity: 1; transform: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
   </style>
 </head>
-<body class="auth-page trungthu-theme">
-  <div class="sky" aria-hidden="true">
-    <div class="stars" id="stars"></div>
-    <div class="moon-glow"></div>
-  </div>
+<body>
+  <div class="orb orb-a" aria-hidden="true"></div>
+  <div class="orb orb-b" aria-hidden="true"></div>
 
-  <main class="shell">
-    <section class="login-card" aria-label="Đăng nhập">
-      <div class="form-pane">
-        <a href="index.html" class="back-home" title="Quay về trang chủ">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-          Trang chủ
-        </a>
+  <div class="login-wrap">
+    <div class="login-card" role="main" aria-label="Đăng nhập">
 
-        <div id="deviceTipBanner" class="device-tip">
-          <span>Dùng <b>laptop hoặc tablet</b> để học hiệu quả hơn.</span>
+      <a href="index.html" class="back-home" title="Quay về trang chủ">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+        Trang chủ
+      </a>
+
+      <div id="deviceTipBanner" class="device-tip">
+        <span>Dùng <b>laptop hoặc tablet</b> để học hiệu quả hơn.</span>
+      </div>
+      <script>if(/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)){document.getElementById('deviceTipBanner').style.display='block';}</script>
+
+      <div class="brand">
+        <div class="logo" aria-hidden="true">
+          <img src="icons/icon-192.png" alt="DHDT"/>
         </div>
-        <script>if(/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)){document.getElementById('deviceTipBanner').style.display='block';}</script>
+        <h1>Chào mừng trở lại</h1>
+        <p class="tagline">Hệ thống học tập DHDT LMS</p>
+        <span class="ver-pill">v1.5.0</span>
+      </div>
 
-        <div class="brand">
-          <div class="logo" aria-hidden="true" style="padding:0">
-            <img src="icons/icon-192.png" alt="DHDT" style="width:100%;height:100%;object-fit:cover;border-radius:16px"/>
-          </div>
-          <h1>Chào mừng trở lại</h1>
-          <p class="tagline">Ánh trăng Trung Thu — tiếp tục hành trình học tập</p>
-          <span class="ver-pill">v1.5.0</span>
-        </div>
+      <form class="form" id="loginForm">
+        <label class="field" for="usernameInput">
+          <span class="label">Tài khoản</span>
+          <span class="input-wrap">
+            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <input type="text" id="usernameInput" name="account" autocomplete="username" placeholder="Gmail hoặc tên đăng nhập" required/>
+          </span>
+        </label>
 
-        <form class="form" id="loginForm">
-          <label class="field" for="usernameInput">
-            <span class="label">Tài khoản</span>
-            <span class="input-wrap">
-              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-              <input type="text" id="usernameInput" name="account" autocomplete="username" placeholder="Gmail hoặc tên đăng nhập" required/>
-            </span>
-          </label>
-
-          <label class="field" for="passwordInput">
-            <span class="label">Mật khẩu</span>
-            <span class="input-wrap">
-              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              <input id="passwordInput" type="password" name="password" autocomplete="current-password" placeholder="Nhập mật khẩu" required/>
-            </span>
-          </label>
+        <label class="field" for="passwordInput">
+          <span class="label">Mật khẩu</span>
+          <span class="input-wrap">
+            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <input id="passwordInput" type="password" name="password" autocomplete="current-password" placeholder="Nhập mật khẩu" required/>
+          </span>
+        </label>
 
           <p class="hint">Phân biệt: <strong>i/L — 1/l — 0/O</strong></p>
 
@@ -116,39 +451,21 @@
           <a href="#" class="link" id="requestAccountBtn" onclick="event.preventDefault()">Chưa có tài khoản? Liên hệ trợ lý</a>
           <a href="#" class="link" onclick="event.preventDefault();document.getElementById('guideModal').style.display='block'">Hướng dẫn</a>
         </div>
-      </div>
-
-      <aside class="art-pane" aria-hidden="true">
-        <div class="wave wave-1"></div>
-        <div class="wave wave-2"></div>
-        <div class="wave wave-3"></div>
-        <div class="art-layers">
-          <img src="assets/trungthu/trungthu-panel.png" alt="" class="art-img"/>
-          <div class="lantern l1"></div>
-          <div class="lantern l2"></div>
-          <div class="lantern l3"></div>
-        </div>
-        <div class="art-caption">
-          <div class="kicker">Mùa Trung Thu</div>
-          <h2>Anh Duy Hoàng Chúc Mừng Trung Thu Bạn</h2>
-        </div>
-      </aside>
-    </section>
-  </main>
-
-  <script src="js/trungthu-login-ui.js?v=1.5.2"></script>
+      </form>
+    </div><!-- /.login-card -->
+  </div><!-- /.login-wrap -->
 
   <!-- MODAL HƯỚNG DẪN -->
-  <div id="guideModal" style="display:none;position:fixed;inset:0;z-index:12000;overflow-y:auto;padding:20px;box-sizing:border-box;background:rgba(8,12,28,.75);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)">
-    <div style="width:min(520px,100%);margin:20px auto 32px;border-radius:20px;overflow:hidden;background:#fffdf9;border:1px solid rgba(240,180,41,.3);box-shadow:0 24px 64px rgba(0,0,0,.45);position:relative">
+  <div id="guideModal" style="display:none;position:fixed;inset:0;z-index:12000;overflow-y:auto;padding:20px;box-sizing:border-box;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)">
+    <div style="width:min(520px,100%);margin:20px auto 32px;border-radius:20px;overflow:hidden;background:#1e293b;border:1px solid rgba(255,255,255,.1);box-shadow:0 24px 64px rgba(0,0,0,.55);position:relative">
       <div style="position:relative;padding:22px 48px 18px 22px;background:linear-gradient(145deg,#1a1440 0%,#2a1830 50%,#7c2d12 100%);color:#fff8eb">
         <button type="button" onclick="document.getElementById('guideModal').style.display='none'" aria-label="Đóng" style="position:absolute;top:14px;right:14px;width:34px;height:34px;border:1px solid rgba(255,255,255,.25);border-radius:50%;background:rgba(255,255,255,.12);color:#fff8eb;font:700 16px/1 system-ui,sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;margin:0">✕</button>
-        <div style="display:block;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#f0b429;margin:0 0 6px;line-height:1.3">Mùa Trung Thu</div>
+        <div style="display:block;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#f0b429;margin:0 0 6px;line-height:1.3">DHDT LMS</div>
         <div style="display:block;margin:0;padding:0;font-size:20px;font-weight:800;line-height:1.3;color:#fff8eb;letter-spacing:-.02em">Hướng dẫn sử dụng</div>
         <div style="display:block;margin:6px 0 0;padding:0;font-size:13px;font-weight:500;line-height:1.4;color:rgba(255,248,235,.75)">DHDT LMS · 4 bước bắt đầu học</div>
       </div>
 
-      <div style="display:flex;flex-direction:column;gap:12px;padding:18px;background:#fff8ef">
+      <div style="display:flex;flex-direction:column;gap:12px;padding:18px;background:#0f172a">
         <div style="border-radius:14px;padding:14px 16px;background:#f7fdf9;border:1px solid #bbf7d0">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
             <span style="width:26px;height:26px;border-radius:8px;background:#059669;color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</span>
@@ -230,7 +547,7 @@
         </div>
 
         <p style="text-align:center;font-size:13px;color:#94a3b8;margin:2px 0 0;line-height:1.45">Chúng tôi luôn đồng hành cùng bạn trên hành trình chinh phục đại học</p>
-        <button type="button" onclick="document.getElementById('guideModal').style.display='none'" style="width:100%;padding:14px;border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:800;cursor:pointer;background:linear-gradient(90deg,#f0871f,#c2410c 55%,#7f1d1d);box-shadow:0 10px 24px rgba(194,65,12,.3)">Đã hiểu, đóng lại</button>
+        <button type="button" onclick="document.getElementById('guideModal').style.display='none'" style="width:100%;padding:14px;border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:800;cursor:pointer;background:#3b82f6;box-shadow:0 8px 20px rgba(59,130,246,.35)">Đã hiểu, đóng lại</button>
       </div>
     </div>
   </div>
@@ -252,15 +569,14 @@
       </div>
 
       <!-- Body -->
-      <div style="background:#fff;padding:1.5rem;display:flex;flex-direction:column;gap:.85rem">
-
-        <p style="font-size:.88rem;color:#475569;line-height:1.7;margin:0">Hệ thống <b>không hỗ trợ tự đặt lại mật khẩu</b> để đảm bảo bảo mật. Vui lòng liên hệ Trợ Lý Duy Hoàng - Trần Cường hoặc Quốc Toàn theo quy trình dưới đây:</p>
+      <div style="background:#1e293b;padding:1.5rem;display:flex;flex-direction:column;gap:.85rem">
+        <p style="font-size:.88rem;color:#94a3b8;line-height:1.7;margin:0">Hệ thống <b style="color:#f1f5f9">không hỗ trợ tự đặt lại mật khẩu</b> để đảm bảo bảo mật. Vui lòng liên hệ Trợ Lý Duy Hoàng - Trần Cường hoặc Quốc Toàn theo quy trình dưới đây:</p>
 
         <!-- Bước 1 -->
-        <div style="display:flex;gap:.85rem;align-items:flex-start;background:#eef2ff;border-radius:14px;padding:1rem 1.1rem">
+        <div style="display:flex;gap:.85rem;align-items:flex-start;background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.2);border-radius:14px;padding:1rem 1.1rem">
           <div style="width:32px;height:32px;background:#6366f1;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.9rem;flex-shrink:0">1</div>
           <div>
-            <div style="font-weight:700;font-size:.9rem;color:#3730a3;margin-bottom:.3rem">Nhắn tin cho Trợ Lý Duy Hoàng - Trần Cường hoặc Quốc Toàn</div>
+            <div style="font-weight:700;font-size:.9rem;color:#a5b4fc;margin-bottom:.3rem">Nhắn tin cho Trợ Lý Duy Hoàng - Trần Cường hoặc Quốc Toàn</div>
             <div style="font-size:.83rem;color:#475569;line-height:1.65">Liên hệ qua Zalo và cung cấp đầy đủ thông tin xác minh.</div>
             <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.7rem">
               <a href="https://zalo.me/84869573231" target="_blank" style="display:inline-flex;align-items:center;gap:.6rem;text-decoration:none;background:linear-gradient(135deg,#0068ff,#0052cc);color:#fff;font-size:.85rem;font-weight:700;padding:.55rem 1.1rem;border-radius:10px;box-shadow:0 4px 12px rgba(0,104,255,.35);transition:transform .15s" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
@@ -390,6 +706,9 @@
             sessionStorage.setItem('dh_role', 'teacher');
             sessionStorage.setItem('dh_user', u);
             sessionStorage.setItem('dh_name', teacher.full_name);
+            localStorage.setItem('dh_role', 'teacher');
+            localStorage.setItem('dh_user', u);
+            localStorage.setItem('dh_name', teacher.full_name);
             window.location.href = 'admin.html';
             return;
           }
@@ -402,6 +721,9 @@
               sessionStorage.setItem('dh_role', 'teacher');
               sessionStorage.setItem('dh_user', u);
               sessionStorage.setItem('dh_name', matchedExtra.full_name || u);
+              localStorage.setItem('dh_role', 'teacher');
+              localStorage.setItem('dh_user', u);
+              localStorage.setItem('dh_name', matchedExtra.full_name || u);
               window.location.href = 'admin.html';
               return;
             } else {
@@ -431,6 +753,9 @@
             sessionStorage.setItem('dh_role', 'assistant');
             sessionStorage.setItem('dh_user', u);
             sessionStorage.setItem('dh_name', assistantData.full_name || u);
+            localStorage.setItem('dh_role', 'assistant');
+            localStorage.setItem('dh_user', u);
+            localStorage.setItem('dh_name', assistantData.full_name || u);
             window.location.href = 'admin.html';
             return;
           }
@@ -525,6 +850,10 @@
           sessionStorage.setItem('dh_name', student.full_name);
           sessionStorage.setItem('dh_token', token);
           sessionStorage.setItem('dh_code', student.student_code || u);
+          // Lưu thêm vào localStorage để các tab khác (diemdanh.html) đọc được
+          localStorage.setItem('dh_role', 'student');
+          localStorage.setItem('dh_user', u);
+          localStorage.setItem('dh_name', student.full_name);
 
           // Parse thông tin thiết bị
           const ua = navigator.userAgent;
@@ -948,19 +1277,15 @@
     }
   </style>
 
-  <!-- POPUP THÔNG BÁO HỖ TRỢ — Trung Thu -->
+  <!-- POPUP THÔNG BÁO HỖ TRỢ -->
   <div id="supportLeavePopup" style="display:none;position:fixed;inset:0;background:rgba(8,10,24,.78);z-index:10001;overflow-y:auto;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)">
-    <div style="max-width:440px;margin:12vh auto 2rem;border-radius:22px;overflow:hidden;border:1px solid rgba(245,215,110,.35);box-shadow:0 28px 70px rgba(0,0,0,.5),0 0 40px rgba(245,215,110,.12);animation:policyPopIn .4s cubic-bezier(.22,1,.36,1) both">
-      <div style="background:linear-gradient(145deg,#1a1440 0%,#2a1830 45%,#7c2d12 100%);padding:1.55rem 1.4rem 1.3rem;color:#fff8eb;position:relative;overflow:hidden">
-        <div style="position:absolute;top:-36px;right:-28px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fffaf0,#f5d76e 55%,transparent 72%);opacity:.55;pointer-events:none"></div>
-        <div style="position:absolute;bottom:-40px;left:-20px;width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,rgba(232,93,4,.35),transparent 70%);pointer-events:none"></div>
-        <button type="button" onclick="closeSupportLeavePopup()" style="position:absolute;top:.9rem;right:.9rem;background:rgba(255,255,255,.12);border:1px solid rgba(245,215,110,.28);color:#fff8eb;width:32px;height:32px;border-radius:50%;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2" aria-label="Đóng">✕</button>
+    <div style="max-width:440px;margin:12vh auto 2rem;border-radius:22px;overflow:hidden;border:1px solid rgba(245,215,110,.35);box-shadow:0 28px 70px rgba(0,0,0,.5);animation:policyPopIn .4s cubic-bezier(.22,1,.36,1) both">
+      <div style="background:linear-gradient(145deg,#0f172a 0%,#1e3a5f 100%);padding:1.55rem 1.4rem 1.3rem;color:#fff8eb;position:relative;overflow:hidden">
+        <button type="button" onclick="closeSupportLeavePopup()" style="position:absolute;top:.9rem;right:.9rem;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff8eb;width:32px;height:32px;border-radius:50%;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2" aria-label="Đóng">✕</button>
         <div style="display:flex;align-items:center;gap:.9rem;position:relative;z-index:1">
-          <div style="width:50px;height:50px;border-radius:50%;flex-shrink:0;background:radial-gradient(circle at 32% 32%,#fffaf0,#f5d76e 58%,#e8a317);box-shadow:0 0 22px rgba(245,215,110,.55);position:relative">
-            <span style="position:absolute;top:6px;right:5px;width:32px;height:32px;border-radius:50%;background:#1a1440"></span>
-          </div>
+          <div style="width:50px;height:50px;border-radius:50%;flex-shrink:0;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:1.5rem">📢</div>
           <div>
-            <div style="font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(245,215,110,.9);margin-bottom:.25rem">Mùa Trung Thu</div>
+            <div style="font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.7);margin-bottom:.25rem">DHDT LMS</div>
             <div style="font-family:Georgia,'Times New Roman',serif;font-size:1.3rem;font-weight:700;letter-spacing:.01em;color:#fff8eb">Thông báo hỗ trợ web</div>
             <div style="font-size:.8rem;color:rgba(247,241,230,.72);margin-top:.25rem">Áp dụng từ 16/8 đến 22/8</div>
           </div>

@@ -6,7 +6,6 @@
   <title>Nhóm trao đổi - DHDT LMS</title>
   <link rel="icon" type="image/png" href="icons/icon-192.png"/>
   <link rel="stylesheet" href="style.css"/>
-  <link rel="stylesheet" href="css/trungthu-dashboard.css?v=1.5.2"/>
   <link rel="manifest" href="manifest.json"/>
   <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="config.js"></script>
@@ -128,8 +127,7 @@
     @media(max-width:640px){ .zg-form{grid-template-columns:1fr} }
   </style>
 </head>
-<body class="dashboard-page trungthu-dash">
-  <div class="tt-dash-spark" id="ttDashSpark" aria-hidden="true"></div>
+<body class="dashboard-page">
   <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
 
   <aside class="sidebar" id="sidebar">
@@ -502,14 +500,6 @@ document.getElementById('zgCode').addEventListener('keydown', e => { if (e.key =
     localStorage.setItem('st_dark', on ? '1' : '0');
   });
 })();
-(function sparks() {
-  var wrap = document.getElementById('ttDashSpark');
-  if (!wrap || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  var n = window.innerWidth < 700 ? 10 : 16, html = '';
-  for (var i = 0; i < n; i++) html += '<i style="--x:'+(Math.random()*100)+'%;--d:'+(12+Math.random()*14)+'s;--delay:'+(-Math.random()*16)+'s;--drift:'+(Math.random()*40-20)+'px;--s:'+(2+Math.random()*3)+'px"></i>';
-  wrap.innerHTML = html;
-})();
-
 loadMe().then(ok => { if (ok) { loadGroups(); loadMySuggestions(); } });
 
 const MINE_PAGE = 5;

@@ -1,13 +1,8 @@
-const CACHE = 'DHDT-lms-v1.5.1';
+const CACHE = 'DHDT-lms-v1.5.9';
 const BASE = '/duyhoangdaytaon-cantho.1.1';
 const STATIC = [
   `${BASE}/style.css`,
   `${BASE}/config.js`,
-  `${BASE}/trungthu.css`,
-  `${BASE}/trungthu-wish.js`,
-  `${BASE}/trungthu-bg.jpg`,
-  `${BASE}/css/trungthu-login.css`,
-  `${BASE}/js/trungthu-login-ui.js`,
   `${BASE}/app.js`,
   `${BASE}/admin.js`,
   `${BASE}/student.js`,

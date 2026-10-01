@@ -325,7 +325,7 @@ if (!isTeacher) {
   ].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
 }
 
-document.getElementById('logoutBtn').addEventListener('click', e => { e.preventDefault(); sessionStorage.clear(); location.href='login.html'; });
+document.getElementById('logoutBtn').addEventListener('click', e => { e.preventDefault(); sessionStorage.clear(); localStorage.removeItem('dh_user'); localStorage.removeItem('dh_role'); localStorage.removeItem('dh_name'); location.href='login.html'; });
 document.getElementById('menuToggle').addEventListener('click', () => {
   document.getElementById('sidebar').classList.toggle('open');
   document.getElementById('sidebarBackdrop').classList.toggle('show');
@@ -390,7 +390,6 @@ function showPage(name) {
   if (name === 'library')        renderLibraryAdmin();
   if (name === 'groups')         renderZaloGroupsAdmin();
   if (name === 'guide')          adminRenderGuide();
-  if (name === 'attendance-admin') { populateAttAdminClassFilter(); loadAttAdminSessions(); }
   if (name === 'feedback-admin')   { populateFbAdminFilters(); loadFbAdminSessions(); }
 }
 document.querySelectorAll('.slink[data-page]').forEach(l => {
@@ -3639,7 +3638,7 @@ document.getElementById('clearAlertsBtn').addEventListener('click', async ()=>{
 });
 
 // ---- Init ----
-const _validPages = ['overview','lessons','lesson-groups','create-student','students','classes','security','devices','access-stats','login-history','announcements','files','library','groups','schedule','profile','attendance-admin','feedback-admin'];
+const _validPages = ['overview','lessons','lesson-groups','create-student','students','classes','security','devices','access-stats','login-history','announcements','files','library','groups','schedule','profile','feedback-admin'];
 const _savedPage = sessionStorage.getItem('dh_page');
 populateClassFilters().then(() => {
   const fromHash = location.hash === '#feedback-admin' ? 'feedback-admin' : null;
@@ -7294,631 +7293,7 @@ function adminFilterGuide(q) {
 }
 
 
-// ════════════════════════════════════════════════════════════════
-// ĐIỂM DANH ADMIN — ATTENDANCE ADMIN MODULE
-// ════════════════════════════════════════════════════════════════
 
-let _attAdminEditId = null; // null = tạo mới, số = sửa
-
-const ATT_STATUS_ADMIN = {
-  present: { label: 'Có mặt',   icon: '✅', color: '#16a34a', bg: '#dcfce7' },
-  late:    { label: 'Đi muộn',  icon: '⏰', color: '#d97706', bg: '#fef3c7' },
-  excused: { label: 'Xin phép', icon: '📋', color: '#4338ca', bg: '#e0e7ff' },
-  absent:  { label: 'Vắng',     icon: '❌', color: '#dc2626', bg: '#fee2e2' },
-};
-
-// ── Populate filter lớp ─────────────────────────────────────────
-async function populateAttAdminClassFilter() {
-  const sel1 = document.getElementById('attAdminFilterClass');
-  const sel2 = document.getElementById('attAdminClass');
-  const { data: classes } = await db.from('classes').select('name').order('name');
-  const options = (classes || []).map(c => `<option value="${c.name}">${c.name}</option>`).join('');
-  if (sel1) sel1.innerHTML = '<option value="">Tất cả lớp</option>' + options;
-  if (sel2) sel2.innerHTML = '<option value="">-- Chọn lớp --</option>' + options;
-  // Set ngày mặc định
-  const dateEl = document.getElementById('attAdminDate');
-  if (dateEl && !dateEl.value) dateEl.value = new Date().toISOString().split('T')[0];
-}
-
-// ── Load danh sách buổi điểm danh ──────────────────────────────
-async function loadAttAdminSessions() {
-  const listEl = document.getElementById('attAdminSessionList');
-  if (!listEl) return;
-  listEl.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted)">⏳ Đang tải...</div>';
-
-  const filterClass = document.getElementById('attAdminFilterClass')?.value || '';
-  const filterDate  = document.getElementById('attAdminFilterDate')?.value  || '';
-
-  let query = db.from('attendance_sessions').select('*').order('session_date', { ascending: false }).order('created_at', { ascending: false });
-  if (filterClass) query = query.eq('class_name', filterClass);
-  if (filterDate)  query = query.eq('session_date', filterDate);
-
-  const { data: sessions, error } = await query;
-  if (error) { listEl.innerHTML = `<div style="color:#ef4444;padding:1rem">❌ Lỗi: ${error.message}</div>`; return; }
-  if (!sessions?.length) {
-    listEl.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted)">📭 Chưa có buổi điểm danh nào.<br/><small>Nhấn "Tạo buổi điểm danh" để bắt đầu.</small></div>';
-    updateAttAdminStats([]);
-    return;
-  }
-
-  // Lấy tổng điểm danh theo từng session
-  const sessionIds = sessions.map(s => s.id);
-  const { data: allRecs } = await db.from('attendance').select('session_id,status').in('session_id', sessionIds);
-  const recMap = {};
-  (allRecs || []).forEach(r => {
-    if (!recMap[r.session_id]) recMap[r.session_id] = { present:0, late:0, excused:0, absent:0, total:0 };
-    recMap[r.session_id][r.status] = (recMap[r.session_id][r.status] || 0) + 1;
-    recMap[r.session_id].total++;
-  });
-
-  updateAttAdminStats(sessions, allRecs || []);
-
-  listEl.innerHTML = sessions.map(s => {
-    const rec = recMap[s.id] || {};
-    const dateStr = new Date(s.session_date + 'T00:00:00').toLocaleDateString('vi-VN', { weekday:'short', day:'2-digit', month:'2-digit', year:'numeric' });
-    const present = (rec.present||0) + (rec.late||0);
-    return `
-      <div class="att-session-row ${s.is_active ? 'open' : ''}" id="attSession_${s.id}">
-        <!-- Icon trạng thái -->
-        <div style="width:46px;height:46px;border-radius:13px;background:${s.is_active?'#d1fae5':'var(--primary-light,#eef2ff)'};display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0">${s.is_active?'🟢':'📋'}</div>
-        <!-- Info -->
-        <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:.3rem">
-            <span style="font-weight:800;font-size:.93rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.title}</span>
-            <span class="att-pill ${s.is_active ? 'att-pill-open' : 'att-pill-closed'}">${s.is_active ? '● Đang mở' : '● Đã đóng'}</span>
-          </div>
-          <div style="font-size:.76rem;color:var(--muted);display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:.45rem">
-            <span>📅 ${dateStr}</span>
-            ${s.start_time ? `<span>🕐 ${s.start_time}${s.end_time?' – '+s.end_time:''}</span>` : ''}
-            <span>📚 ${s.class_name}</span>
-            ${s.meet_link ? `<a href="${s.meet_link}" target="_blank" style="color:var(--primary);font-weight:600;text-decoration:none">🎥 Meet</a>` : ''}
-          </div>
-          <div style="display:flex;gap:.4rem;flex-wrap:wrap">
-            <span class="att-mini-stat" style="background:#d1fae5;color:#15803d">✅ ${present} có mặt</span>
-            <span class="att-mini-stat" style="background:#fee2e2;color:#b91c1c">❌ ${rec.absent||0} vắng</span>
-            <span class="att-mini-stat" style="background:#e0e7ff;color:#3730a3">📋 ${rec.excused||0} xin phép</span>
-            <span class="att-mini-stat" style="background:var(--primary-light,#eef2ff);color:var(--muted)">👥 ${rec.total||0} đã điểm danh</span>
-          </div>
-        </div>
-        <!-- Actions -->
-        <div style="display:flex;gap:.4rem;flex-wrap:wrap;flex-shrink:0;align-items:center">
-          <button class="att-action-btn" style="background:var(--primary-light,#eef2ff);color:var(--primary)" onclick="viewAttDetail(${s.id},'${s.title.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')">👁 Chi tiết</button>
-          <button class="att-action-btn" style="background:linear-gradient(135deg,#065f46,#059669);color:#fff" onclick="window.open('attendance-live.html?id=${s.id}','_blank')">📡 Live</button>
-          <button class="att-action-btn" style="background:${s.is_active?'#fee2e2':'#d1fae5'};color:${s.is_active?'#b91c1c':'#15803d'}" onclick="toggleAttSession(${s.id},${!s.is_active})">${s.is_active?'🔒 Đóng':'🔓 Mở'}</button>
-          <button class="att-action-btn" style="background:#fef3c7;color:#92400e" onclick="editAttSession(${JSON.stringify(s).replace(/"/g,'&quot;')})">✏️</button>
-          <button class="att-action-btn" style="background:#fee2e2;color:#b91c1c" onclick="deleteAttSession(${s.id})">🗑</button>
-        </div>
-      </div>`;
-  }).join('');
-}
-
-// ── Thống kê nhanh admin ────────────────────────────────────────
-function updateAttAdminStats(sessions, allRecs = []) {
-  const today = new Date().toISOString().split('T')[0];
-  const todaySessions = sessions.filter(s => s.session_date === today).map(s => s.id);
-  const todayRecs = allRecs.filter(r => todaySessions.includes(r.session_id));
-  const el = id => document.getElementById(id);
-  if (el('aStatTotal'))   el('aStatTotal').textContent   = sessions.length;
-  if (el('aStatPresent')) el('aStatPresent').textContent = todayRecs.filter(r => r.status==='present'||r.status==='late').length;
-  if (el('aStatAbsent'))  el('aStatAbsent').textContent  = todayRecs.filter(r => r.status==='absent').length;
-  if (el('aStatExcused')) el('aStatExcused').textContent = todayRecs.filter(r => r.status==='excused').length;
-}
-
-// ── Mở modal tạo mới ────────────────────────────────────────────
-function openAttAdminCreateModal() {
-  _attAdminEditId = null;
-  document.getElementById('attAdminModalTitle').textContent = 'Tạo buổi điểm danh';
-  document.getElementById('attAdminTitle').value = '';
-  document.getElementById('attAdminClass').value = '';
-  document.getElementById('attAdminDate').value = new Date().toISOString().split('T')[0];
-  document.getElementById('attAdminStartTime').value = '';
-  document.getElementById('attAdminEndTime').value = '';
-  document.getElementById('attAdminMeetLink').value = '';
-  document.getElementById('attAdminDesc').value = '';
-  document.getElementById('attAdminIsActive').checked = true;
-  document.getElementById('attAdminModalError').style.display = 'none';
-  document.getElementById('attAdminSaveText').textContent = '💾 Lưu buổi điểm danh';
-  document.getElementById('attAdminModal').style.display = '';
-}
-
-// ── Sửa buổi điểm danh ──────────────────────────────────────────
-function editAttSession(s) {
-  _attAdminEditId = s.id;
-  document.getElementById('attAdminModalTitle').textContent = 'Chỉnh sửa buổi điểm danh';
-  document.getElementById('attAdminTitle').value     = s.title || '';
-  document.getElementById('attAdminClass').value     = s.class_name || '';
-  document.getElementById('attAdminDate').value      = s.session_date || '';
-  document.getElementById('attAdminStartTime').value = s.start_time || '';
-  document.getElementById('attAdminEndTime').value   = s.end_time || '';
-  document.getElementById('attAdminMeetLink').value  = s.meet_link || '';
-  document.getElementById('attAdminDesc').value      = s.description || '';
-  document.getElementById('attAdminIsActive').checked = s.is_active !== false;
-  document.getElementById('attAdminModalError').style.display = 'none';
-  document.getElementById('attAdminSaveText').textContent = '💾 Cập nhật';
-  document.getElementById('attAdminModal').style.display = '';
-}
-
-// ── Lưu buổi điểm danh ──────────────────────────────────────────
-async function saveAttAdminSession() {
-  const title    = document.getElementById('attAdminTitle').value.trim();
-  const cls      = document.getElementById('attAdminClass').value;
-  const date     = document.getElementById('attAdminDate').value;
-  const start    = document.getElementById('attAdminStartTime').value;
-  const end      = document.getElementById('attAdminEndTime').value;
-  const meet     = document.getElementById('attAdminMeetLink').value.trim();
-  const desc     = document.getElementById('attAdminDesc').value.trim();
-  const isActive = document.getElementById('attAdminIsActive').checked;
-  const errEl    = document.getElementById('attAdminModalError');
-
-  if (!title) { errEl.textContent = 'Vui lòng nhập tiêu đề'; errEl.style.display = ''; return; }
-  if (!cls)   { errEl.textContent = 'Vui lòng chọn lớp';     errEl.style.display = ''; return; }
-  if (!date)  { errEl.textContent = 'Vui lòng chọn ngày';    errEl.style.display = ''; return; }
-  errEl.style.display = 'none';
-
-  const btn = document.getElementById('attAdminSaveText');
-  btn.textContent = '⏳ Đang lưu...';
-
-  const payload = {
-    title, class_name: cls, session_date: date,
-    start_time: start || null, end_time: end || null,
-    meet_link: meet || null, description: desc || null,
-    is_active: isActive,
-    created_by: sessionStorage.getItem('dh_user') || 'admin',
-  };
-
-  let error;
-  if (_attAdminEditId) {
-    ({ error } = await db.from('attendance_sessions').update(payload).eq('id', _attAdminEditId));
-  } else {
-    ({ error } = await db.from('attendance_sessions').insert(payload));
-  }
-
-  if (error) { errEl.textContent = 'Lỗi: ' + error.message; errEl.style.display = ''; btn.textContent = '💾 Lưu buổi điểm danh'; return; }
-
-  document.getElementById('attAdminModal').style.display = 'none';
-  showToast(_attAdminEditId ? 'Đã cập nhật buổi điểm danh' : 'Đã tạo buổi điểm danh mới');
-  loadAttAdminSessions();
-}
-
-// ── Toggle mở/đóng điểm danh ────────────────────────────────────
-async function toggleAttSession(id, isActive) {
-  const { error } = await db.from('attendance_sessions').update({ is_active: isActive }).eq('id', id);
-  if (error) { showToast('Lỗi: ' + error.message, false); return; }
-  showToast(isActive ? '🔓 Đã mở điểm danh' : '🔒 Đã đóng điểm danh');
-  loadAttAdminSessions();
-}
-
-// ── Xóa buổi điểm danh ──────────────────────────────────────────
-async function deleteAttSession(id) {
-  if (!confirm('Xóa buổi điểm danh này? Toàn bộ dữ liệu điểm danh của buổi cũng sẽ bị xóa.')) return;
-  const { error } = await db.from('attendance_sessions').delete().eq('id', id);
-  if (error) { showToast('Lỗi: ' + error.message, false); return; }
-  showToast('Đã xóa buổi điểm danh');
-  loadAttAdminSessions();
-}
-
-// ── Xem chi tiết điểm danh buổi ─────────────────────────────────
-let _currentDetailSessionId = null;
-let _currentDetailSessionTitle = '';
-async function viewAttDetail(sessionId, title) {
-  _currentDetailSessionId    = sessionId;
-  _currentDetailSessionTitle = title;
-  document.getElementById('attDetailTitle').textContent = title;
-  document.getElementById('attDetailSub').textContent   = 'Đang tải...';
-  document.getElementById('attDetailStats').innerHTML   = '';
-  document.getElementById('attDetailList').innerHTML    = '<div style="text-align:center;padding:2rem;color:var(--muted)">⏳ Đang tải...</div>';
-  document.getElementById('attDetailModal').style.display = '';
-
-  // Lấy thông tin buổi
-  const { data: session } = await db.from('attendance_sessions').select('*').eq('id', sessionId).single();
-  if (session) {
-    const dateStr = new Date(session.session_date + 'T00:00:00').toLocaleDateString('vi-VN', { weekday:'long', day:'2-digit', month:'2-digit', year:'numeric' });
-    document.getElementById('attDetailSub').textContent = `📅 ${dateStr}  •  📚 ${session.class_name}`;
-  }
-
-  // Lấy tất cả học sinh trong lớp
-  const { data: students } = await db.from('students').select('username,full_name,class_name').eq('active', true);
-  const classStudents = (students || []).filter(s =>
-    (s.class_name || '').split(',').map(c=>c.trim()).includes(session?.class_name)
-  );
-
-  // Lấy bản ghi điểm danh của buổi
-  const { data: records } = await db.from('attendance').select('*').eq('session_id', sessionId);
-  const recMap = Object.fromEntries((records || []).map(r => [r.username, r]));
-
-  // Thống kê
-  const present  = (records || []).filter(r => r.status === 'present' || r.status === 'late').length;
-  const excused  = (records || []).filter(r => r.status === 'excused').length;
-  const absent   = classStudents.length - present - excused;
-  const statsHtml = [
-    { label: 'Có mặt', val: present, color: '#16a34a', bg: '#dcfce7' },
-    { label: 'Xin phép', val: excused, color: '#4338ca', bg: '#e0e7ff' },
-    { label: 'Vắng', val: Math.max(0, absent), color: '#dc2626', bg: '#fee2e2' },
-    { label: 'Tổng HS', val: classStudents.length, color: '#0369a1', bg: '#e0f2fe' },
-  ].map(s => `<div style="flex:1;text-align:center;padding:.75rem .5rem;border-right:1px solid var(--border);last-child:border-right:none">
-    <div style="font-size:1.4rem;font-weight:900;color:${s.color}">${s.val}</div>
-    <div style="font-size:.7rem;color:var(--muted);margin-top:.15rem">${s.label}</div>
-  </div>`).join('');
-  document.getElementById('attDetailStats').innerHTML = statsHtml;
-
-  // Danh sách học sinh
-  if (!classStudents.length) {
-    document.getElementById('attDetailList').innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted)">Chưa có học sinh nào trong lớp này.</div>';
-    return;
-  }
-
-  const html = classStudents.map(s => {
-    const rec = recMap[s.username];
-    const st  = rec ? (ATT_STATUS_ADMIN[rec.status] || ATT_STATUS_ADMIN.absent) : ATT_STATUS_ADMIN.absent;
-    return `
-      <div style="display:flex;align-items:flex-start;gap:.75rem;padding:.75rem;border-radius:12px;background:var(--card);border:1px solid var(--border);margin-bottom:.5rem">
-        <div style="width:38px;height:38px;border-radius:10px;background:${st.bg};display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">${st.icon}</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-weight:700;font-size:.88rem">${s.full_name || s.username}</div>
-          <div style="font-size:.73rem;color:var(--muted)">@${s.username}</div>
-          ${rec?.absence_reason ? `<div style="font-size:.76rem;color:#92400e;background:#fef3c7;padding:.2rem .5rem;border-radius:6px;margin-top:.3rem;display:inline-block">📝 ${rec.absence_reason}</div>` : ''}
-          ${rec?.check_in_time ? `<div style="font-size:.72rem;color:var(--muted);margin-top:.2rem">⏰ ${new Date(rec.check_in_time).toLocaleTimeString('vi-VN')}</div>` : ''}
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.35rem;flex-shrink:0">
-          <span style="background:${st.bg};color:${st.color};font-size:.72rem;font-weight:700;padding:.2rem .6rem;border-radius:8px">${st.icon} ${st.label}</span>
-          ${rec?.proof_image_url ? `<img src="${rec.proof_image_url}" style="max-width:80px;max-height:60px;border-radius:6px;object-fit:contain;cursor:pointer;border:1px solid var(--border)" onclick="window.open('${rec.proof_image_url}')" title="Xem ảnh điểm danh"/>` : ''}
-        </div>
-      </div>`;
-  }).join('');
-  document.getElementById('attDetailList').innerHTML = html;
-}
-
-// ── Xuất CSV ─────────────────────────────────────────────────────
-async function exportAttendanceCSV() {
-  if (!_currentDetailSessionId) return;
-  const { data: session } = await db.from('attendance_sessions').select('*').eq('id', _currentDetailSessionId).single();
-  const { data: students } = await db.from('students').select('username,full_name').eq('active', true);
-  const { data: records  } = await db.from('attendance').select('*').eq('session_id', _currentDetailSessionId);
-  const recMap = Object.fromEntries((records || []).map(r => [r.username, r]));
-  const classStudents = (students || []).filter(s =>
-    (s.class_name || '').split(',').map(c=>c.trim()).includes(session?.class_name)
-  );
-
-  const rows = [['Họ tên', 'Username', 'Trạng thái', 'Giờ điểm danh', 'Lý do vắng', 'Có ảnh']];
-  classStudents.forEach(s => {
-    const r = recMap[s.username];
-    rows.push([
-      s.full_name || s.username,
-      s.username,
-      r ? (ATT_STATUS_ADMIN[r.status]?.label || r.status) : 'Vắng',
-      r?.check_in_time ? new Date(r.check_in_time).toLocaleTimeString('vi-VN') : '',
-      r?.absence_reason || '',
-      r?.proof_image_url ? 'Có' : 'Không',
-    ]);
-  });
-
-  const csv = rows.map(r => r.map(cell => `"${String(cell).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href = url;
-  a.download = `diemdanh_${_currentDetailSessionTitle.replace(/\s/g,'_')}_${session?.session_date || ''}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-// Đóng modal admin khi click ngoài
-document.getElementById('attAdminModal')?.addEventListener('click', e => {
-  if (e.target === document.getElementById('attAdminModal')) document.getElementById('attAdminModal').style.display = 'none';
-});
-document.getElementById('attDetailModal')?.addEventListener('click', e => {
-  if (e.target === document.getElementById('attDetailModal')) document.getElementById('attDetailModal').style.display = 'none';
-});
-
-// ============================================================
-// THƯ VIỆN SỐ — đề xuất học sinh & admin thêm nguồn
-// ============================================================
-const LIB_CATS = [
-  { id:'sgk', label:'SGK & chương trình' },
-  { id:'exam', label:'Ôn thi THPT' },
-  { id:'vn', label:'Viện & đại học VN' },
-  { id:'olympiad', label:'Olympic & HSG' },
-  { id:'open', label:'Học liệu quốc tế' },
-  { id:'video', label:'Video bài giảng' },
-  { id:'tool', label:'Công cụ toán' },
-  { id:'lookup', label:'Tra cứu' },
-  { id:'other', label:'Khác' }
-];
-let _libTab = 'pending';
-
-function libEsc(s) {
-  return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-function libCatLabel(id) {
-  return (LIB_CATS.find(c => c.id === id) || {}).label || id || '';
-}
-function libSafeUrl(u) {
-  try {
-    const x = new URL((u || '').trim());
-    if (x.protocol === 'http:' || x.protocol === 'https:') return x.href;
-  } catch (e) {}
-  return '';
-}
-function libWhoFromAccount(s, st) {
-  const name = (st?.full_name || s?.student_name || '').trim() || s?.username || 'Học sinh';
-  const cls = (st?.class_name || s?.class_name || '').trim();
-  const user = (s?.username || '').trim();
-  return { name, cls, user };
-}
-function libWhoHtml(s, st) {
-  if (!s) return '';
-  const w = libWhoFromAccount(s, st);
-  return `<div class="lib-who-admin">
-    <span class="lib-who-kicker">Học viên đề xuất</span>
-    <b>${libEsc(w.name)}</b>
-    ${w.cls ? `<span>· ${libEsc(w.cls)}</span>` : ''}
-    ${w.user ? `<span>· ${libEsc(w.user)}</span>` : ''}
-  </div>`;
-}
-async function libStudentMap(suggestions) {
-  const usernames = [...new Set((suggestions || []).map(s => s.username).filter(Boolean))];
-  const map = {};
-  if (!usernames.length) return map;
-  try {
-    const { data } = await db.from('students').select('username,full_name,class_name').in('username', usernames);
-    (data || []).forEach(st => { map[st.username] = st; });
-  } catch (e) {}
-  return map;
-}
-
-async function refreshLibBadge() {
-  const box = document.getElementById('libNavBadge');
-  const ov = document.getElementById('libPendingOverview');
-  const tabBadge = document.getElementById('libReportTabBadge');
-  try {
-    const [sug, rpt] = await Promise.all([
-      db.from('library_suggestions').select('*', { count:'exact', head:true }).eq('status', 'pending'),
-      db.from('library_reports').select('*', { count:'exact', head:true }).eq('status', 'pending')
-    ]);
-    const nSug = sug.error ? 0 : (sug.count || 0);
-    const nRpt = rpt.error ? 0 : (rpt.count || 0);
-    const n = nSug + nRpt;
-    if (box) { box.style.display = n ? 'inline' : 'none'; box.textContent = n; }
-    if (tabBadge) { tabBadge.style.display = nRpt ? 'inline' : 'none'; tabBadge.textContent = nRpt; }
-    if (ov) {
-      const bits = [];
-      if (nSug) bits.push(`<b>${nSug}</b> đề xuất nguồn đang chờ duyệt`);
-      if (nRpt) bits.push(`<b>${nRpt}</b> báo cáo link`);
-      ov.innerHTML = bits.length
-        ? `<div style="background:#fef3c7;border-left:4px solid #f59e0b;padding:.75rem 1rem;border-radius:8px;font-size:.88rem">💡 ${bits.join(' · ')}. <a href="#" class="link-blue" onclick="showPage('library');return false">Xem ngay →</a></div>`
-        : '';
-    }
-  } catch (e) {
-    if (box) box.style.display = 'none';
-  }
-}
-
-const LIB_ICONS = ['✨','📘','📗','🎬','🧮','🏅','🏫','📐','🔎','🇻🇳','🎓','🧩','📈','🔬','💡','📜'];
-const LIB_COLORS = ['#fef3c7','#dbeafe','#d1fae5','#fce7f3','#ede9fe','#ffedd5','#e0f2fe','#fee2e2'];
-
-function libSetTabs() {
-  document.querySelectorAll('#libAdminTabs [data-libtab]').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.libtab === _libTab);
-  });
-}
-
-function libPickerRow(kind, values, current, prefix) {
-  return values.map(v => {
-    const on = v === current ? ' active' : '';
-    if (kind === 'icon') return `<button type="button" class="lib-ico-btn${on}" data-lib-pick="${prefix}" data-val="${libEsc(v)}">${v}</button>`;
-    return `<button type="button" class="lib-color-btn${on}" data-lib-pick="${prefix}" data-val="${libEsc(v)}" style="background:${libEsc(v)}"></button>`;
-  }).join('');
-}
-
-async function renderLibraryAdmin() {
-  libSetTabs();
-  const listEl = document.getElementById('libAdminList');
-  const manEl = document.getElementById('libAdminManual');
-  const statsEl = document.getElementById('libAdminStats');
-  if (!listEl) return;
-
-  const [{ data: suggs, error: e1 }, { data: allRes, error: e2 }, rptRes] = await Promise.all([
-    db.from('library_suggestions').select('*').order('created_at', { ascending: false }).limit(200),
-    db.from('library_resources').select('*').order('created_at', { ascending: false }).limit(300),
-    db.from('library_reports').select('*').order('created_at', { ascending: false }).limit(200)
-  ]);
-  if (e1 || e2) {
-    listEl.style.display = 'block';
-    manEl.style.display = 'none';
-    listEl.innerHTML = `<div class="lib-empty">Chưa có bảng thư viện trên Supabase.<br/>Chạy file <b>supabase_library.sql</b> rồi tải lại trang.</div>`;
-    return;
-  }
-  const reportsOk = !rptRes.error;
-  const reports = reportsOk ? (rptRes.data || []) : [];
-  const extras = (allRes || []).filter(r => r.active !== false);
-  const hidden = (allRes || []).filter(r => r.active === false);
-  const hiddenBySug = {};
-  hidden.forEach(r => { if (r.suggestion_id) hiddenBySug[r.suggestion_id] = r; });
-
-  const all = suggs || [];
-  const pending = all.filter(s => s.status === 'pending').length;
-  const approved = all.filter(s => s.status === 'approved').length;
-  const closed = all.filter(s => ['rejected', 'removed', 'deleted'].includes(s.status)).length;
-  const extraN = (extras || []).length;
-  const nameByUser = await libStudentMap(all);
-  const sugById = {};
-  all.forEach(s => { sugById[s.id] = s; });
-  statsEl.innerHTML = [
-    ['Chờ duyệt', pending, '#d97706'],
-    ['Đã thêm', approved, '#059669'],
-    ['Từ chối / gỡ', closed, '#dc2626'],
-    ['Nguồn mới', extraN, '#4f46e5']
-  ].map(([label, n, color]) =>
-    `<div class="lib-stat"><b style="color:${color}">${n}</b><span>${label}</span></div>`
-  ).join('');
-
-  const isManual = _libTab === 'manual';
-  listEl.style.display = isManual ? 'none' : 'block';
-  manEl.style.display = isManual ? 'block' : 'none';
-  if (isManual) {
-    renderLibManualForm();
-    return;
-  }
-
-  if (_libTab === 'reports') {
-    if (!reportsOk) {
-      listEl.innerHTML = `<div class="lib-empty">Chưa có bảng báo cáo.<br/>Chạy lại file <b>supabase_library.sql</b> (phần library_reports) rồi tải lại trang.</div>`;
-      return;
-    }
-    if (!reports.length) { listEl.innerHTML = '<div class="lib-empty">Chưa có báo cáo từ học sinh.</div>'; return; }
-    listEl.innerHTML = reports.map(r => {
-      const when = r.created_at ? new Date(r.created_at).toLocaleString('vi-VN') : '';
-      const pending = r.status === 'pending';
-      return `
-      <div class="lib-card">
-        <div style="display:flex;justify-content:space-between;gap:.6rem;flex-wrap:wrap;margin-bottom:.35rem">
-          <div style="font-weight:800">${libEsc(r.title || r.url || 'Nguồn')}</div>
-          <span style="font-size:.72rem;color:var(--muted);font-weight:600">${when}</span>
-        </div>
-        <div style="margin-bottom:.55rem">
-          <span style="font-size:.68rem;font-weight:800;border-radius:999px;padding:.12rem .5rem;background:${pending ? '#fef3c7' : '#e2e8f0'};color:${pending ? '#92400e' : '#334155'}">${pending ? 'Chờ xem' : 'Đã xử lý'}</span>
-          <span style="font-size:.68rem;font-weight:800;border-radius:999px;padding:.12rem .5rem;margin-left:.3rem;background:#fee2e2;color:#991b1b">${libEsc(r.reason || '')}</span>
-        </div>
-        <div class="lib-who-admin">
-          <span class="lib-who-kicker">Học viên báo cáo</span>
-          <b>${libEsc(r.student_name || r.username || 'Học sinh')}</b>
-          ${r.class_name ? `<span>· ${libEsc(r.class_name)}</span>` : ''}
-          ${r.username ? `<span>· ${libEsc(r.username)}</span>` : ''}
-        </div>
-        <a href="${libEsc(r.url)}" target="_blank" rel="noopener noreferrer" style="font-size:.8rem;color:#4f46e5;word-break:break-all">${libEsc(r.url)}</a>
-        ${r.note ? `<p style="font-size:.8rem;margin:.4rem 0 0;color:#92400e;background:#fffbeb;border-radius:10px;padding:.45rem .7rem">${libEsc(r.note)}</p>` : ''}
-        ${r.admin_note ? `<p style="font-size:.8rem;margin:.4rem 0 0;color:var(--muted)">Admin: ${libEsc(r.admin_note)}</p>` : ''}
-        ${pending ? `
-          <div style="display:flex;gap:.45rem;flex-wrap:wrap;margin-top:.85rem">
-            <button class="lib-gold-btn" style="padding:.55rem 1rem;font-size:.82rem" data-lib-rpt-ok="${r.id}">Đã xem</button>
-            ${r.resource_id ? `<button class="btn-sm btn-outline" data-lib-rpt-hide="${r.resource_id}" data-lib-rpt-id="${r.id}">Gỡ nguồn</button>` : ''}
-          </div>
-        ` : ''}
-      </div>`;
-    }).join('');
-    return;
-  }
-
-  if (_libTab === 'approved') {
-    const rows = extras || [];
-    if (!rows.length) { listEl.innerHTML = '<div class="lib-empty">Chưa có nguồn nào do admin thêm.</div>'; return; }
-    listEl.innerHTML = rows.map(r => {
-      const sug = r.suggestion_id ? sugById[r.suggestion_id] : null;
-      const st = sug?.username ? nameByUser[sug.username] : null;
-      return `
-      <div class="lib-card">
-        <div style="display:flex;justify-content:space-between;gap:.75rem;flex-wrap:wrap;align-items:flex-start">
-          <div style="display:flex;gap:.8rem;min-width:0;flex:1">
-            <div class="lib-preview-ico" style="background:${libEsc(r.color || '#fef3c7')}">${r.icon || '✨'}</div>
-            <div style="min-width:0">
-              <div style="font-weight:800">${libEsc(r.title)}</div>
-              ${sug ? libWhoHtml(sug, st) : `<div class="lib-who-admin"><span class="lib-who-kicker">Admin thêm</span><b>${libEsc(r.added_by || 'Admin')}</b></div>`}
-              <div style="font-size:.78rem;color:var(--muted);margin-top:.2rem">${libEsc(libCatLabel(r.category))} · ${libEsc(r.source || '')}</div>
-              <a href="${libEsc(r.url)}" target="_blank" rel="noopener noreferrer" style="font-size:.78rem;color:#4f46e5;word-break:break-all">${libEsc(r.url)}</a>
-            </div>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:.4rem">
-            <button class="btn-sm btn-outline" data-lib-hide="${r.id}">Gỡ khỏi thư viện</button>
-            <button class="btn-sm btn-outline" data-lib-del="${r.id}" style="border-color:#ef4444;color:#991b1b">Xóa khỏi thư viện</button>
-          </div>
-        </div>
-      </div>`;
-    }).join('');
-    return;
-  }
-
-  const filtered = _libTab === 'rejected'
-    ? all.filter(s => ['rejected', 'removed', 'deleted'].includes(s.status))
-    : all.filter(s => s.status === _libTab);
-  const orphans = _libTab === 'rejected' ? hidden.filter(r => !r.suggestion_id) : [];
-  if (!filtered.length && !orphans.length) {
-    listEl.innerHTML = `<div class="lib-empty">${_libTab === 'pending' ? 'Chưa có đề xuất mới — học sinh gửi từ trang Thư viện số.' : 'Không có mục nào.'}</div>`;
-    return;
-  }
-
-  const stBadge = {
-    pending: ['Chờ duyệt', '#92400e', '#fef3c7'],
-    approved: ['Đề xuất đã thêm', '#166534', '#dcfce7'],
-    rejected: ['Từ chối', '#991b1b', '#fee2e2'],
-    removed: ['Đề xuất đã bị gỡ', '#9a3412', '#ffedd5'],
-    deleted: ['Đã xóa khỏi thư viện', '#334155', '#e2e8f0']
-  };
-
-  const orphanHtml = orphans.map(r => `
-      <div class="lib-card">
-        <div style="font-weight:800;font-size:1.02rem;margin-bottom:.4rem">${libEsc(r.title)}</div>
-        <div style="margin-bottom:.55rem"><span style="font-size:.68rem;font-weight:800;border-radius:999px;padding:.12rem .5rem;background:#ffedd5;color:#9a3412">Đã gỡ khỏi thư viện</span></div>
-        <a href="${libEsc(r.url)}" target="_blank" rel="noopener noreferrer" style="font-size:.8rem;color:#4f46e5;word-break:break-all">${libEsc(r.url)}</a>
-        <div style="margin-top:.85rem">
-          <button class="lib-gold-btn" style="padding:.55rem 1rem;font-size:.82rem" data-lib-restore="${r.id}">Khôi phục vào thư viện</button>
-        </div>
-      </div>`).join('');
-
-  listEl.innerHTML = orphanHtml + filtered.map(s => {
-    const when = s.created_at ? new Date(s.created_at).toLocaleString('vi-VN') : '';
-    const editId = 'libEdit_' + s.id;
-    const st = s.username ? nameByUser[s.username] : null;
-    const [bl, bc, bg] = stBadge[s.status] || [s.status, '#475569', '#e2e8f0'];
-    return `
-      <div class="lib-card">
-        <div style="display:flex;justify-content:space-between;gap:.6rem;flex-wrap:wrap;margin-bottom:.2rem">
-          <div style="font-weight:800;font-size:1.02rem">${libEsc(s.title)}</div>
-          <span style="font-size:.72rem;color:var(--muted);font-weight:600">${when}</span>
-        </div>
-        <div style="margin-bottom:.55rem"><span style="font-size:.68rem;font-weight:800;border-radius:999px;padding:.12rem .5rem;background:${bg};color:${bc}">${libEsc(bl)}</span></div>
-        ${libWhoHtml(s, st)}
-        <div style="font-size:.8rem;color:var(--muted);margin-bottom:.4rem">${libEsc(libCatLabel(s.category))}</div>
-        <a href="${libEsc(s.url)}" target="_blank" rel="noopener noreferrer" style="font-size:.8rem;color:#4f46e5;word-break:break-all">${libEsc(s.url)}</a>
-        ${s.description ? `<p style="font-size:.84rem;margin:.5rem 0 0;line-height:1.55">${libEsc(s.description)}</p>` : ''}
-        ${s.note ? `<p style="font-size:.8rem;margin:.4rem 0 0;color:#92400e;background:#fffbeb;border-radius:10px;padding:.45rem .7rem">💡 ${libEsc(s.note)}</p>` : ''}
-        ${s.admin_note ? `<p style="font-size:.8rem;margin:.4rem 0 0;color:var(--muted)">Ghi chú admin: ${libEsc(s.admin_note)}</p>` : ''}
-        ${s.status === 'removed' && hiddenBySug[s.id] ? `
-          <div style="margin-top:.85rem">
-            <button class="lib-gold-btn" style="padding:.55rem 1rem;font-size:.82rem" data-lib-restore="${hiddenBySug[s.id].id}">Khôi phục vào thư viện</button>
-          </div>
-        ` : ''}
-        ${s.status === 'pending' ? `
-          <div style="display:flex;gap:.45rem;flex-wrap:wrap;margin-top:.85rem">
-            <button class="lib-gold-btn" style="padding:.55rem 1rem;font-size:.82rem" data-lib-open="${s.id}">Chỉnh &amp; thêm vào thư viện</button>
-            <button class="btn-sm btn-outline" data-lib-reject="${s.id}">Từ chối</button>
-          </div>
-          <div id="${editId}" style="display:none;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)">
-            ${libEditFields(s)}
-            <div style="display:flex;gap:.45rem;margin-top:.9rem">
-              <button class="lib-gold-btn" data-lib-save="${s.id}">Thêm vào thư viện</button>
-              <button class="btn-outline" onclick="document.getElementById('${editId}').style.display='none'">Hủy</button>
-            </div>
-          </div>
-        ` : ''}
-      </div>`;
-  }).join('');
-}
-
-function libEditFields(s, prefix) {
-  const p = prefix || ('s' + (s.id || 'new'));
-  const icon = s.icon || '✨';
-  const color = s.color || '#fef3c7';
-  const catOpts = LIB_CATS.map(c => `<option value="${c.id}" ${c.id===(s.category||'open')?'selected':''}>${c.label}</option>`).join('');
-  return `
-    <div class="lib-fields">
-      <div class="lib-field full"><label>Tên nguồn</label><input id="${p}_title" value="${libEsc(s.title||'')}" placeholder="VD: NRICH Cambridge"/></div>
-      <div class="lib-field full"><label>Link website</label><input id="${p}_url" value="${libEsc(s.url||'')}" placeholder="https://"/></div>
-      <div class="lib-field"><label>Đơn vị phát hành</label><input id="${p}_source" value="${libEsc(s.source||'')}" placeholder="Bộ GDĐT, MIT, Cambridge..."/></div>
-      <div class="lib-field"><label>Nhóm</label><select id="${p}_cat">${catOpts}</select></div>
-      <div class="lib-field full"><label>Mô tả ngắn</label><textarea id="${p}_desc" rows="3" placeholder="Học sinh dùng nguồn này để làm gì?">${libEsc(s.description||'')}</textarea></div>
-      <div class="lib-field full"><label>Tags (cách nhau bởi dấu phẩy)</label><input id="${p}_tags" value="${libEsc(s.tags || 'Mới, Học sinh đề xuất')}"/></div>
-      <div class="lib-field full">
-        <label>Icon</label>
-        <input type="hidden" id="${p}_icon" value="${libEsc(icon)}"/>
-        <div class="lib-ico-row" data-lib-icons="${p}">${libPickerRow('icon', LIB_ICONS, icon, p)}</div>
-      </div>
-      <div class="lib-field full">
-        <label>Màu thẻ</label>
-        <input type="hidden" id="${p}_color" value="${libEsc(color)}"/>
-        <div class="lib-color-row" data-lib-colors="${p}">${libPickerRow('color', LIB_COLORS, color, p)}</div>
-      </div>
-    </div>`;
-}
 
 function libReadFields(prefix) {
   return {
@@ -8473,7 +7848,6 @@ document.getElementById('zgAdminList')?.addEventListener('click', async e => {
 // GÓP Ý BUỔI HỌC — ADMIN
 // ════════════════════════════════════════════════════════════════
 let _fbAdminEditId = null;
-let _fbAdminAttId = null;
 let _fbDetailId = null;
 let _fbDetailReplies = [];
 
@@ -8497,27 +7871,8 @@ async function populateFbAdminFilters() {
   if (sel2) sel2.innerHTML = '<option value="">-- Chọn lớp --</option>' + opts;
   const dateEl = document.getElementById('fbAdminDate');
   if (dateEl && !dateEl.value) dateEl.value = new Date().toISOString().split('T')[0];
-  await _loadFbAttOptions();
 }
 
-async function _loadFbAttOptions() {
-  const sel = document.getElementById('fbFromAtt');
-  if (!sel) return;
-  const { data } = await db.from('attendance_sessions').select('id,title,class_name,session_date')
-    .order('session_date', { ascending: false }).limit(40);
-  sel.innerHTML = '<option value="">-- Không, nhập tay --</option>' +
-    (data || []).map(s => `<option value="${s.id}" data-title="${_fbEsc(s.title)}" data-class="${_fbEsc(s.class_name)}" data-date="${s.session_date}">${_fbEsc(s.session_date)} · ${_fbEsc(s.class_name)} · ${_fbEsc(s.title)}</option>`).join('');
-}
-
-function fillFbFromAttendance() {
-  const sel = document.getElementById('fbFromAtt');
-  const opt = sel?.selectedOptions[0];
-  if (!opt || !opt.value) { _fbAdminAttId = null; return; }
-  _fbAdminAttId = Number(opt.value);
-  document.getElementById('fbAdminTitle').value = 'Góp ý — ' + (opt.dataset.title || '');
-  document.getElementById('fbAdminClass').value = opt.dataset.class || '';
-  document.getElementById('fbAdminDate').value = opt.dataset.date || '';
-}
 
 async function loadFbAdminSessions() {
   const listEl = document.getElementById('fbAdminSessionList');
@@ -8592,17 +7947,14 @@ function _updateFbAdminStats(sessions, replies) {
 
 async function openFbAdminCreateModal() {
   _fbAdminEditId = null;
-  _fbAdminAttId = null;
   document.getElementById('fbAdminModalTitle').textContent = 'Mở góp ý buổi học';
   document.getElementById('fbAdminTitle').value = '';
   document.getElementById('fbAdminClass').value = '';
   document.getElementById('fbAdminDate').value = new Date().toISOString().split('T')[0];
   document.getElementById('fbAdminPrompt').value = 'Buổi học hôm nay thế nào? Góp ý để thầy/cô điều chỉnh buổi sau. Không ảnh hưởng điểm số.';
   document.getElementById('fbAdminIsOpen').checked = true;
-  document.getElementById('fbFromAtt').value = '';
   document.getElementById('fbAdminModalError').style.display = 'none';
   document.getElementById('fbAdminSaveText').textContent = 'Lưu form góp ý';
-  await _loadFbAttOptions();
   document.getElementById('fbAdminModal').style.display = '';
 }
 
@@ -8610,14 +7962,12 @@ async function editFbSession(id) {
   const { data: s, error } = await db.from('session_feedback').select('*').eq('id', id).single();
   if (error || !s) { showToast('Không tải được buổi', false); return; }
   _fbAdminEditId = s.id;
-  _fbAdminAttId = s.attendance_id || null;
   document.getElementById('fbAdminModalTitle').textContent = 'Sửa form góp ý';
   document.getElementById('fbAdminTitle').value = s.title || '';
   document.getElementById('fbAdminClass').value = s.class_name || '';
   document.getElementById('fbAdminDate').value = s.session_date || '';
   document.getElementById('fbAdminPrompt').value = s.prompt || '';
   document.getElementById('fbAdminIsOpen').checked = s.is_open !== false;
-  document.getElementById('fbFromAtt').value = s.attendance_id || '';
   document.getElementById('fbAdminModalError').style.display = 'none';
   document.getElementById('fbAdminSaveText').textContent = 'Cập nhật';
   document.getElementById('fbAdminModal').style.display = '';
@@ -8639,7 +7989,6 @@ async function saveFbAdminSession() {
   const payload = {
     title, class_name: cls, session_date: date,
     prompt: prompt || null,
-    attendance_id: _fbAdminAttId || (document.getElementById('fbFromAtt').value ? Number(document.getElementById('fbFromAtt').value) : null),
     is_open: isOpen,
     created_by: sessionStorage.getItem('dh_user') || 'admin'
   };
@@ -8780,3 +8129,6 @@ function exportFbCSV() {
   a.href = url; a.download = `gop_y_${_fbDetailId}_${new Date().toISOString().slice(0,10)}.csv`;
   a.click(); URL.revokeObjectURL(url);
 }
+
+
+// ════════════════════════════════════════════════════════════════

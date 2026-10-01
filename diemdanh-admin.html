@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Quản lý Điểm Danh — DHDT LMS</title>
+<link rel="icon" type="image/png" href="icons/icon-192.png"/>
+<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script src="config.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f172a;--bg2:#1e293b;--bg3:#334155;
+  --border:rgba(255,255,255,.1);--border2:rgba(255,255,255,.06);
+  --text:#f1f5f9;--text2:#94a3b8;--text3:#64748b;
+  --accent:#3b82f6;--accent2:#2563eb;
+  --green:#10b981;--red:#ef4444;--yellow:#f59e0b;--purple:#8b5cf6;--orange:#f97316;
+  --card:rgba(255,255,255,.04);--card-hover:rgba(255,255,255,.08);
+  --font:'Segoe UI',system-ui,sans-serif;--r:12px;
+  color-scheme:dark;
+}
+html{scrollbar-width:thin;scrollbar-color:var(--accent) var(--bg2)}
+html::-webkit-scrollbar{width:5px}
+html::-webkit-scrollbar-thumb{background:var(--accent);border-radius:3px}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+a{text-decoration:none;color:inherit}
+button{font:inherit;cursor:pointer;border:none;background:none}
+input,select,textarea{font:inherit;color:inherit}
+
+/* ── TOPBAR ── */
+.topbar{
+  position:sticky;top:0;z-index:200;
+  background:rgba(15,23,42,.92);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+  padding:.7rem 1.5rem;
+  display:flex;align-items:center;gap:.75rem;
+}
+.topbar-brand{font-weight:800;font-size:.95rem;color:var(--text);white-space:nowrap}
+.topbar-tag{font-size:.7rem;font-weight:700;background:rgba(59,130,246,.18);border:1px solid rgba(59,130,246,.3);color:#93c5fd;padding:.18rem .6rem;border-radius:999px}
+.topbar-tabs{display:flex;gap:.25rem;margin-left:.5rem;flex:1;overflow-x:auto}
+.topbar-tabs::-webkit-scrollbar{display:none}
+.tab-btn{
+  padding:.45rem .95rem;border-radius:8px;font-size:.82rem;font-weight:600;
+  color:var(--text2);transition:all .15s;white-space:nowrap;
+  display:flex;align-items:center;gap:.4rem;
+}
+.tab-btn:hover{background:var(--card-hover);color:var(--text)}
+.tab-btn.active{background:rgba(59,130,246,.18);color:#93c5fd}
+.tab-btn .dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 1.5s ease-in-out infinite;display:none}
+.tab-btn.live-active .dot{display:block}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.3)}}
+.topbar-right{display:flex;align-items:center;gap:.6rem;margin-left:auto;flex-shrink:0}
+.btn-back{display:inline-flex;align-items:center;gap:.35rem;padding:.4rem .85rem;border-radius:8px;font-size:.8rem;font-weight:600;background:var(--card);border:1px solid var(--border);color:var(--text2);transition:all .15s}
+.btn-back:hover{background:var(--card-hover);color:var(--text)}
+.user-chip{display:flex;align-items:center;gap:.45rem;font-size:.8rem;color:var(--text2)}
+.user-av{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;flex-shrink:0}
+
+/* ── PAGES ── */
+.page{display:none;flex:1;padding:1.5rem;max-width:1200px;margin:0 auto;width:100%}
+.page.active{display:block}
+
+/* ── STAT GRID ── */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.85rem;margin-bottom:1.75rem}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:1.1rem 1.25rem;display:flex;align-items:center;gap:.85rem;transition:background .15s}
+.stat-card:hover{background:var(--card-hover)}
+.stat-icon{width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0}
+.stat-num{font-size:1.65rem;font-weight:900;line-height:1;letter-spacing:-.03em}
+.stat-lbl{font-size:.72rem;color:var(--text2);margin-top:.2rem;font-weight:500}
+
+/* ── SECTION HEADER ── */
+.sec-header{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-bottom:1rem;flex-wrap:wrap}
+.sec-title{font-size:1rem;font-weight:800;color:var(--text);display:flex;align-items:center;gap:.5rem}
+.sec-title span{font-size:1.1rem}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:.4rem;padding:.55rem 1.1rem;border-radius:9px;font-size:.84rem;font-weight:700;transition:all .15s;white-space:nowrap}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:0 2px 12px rgba(59,130,246,.35)}
+.btn-primary:hover{background:var(--accent2);transform:translateY(-1px)}
+.btn-success{background:var(--green);color:#fff}
+.btn-success:hover{background:#059669;transform:translateY(-1px)}
+.btn-danger{background:var(--red);color:#fff}
+.btn-danger:hover{background:#dc2626;transform:translateY(-1px)}
+.btn-ghost{background:var(--card);border:1px solid var(--border);color:var(--text2)}
+.btn-ghost:hover{background:var(--card-hover);color:var(--text)}
+.btn-sm{padding:.38rem .75rem;font-size:.76rem}
+.btn-icon{width:34px;height:34px;padding:0;border-radius:8px;justify-content:center}
+
+/* ── TABLE ── */
+.table-wrap{overflow-x:auto;border-radius:var(--r);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:.85rem}
+thead{background:rgba(255,255,255,.04)}
+th{padding:.75rem 1rem;text-align:left;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:.75rem 1rem;border-bottom:1px solid var(--border2);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.03)}
+
+/* ── BADGE ── */
+.badge{display:inline-flex;align-items:center;gap:.3rem;padding:.2rem .65rem;border-radius:999px;font-size:.72rem;font-weight:700}
+.badge-present{background:#dcfce7;color:#15803d}
+.badge-late{background:#fef3c7;color:#92400e}
+.badge-absent{background:#fee2e2;color:#b91c1c}
+.badge-excused{background:#e0e7ff;color:#3730a3}
+.badge-pending{background:#fef3c7;color:#92400e}
+.badge-approved{background:#dcfce7;color:#15803d}
+.badge-rejected{background:#fee2e2;color:#b91c1c}
+.badge-open{background:#d1fae5;color:#065f46}
+.badge-closed{background:rgba(255,255,255,.08);color:var(--text3)}
+.badge-scheduled{background:rgba(59,130,246,.15);color:#60a5fa}
+
+/* ── CARD ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:1.25rem}
+.card + .card{margin-top:.85rem}
+
+/* ── FORM ── */
+.form-group{margin-bottom:.85rem}
+.form-label{display:block;font-size:.75rem;font-weight:700;color:var(--text2);margin-bottom:.35rem;letter-spacing:.04em;text-transform:uppercase}
+.form-control{width:100%;padding:.65rem .85rem;background:rgba(255,255,255,.07);border:1.5px solid var(--border);border-radius:9px;font-size:.88rem;color:var(--text);outline:none;transition:border-color .2s,box-shadow .2s;color-scheme:dark}
+.form-control:focus{border-color:rgba(59,130,246,.6);box-shadow:0 0 0 3px rgba(59,130,246,.12)}
+.form-control::placeholder{color:var(--text3)}
+.form-control option{background:#1e293b;color:#f1f5f9}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+@media(max-width:540px){.form-row{grid-template-columns:1fr}}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(8px);z-index:1000;display:none;align-items:center;justify-content:center;padding:1rem}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:18px;width:100%;max-width:520px;box-shadow:0 24px 60px rgba(0,0,0,.5);animation:modalIn .25s ease both;overflow:hidden;max-height:90vh;display:flex;flex-direction:column}
+@keyframes modalIn{from{opacity:0;transform:scale(.96) translateY(10px)}to{opacity:1;transform:none}}
+.modal-header{padding:1.1rem 1.4rem;background:linear-gradient(135deg,#1e3a5f,#1e40af);display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-shrink:0}
+.modal-header h3{font-size:.98rem;font-weight:800;color:#fff}
+.modal-header p{font-size:.78rem;color:rgba(255,255,255,.65);margin-top:.1rem}
+.btn-close{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.15);color:#fff;font-size:.9rem;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.btn-close:hover{background:rgba(255,255,255,.25)}
+.modal-body{padding:1.25rem 1.4rem;overflow-y:auto;flex:1}
+.modal-footer{padding:.9rem 1.4rem;border-top:1px solid var(--border);display:flex;gap:.6rem;justify-content:flex-end;flex-shrink:0}
+
+/* ── FILTER BAR ── */
+.filter-bar{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;margin-bottom:1rem}
+.filter-bar .form-control{width:auto;min-width:140px}
+
+/* ── LIVE ATTENDEE ── */
+.live-grid{display:flex;flex-direction:column;gap:.5rem;max-height:420px;overflow-y:auto}
+.live-item{display:flex;align-items:center;gap:.75rem;padding:.7rem 1rem;border-radius:10px;background:var(--card);border:1px solid var(--border);transition:background .15s}
+.live-item:hover{background:var(--card-hover)}
+.live-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:800;color:#fff;flex-shrink:0}
+.live-name{font-weight:700;font-size:.88rem}
+.live-sub{font-size:.73rem;color:var(--text2);margin-top:.1rem}
+.live-time{font-size:.75rem;color:var(--text3);margin-left:auto;white-space:nowrap;flex-shrink:0}
+
+/* ── PROGRESS BAR ── */
+.prog-bar{height:7px;background:rgba(255,255,255,.07);border-radius:999px;overflow:hidden;margin-top:.35rem}
+.prog-fill{height:100%;border-radius:999px;transition:width .8s ease}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:3rem 1rem;color:var(--text3)}
+.empty span{font-size:2.5rem;display:block;margin-bottom:.65rem}
+
+/* ── TOAST ── */
+.toast-wrap{position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;display:flex;flex-direction:column;gap:.5rem;align-items:flex-end}
+.toast{padding:.65rem 1.1rem;border-radius:10px;background:var(--bg2);border:1px solid var(--border);font-size:.85rem;font-weight:600;color:var(--text);box-shadow:0 8px 24px rgba(0,0,0,.35);animation:toastIn .3s ease both;display:flex;align-items:center;gap:.5rem}
+@keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+.toast.success{border-color:rgba(16,185,129,.4);color:#6ee7b7}
+.toast.error{border-color:rgba(239,68,68,.4);color:#fca5a5}
+.toast.info{border-color:rgba(245,158,11,.5);color:#fcd34d}
+
+/* ── RESPONSIVE ── */
+@media(max-width:768px){
+  .topbar{padding:.65rem 1rem}
+  .page{padding:1rem}
+  .stat-grid{grid-template-columns:repeat(2,1fr)}
+  .form-row{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-brand">DHDT LMS</div>
+  <div class="topbar-tag">Điểm danh</div>
+  <div class="topbar-tabs">
+    <button class="tab-btn active" onclick="showTab('dashboard')" id="tab-dashboard">🏠 Dashboard</button>
+    <button class="tab-btn" onclick="showTab('sessions')" id="tab-sessions">📅 Buổi học</button>
+    <button class="tab-btn live-active" onclick="showTab('live')" id="tab-live"><span class="dot"></span>🟢 Live</button>
+    <button class="tab-btn" onclick="showTab('absences')" id="tab-absences">🔴 Đơn vắng <span id="absenceBadge" style="display:none;background:var(--red);color:#fff;font-size:.65rem;padding:.1rem .4rem;border-radius:999px;margin-left:.2rem">0</span></button>
+    <button class="tab-btn" onclick="showTab('report')" id="tab-report">📊 Báo cáo</button>
+  </div>
+  <div class="topbar-right">
+    <a href="admin.html" class="btn-back" id="btnBackAdmin">← Admin</a>
+    <div class="user-chip">
+      <div class="user-av" id="userAv">A</div>
+      <span id="userName">Admin</span>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- ══ DASHBOARD ══ -->
+<div class="page active" id="pageDashboard">
+  <div class="stat-grid" id="dashStats">
+    <div class="stat-card"><div class="stat-icon" style="background:rgba(59,130,246,.15)">👨‍🎓</div><div><div class="stat-num" id="dStatStudents" style="color:var(--accent)">—</div><div class="stat-lbl">Học viên</div></div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:rgba(139,92,246,.15)">📚</div><div><div class="stat-num" id="dStatClasses" style="color:var(--purple)">—</div><div class="stat-lbl">Lớp học</div></div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:rgba(245,158,11,.15)">📅</div><div><div class="stat-num" id="dStatWeek" style="color:var(--yellow)">—</div><div class="stat-lbl">Buổi tuần này</div></div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:rgba(16,185,129,.15)">🟢</div><div><div class="stat-num" id="dStatOpen" style="color:var(--green)">—</div><div class="stat-lbl">Đang mở</div></div></div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+    <div class="card">
+      <div class="sec-title" style="margin-bottom:1rem"><span>📊</span> Điểm danh hôm nay</div>
+      <div id="dashTodayStats" style="display:flex;flex-direction:column;gap:.6rem">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid var(--border2)">
+          <span style="font-size:.88rem;display:flex;align-items:center;gap:.4rem">✅ Có mặt</span>
+          <strong id="dPresent" style="color:var(--green)">—</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid var(--border2)">
+          <span style="font-size:.88rem;display:flex;align-items:center;gap:.4rem">⏰ Đi muộn</span>
+          <strong id="dLate" style="color:var(--yellow)">—</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid var(--border2)">
+          <span style="font-size:.88rem;display:flex;align-items:center;gap:.4rem">📋 Có phép</span>
+          <strong id="dExcused" style="color:var(--purple)">—</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem 0">
+          <span style="font-size:.88rem;display:flex;align-items:center;gap:.4rem">❌ Vắng</span>
+          <strong id="dAbsent" style="color:var(--red)">—</strong>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="sec-title" style="margin-bottom:1rem"><span>📅</span> Buổi học hôm nay</div>
+      <div id="dashTodaySessions"><div class="empty" style="padding:1.5rem"><span style="font-size:1.8rem">📭</span>Không có buổi nào</div></div>
+      <button class="btn btn-primary btn-sm" style="margin-top:.85rem;width:100%" onclick="showTab('sessions');document.getElementById('createSessionBtn').click()">➕ Tạo buổi học mới</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SESSIONS ══ -->
+<div class="page" id="pageSessions">
+  <div class="sec-header">
+    <div class="sec-title"><span>📅</span> Quản lý buổi học</div>
+    <button class="btn btn-primary" id="createSessionBtn" onclick="openCreateSession()">➕ Tạo buổi học</button>
+  </div>
+
+  <div class="filter-bar">
+    <select class="form-control" id="sessFilterClass" onchange="loadSessions()">
+      <option value="">Tất cả lớp</option>
+    </select>
+    <input type="date" class="form-control" id="sessFilterDate" onchange="loadSessions()" style="width:160px"/>
+    <select class="form-control" id="sessFilterStatus" onchange="loadSessions()" style="width:150px">
+      <option value="">Tất cả trạng thái</option>
+      <option value="scheduled">Chưa mở</option>
+      <option value="open">Đang mở</option>
+      <option value="closed">Đã đóng</option>
+    </select>
+    <button class="btn btn-ghost btn-sm" onclick="document.getElementById('sessFilterDate').value='';loadSessions()">Xóa lọc</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Buổi học</th><th>Lớp</th><th>Ngày</th><th>Giờ</th>
+          <th>Có mặt</th><th>Trạng thái</th><th>Thao tác</th>
+        </tr>
+      </thead>
+      <tbody id="sessTableBody">
+        <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text3)">⏳ Đang tải...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══ LIVE ══ -->
+<div class="page" id="pageLive">
+  <div class="sec-header">
+    <div class="sec-title"><span class="dot" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--green);animation:pulse 1.5s ease-in-out infinite"></span> Điểm danh Live</div>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+      <select class="form-control" id="liveSessionSelect" onchange="loadLive()" style="width:240px">
+        <option value="">-- Chọn buổi đang mở --</option>
+      </select>
+      <select class="form-control" id="liveClassFilter" onchange="renderCurrentLive()" style="width:150px">
+        <option value="">Tất cả lớp</option>
+      </select>
+      <button class="btn btn-ghost btn-sm" onclick="loadLive()">🔄</button>
+    </div>
+  </div>
+  <div id="liveContent"><div class="empty"><span>📡</span>Chọn buổi học để xem trực tiếp</div></div>
+</div>
+
+<!-- ══ ABSENCES ══ -->
+<div class="page" id="pageAbsences">
+  <div class="sec-header">
+    <div class="sec-title"><span>🔴</span> Đơn xin vắng</div>
+    <div style="display:flex;gap:.5rem">
+      <select class="form-control" id="absFilterStatus" onchange="loadAbsences()" style="width:150px">
+        <option value="pending">Chờ duyệt</option>
+        <option value="">Tất cả</option>
+        <option value="approved">Đã duyệt</option>
+        <option value="rejected">Từ chối</option>
+      </select>
+    </div>
+  </div>
+  <div id="absenceList"><div class="empty"><span>📭</span>Không có đơn nào</div></div>
+</div>
+
+<!-- ══ REPORT ══ -->
+<div class="page" id="pageReport">
+  <div class="sec-header">
+    <div class="sec-title"><span>📊</span> Báo cáo chuyên cần</div>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+      <select class="form-control" id="rptClass" onchange="loadReport()" style="width:160px">
+        <option value="">Tất cả lớp</option>
+      </select>
+      <input type="date" class="form-control" id="rptFrom" style="width:150px"/>
+      <input type="date" class="form-control" id="rptTo" style="width:150px"/>
+      <button class="btn btn-primary btn-sm" onclick="loadReport()">Xem</button>
+      <button class="btn btn-success btn-sm" onclick="exportExcel()" id="btnExportExcel" style="display:none">⬇ Excel</button>
+    </div>
+  </div>
+  <div id="reportContent"><div class="empty"><span>📊</span>Chọn bộ lọc và nhấn Xem</div></div>
+</div>
+
+<!-- ══ MODAL TẠO/SỬA BUỔI ══ -->
+<div class="modal-overlay" id="sessionModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div><h3 id="sessionModalTitle">Tạo buổi học</h3></div>
+      <button class="btn-close" onclick="closeModal('sessionModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Tiêu đề <span style="color:var(--red)">*</span></label>
+        <input type="text" class="form-control" id="sTitle" placeholder="VD: Toán 12A — Buổi 15"/>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Lớp <span style="color:var(--red)">*</span></label>
+          <select class="form-control" id="sClass"><option value="">-- Chọn lớp --</option></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ngày <span style="color:var(--red)">*</span></label>
+          <input type="date" class="form-control" id="sDate"/>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Giờ bắt đầu <span style="color:var(--red)">*</span></label>
+          <input type="time" class="form-control" id="sStart"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Giờ kết thúc <span style="color:var(--red)">*</span></label>
+          <input type="time" class="form-control" id="sEnd"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Link Google Meet</label>
+        <input type="url" class="form-control" id="sMeet" placeholder="https://meet.google.com/..."/>
+      </div>
+      <label style="display:flex;align-items:center;gap:.55rem;cursor:pointer;font-size:.88rem;color:var(--text2);background:rgba(59,130,246,.08);padding:.65rem .85rem;border-radius:9px">
+        <input type="checkbox" id="sOpenNow" style="accent-color:var(--accent);width:15px;height:15px"/>
+        Mở điểm danh ngay sau khi lưu
+      </label>
+      <div style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:9px;padding:.75rem .85rem">
+        <div style="font-size:.75rem;font-weight:700;color:var(--yellow);letter-spacing:.04em;text-transform:uppercase;margin-bottom:.55rem">⏰ Tự động theo giờ</div>
+        <div class="form-row" style="margin-bottom:0">
+          <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;font-size:.85rem;color:var(--text2)">
+            <input type="checkbox" id="sAutoOpen" style="accent-color:var(--yellow);width:14px;height:14px"/>
+            Tự mở lúc <strong style="color:var(--text)">&nbsp;giờ bắt đầu</strong>
+          </label>
+          <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;font-size:.85rem;color:var(--text2)">
+            <input type="checkbox" id="sAutoClose" style="accent-color:var(--yellow);width:14px;height:14px"/>
+            Tự đóng lúc <strong style="color:var(--text)">&nbsp;giờ kết thúc</strong>
+          </label>
+        </div>
+        <div style="font-size:.75rem;color:var(--text3);margin-top:.5rem">Khi trang điểm danh đang mở, hệ thống kiểm tra mỗi phút và tự động mở/đóng đúng giờ.</div>
+      </div>
+      <div id="sessionModalError" style="display:none;margin-top:.75rem;padding:.6rem .85rem;border-radius:8px;background:#fef2f2;border:1px solid #fecaca;font-size:.82rem;color:#b91c1c"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('sessionModal')">Hủy</button>
+      <button class="btn btn-primary" onclick="saveSession()"><span id="sessionSaveText">💾 Lưu</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL CHI TIẾT BUỔI ══ -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal" style="max-width:680px">
+    <div class="modal-header">
+      <div><h3 id="detailTitle">Chi tiết buổi học</h3><p id="detailSub"></p></div>
+      <button class="btn-close" onclick="closeModal('detailModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap" id="detailStats"></div>
+      <div id="detailList"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇ Xuất CSV</button>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('detailModal')">Đóng</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL DUYỆT ĐƠN ══ -->
+<div class="modal-overlay" id="absenceDetailModal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div><h3>Đơn xin vắng</h3></div>
+      <button class="btn-close" onclick="closeModal('absenceDetailModal')">✕</button>
+    </div>
+    <div class="modal-body" id="absenceDetailBody"></div>
+    <div class="modal-footer" id="absenceDetailFooter"></div>
+  </div>
+</div>
+
+<script>
+// ── Auth ────────────────────────────────────────────────────────
+const _u = sessionStorage.getItem('dh_user') || localStorage.getItem('dh_user');
+const _n = sessionStorage.getItem('dh_name') || localStorage.getItem('dh_name') || _u;
+const _r = sessionStorage.getItem('dh_role') || localStorage.getItem('dh_role');
+if (!_u || (_r !== 'teacher' && _r !== 'assistant')) {
+  location.href = 'login.html';
+}
+document.getElementById('userName').textContent = _n || 'Admin';
+document.getElementById('userAv').textContent   = (_n || 'A')[0].toUpperCase();
+// Nút quay lại phù hợp với role
+const backBtn = document.getElementById('btnBackAdmin');
+if(_r === 'assistant') { backBtn.href='admin.html'; backBtn.textContent='← Trợ lý'; }
+else { backBtn.href='admin.html'; backBtn.textContent='← Admin'; }
+
+const db = DH_CFG.createDb();
+
+// ── Helpers ─────────────────────────────────────────────────────
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmtDate(d){ if(!d)return''; const[y,m,dd]=(d+'').split('-'); return `${dd}/${m}/${y}`; }
+function fmtDateTime(ts){ return ts ? new Date(ts).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}) : '—'; }
+function today(){ return new Date().toISOString().split('T')[0]; }
+function weekRange(){
+  const now=new Date();
+  const mon=new Date(now); mon.setDate(now.getDate()-now.getDay()+1);
+  const sun=new Date(mon); sun.setDate(mon.getDate()+6);
+  return [mon.toISOString().split('T')[0], sun.toISOString().split('T')[0]];
+}
+const AV_COLORS=['#4f46e5','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#ec4899'];
+function avColor(s){ let h=0; for(let i=0;i<(s||'').length;i++) h=s.charCodeAt(i)+((h<<5)-h); return AV_COLORS[Math.abs(h)%AV_COLORS.length]; }
+function initials(s){ return (s||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(); }
+
+const STATUS_MAP = {
+  present: { label:'Có mặt',  icon:'✅', cls:'badge-present' },
+  late:    { label:'Đi muộn', icon:'⏰', cls:'badge-late'    },
+  absent:  { label:'Vắng',    icon:'❌', cls:'badge-absent'  },
+  excused: { label:'Có phép', icon:'📋', cls:'badge-excused' },
+};
+
+// ── Toast ───────────────────────────────────────────────────────
+function toast(msg, type='success'){
+  const wrap = document.getElementById('toastWrap');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  wrap.appendChild(t);
+  setTimeout(()=>t.remove(), 3500);
+}
+
+// ── Modal helpers ───────────────────────────────────────────────
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m=>{
+  m.addEventListener('click', e=>{ if(e.target===m) m.classList.remove('open'); });
+});
+
+// ── Tab navigation ───────────────────────────────────────────────
+function showTab(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page'+name.charAt(0).toUpperCase()+name.slice(1)).classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+  if(name==='dashboard') loadDashboard();
+  if(name==='sessions')  { populateClassSelects(); loadSessions(); }
+  if(name==='live')      { loadOpenSessions(); loadLive(); }
+  if(name==='absences')  loadAbsences();
+  if(name==='report')    { populateClassSelects(); }
+}
+
+// ── Populate class selects ───────────────────────────────────────
+let _classes = [];
+async function populateClassSelects(){
+  if(_classes.length) return;
+  const {data} = await db.from('classes').select('name').order('name');
+  _classes = (data||[]).map(c=>c.name);
+  ['sessFilterClass','sClass','rptClass'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+    const cur = el.value;
+    const blank = el.id==='sClass' ? '<option value="">-- Chọn lớp --</option>' : '<option value="">Tất cả lớp</option>';
+    el.innerHTML = blank + _classes.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+    el.value = cur;
+  });
+}
+
+// ── DASHBOARD ───────────────────────────────────────────────────
+async function loadDashboard(){
+  const [
+    {count:students},
+    {count:classes},
+    {data:weekSess},
+    {data:openSess},
+    {data:todaySess},
+  ] = await Promise.all([
+    db.from('students').select('*',{count:'exact',head:true}).eq('active',true),
+    db.from('classes').select('*',{count:'exact',head:true}),
+    db.from('dd_sessions').select('id').gte('session_date',weekRange()[0]).lte('session_date',weekRange()[1]),
+    db.from('dd_sessions').select('*').eq('status','open'),
+    db.from('dd_sessions').select('*').eq('session_date',today()).order('start_time'),
+  ]);
+
+  document.getElementById('dStatStudents').textContent = students||0;
+  document.getElementById('dStatClasses').textContent  = classes||0;
+  document.getElementById('dStatWeek').textContent     = (weekSess||[]).length;
+  document.getElementById('dStatOpen').textContent     = (openSess||[]).length;
+
+  // Live tab badge
+  document.querySelectorAll('.live-active .dot').forEach(d=>d.style.display=(openSess||[]).length?'block':'none');
+
+  // Today attendance counts — tính cả số vắng thực sự
+  const todayIds = (todaySess||[]).map(s=>s.id);
+  let present=0,late=0,excused=0,absent=0;
+  if(todayIds.length){
+    const {data:recs} = await db.from('dd_records').select('status').in('session_id',todayIds);
+    (recs||[]).forEach(r=>{
+      if(r.status==='present')present++;
+      else if(r.status==='late')late++;
+      else if(r.status==='excused')excused++;
+    });
+    // Tính số vắng = tổng học sinh * số buổi - số record có mặt/phép
+    let totalExpected = 0;
+    for(const s of (todaySess||[])){
+      const {count} = await db.from('students').select('*',{count:'exact',head:true}).eq('active',true).ilike('class_name','%'+s.class_name+'%');
+      totalExpected += count||0;
+    }
+    absent = Math.max(0, totalExpected - present - late - excused);
+  }
+  document.getElementById('dPresent').textContent  = present;
+  document.getElementById('dLate').textContent     = late;
+  document.getElementById('dExcused').textContent  = excused;
+  document.getElementById('dAbsent').textContent   = absent;
+
+  // Today sessions list
+  const el = document.getElementById('dashTodaySessions');
+  if(!(todaySess||[]).length){
+    el.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--text3);font-size:.85rem">Không có buổi nào hôm nay</div>';
+  } else {
+    el.innerHTML = (todaySess||[]).map(s=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:.6rem 0;border-bottom:1px solid var(--border2);font-size:.85rem">
+        <div>
+          <div style="font-weight:700">${esc(s.title)}</div>
+          <div style="font-size:.75rem;color:var(--text2)">${s.start_time||''} – ${s.end_time||''} · ${esc(s.class_name)}</div>
+        </div>
+        ${statusBadge(s.status)}
+      </div>`).join('');
+  }
+
+  // Absence badge
+  const {count:pendingAbs} = await db.from('dd_absences').select('*',{count:'exact',head:true}).eq('status','pending');
+  const ab = document.getElementById('absenceBadge');
+  if(pendingAbs){ab.style.display='';ab.textContent=pendingAbs;}else{ab.style.display='none';}
+}
+
+function statusBadge(s){
+  const m={scheduled:'badge-scheduled',open:'badge-open',closed:'badge-closed'};
+  const l={scheduled:'Chưa mở',open:'Đang mở',closed:'Đã đóng'};
+  return `<span class="badge ${m[s]||'badge-closed'}">${l[s]||s}</span>`;
+}
+
+// ── SESSIONS ────────────────────────────────────────────────────
+let _editSessionId = null;
+let _allSessions   = [];
+
+async function loadSessions(){
+  const tbody = document.getElementById('sessTableBody');
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text3)">⏳ Đang tải...</td></tr>';
+
+  const fc = document.getElementById('sessFilterClass').value;
+  const fd = document.getElementById('sessFilterDate').value;
+  const fs = document.getElementById('sessFilterStatus').value;
+
+  let q = db.from('dd_sessions').select('*').order('session_date',{ascending:false}).order('start_time',{ascending:false});
+  if(fc) q=q.eq('class_name',fc);
+  if(fd) q=q.eq('session_date',fd);
+  if(fs) q=q.eq('status',fs);
+
+  const {data:sessions,error} = await q;
+  if(error){tbody.innerHTML=`<tr><td colspan="7" style="color:var(--red);padding:1.5rem;text-align:center">❌ ${error.message}</td></tr>`;return;}
+  _allSessions = sessions||[];
+  if(!_allSessions.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:2.5rem;color:var(--text3)">📭 Chưa có buổi học nào</td></tr>';return;}
+
+  // Lấy số điểm danh
+  const ids = _allSessions.map(s=>s.id);
+  const {data:recs} = await db.from('dd_records').select('session_id,status').in('session_id',ids);
+  const recMap={};
+  (recs||[]).forEach(r=>{
+    if(!recMap[r.session_id]) recMap[r.session_id]={present:0,late:0,total:0};
+    if(r.status==='present') recMap[r.session_id].present++;
+    if(r.status==='late')    recMap[r.session_id].late++;
+    recMap[r.session_id].total++;
+  });
+
+  tbody.innerHTML = _allSessions.map(s=>{
+    const rc = recMap[s.id]||{};
+    const present = (rc.present||0)+(rc.late||0);
+    return `<tr>
+      <td><div style="font-weight:700">${esc(s.title)}</div></td>
+      <td><span style="font-size:.8rem;background:rgba(59,130,246,.12);color:#60a5fa;padding:.15rem .55rem;border-radius:6px">${esc(s.class_name)}</span></td>
+      <td style="white-space:nowrap;color:var(--text2)">${fmtDate(s.session_date)}</td>
+      <td style="white-space:nowrap;color:var(--text2);font-size:.82rem">${s.start_time||''}–${s.end_time||''}</td>
+      <td><span style="font-weight:700;color:var(--green)">${present}</span><span style="color:var(--text3);font-size:.8rem"> / ${rc.total||0}</span></td>
+      <td>${statusBadge(s.status)}</td>
+      <td>
+        <div style="display:flex;gap:.3rem;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-icon btn-sm" title="Chi tiết" onclick="viewDetail(${s.id})">👁</button>
+          ${s.status==='scheduled'?`<button class="btn btn-success btn-sm" onclick="toggleStatus(${s.id},'open')">🔓 Mở</button>`:''}
+          ${s.status==='open'?`<button class="btn btn-ghost btn-sm" onclick="toggleStatus(${s.id},'closed')">🔒 Đóng</button>`:''}
+          ${s.status==='closed'?`<button class="btn btn-ghost btn-sm" onclick="toggleStatus(${s.id},'open')">🔓 Mở lại</button>`:''}
+          <button class="btn btn-ghost btn-icon btn-sm" title="Sửa" onclick="editSession(${s.id})">✏️</button>
+          <button class="btn btn-ghost btn-icon btn-sm" title="Xóa" onclick="deleteSession(${s.id})" style="color:var(--red)">🗑</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openCreateSession(){
+  _editSessionId = null;
+  document.getElementById('sessionModalTitle').textContent = 'Tạo buổi học';
+  document.getElementById('sTitle').value  = '';
+  document.getElementById('sClass').value  = '';
+  document.getElementById('sDate').value   = today();
+  document.getElementById('sStart').value  = '';
+  document.getElementById('sEnd').value    = '';
+  document.getElementById('sMeet').value   = '';
+  document.getElementById('sOpenNow').checked = false;
+  document.getElementById('sessionModalError').style.display='none';
+  document.getElementById('sessionSaveText').textContent='💾 Lưu';
+  populateClassSelects();
+  document.getElementById('sessionModal').classList.add('open');
+}
+
+function editSession(id){
+  const s = _allSessions.find(x=>x.id===id); if(!s)return;
+  _editSessionId = id;
+  document.getElementById('sessionModalTitle').textContent='Sửa buổi học';
+  document.getElementById('sTitle').value  = s.title||'';
+  document.getElementById('sDate').value   = s.session_date||'';
+  document.getElementById('sStart').value  = s.start_time||'';
+  document.getElementById('sEnd').value    = s.end_time||'';
+  document.getElementById('sMeet').value   = s.meet_link||'';
+  document.getElementById('sOpenNow').checked = s.status==='open';
+  document.getElementById('sAutoOpen').checked  = !!s.auto_open;
+  document.getElementById('sAutoClose').checked = !!s.auto_close;
+  document.getElementById('sessionModalError').style.display='none';
+  document.getElementById('sessionSaveText').textContent='💾 Cập nhật';
+  populateClassSelects().then(()=>{ document.getElementById('sClass').value=s.class_name; });
+  document.getElementById('sessionModal').classList.add('open');
+}
+
+async function saveSession(){
+  const title = document.getElementById('sTitle').value.trim();
+  const cls   = document.getElementById('sClass').value;
+  const date  = document.getElementById('sDate').value;
+  const start = document.getElementById('sStart').value;
+  const end   = document.getElementById('sEnd').value;
+  const meet  = document.getElementById('sMeet').value.trim();
+  const open  = document.getElementById('sOpenNow').checked;
+  const autoOpen  = document.getElementById('sAutoOpen').checked;
+  const autoClose = document.getElementById('sAutoClose').checked;
+  const errEl = document.getElementById('sessionModalError');
+
+  if(!title){errEl.textContent='Vui lòng nhập tiêu đề';errEl.style.display='';return;}
+  if(!cls)  {errEl.textContent='Vui lòng chọn lớp';errEl.style.display='';return;}
+  if(!date) {errEl.textContent='Vui lòng chọn ngày';errEl.style.display='';return;}
+  if(!start||!end){errEl.textContent='Vui lòng nhập giờ bắt đầu và kết thúc';errEl.style.display='';return;}
+  errEl.style.display='none';
+
+  const btnText=document.getElementById('sessionSaveText');
+  btnText.textContent='⏳ Đang lưu...';
+
+  const payload={title,class_name:cls,session_date:date,start_time:start,end_time:end,meet_link:meet||null,status:open?'open':'scheduled',auto_open:autoOpen,auto_close:autoClose,created_by:_u};
+  let error;
+  if(_editSessionId){({error}=await db.from('dd_sessions').update(payload).eq('id',_editSessionId));}
+  else{({error}=await db.from('dd_sessions').insert(payload));}
+
+  if(error){errEl.textContent='Lỗi: '+error.message;errEl.style.display='';btnText.textContent='💾 Lưu';return;}
+  closeModal('sessionModal');
+  toast(_editSessionId?'Đã cập nhật buổi học':'Đã tạo buổi học mới');
+  loadSessions();
+  loadDashboard();
+}
+
+async function toggleStatus(id, newStatus){
+  await db.from('dd_sessions').update({status:newStatus}).eq('id',id);
+  toast(newStatus==='open'?'🔓 Đã mở điểm danh':'🔒 Đã đóng điểm danh');
+  loadSessions();
+  loadDashboard();
+  if(newStatus==='open'){loadOpenSessions();}
+}
+
+async function deleteSession(id){
+  if(!confirm('Xóa buổi học này? Toàn bộ dữ liệu điểm danh cũng bị xóa.')) return;
+  await db.from('dd_sessions').delete().eq('id',id);
+  toast('Đã xóa buổi học');
+  loadSessions();
+  loadDashboard();
+}
+
+// ── View detail ──────────────────────────────────────────────────
+let _detailSession = null;
+let _detailStudents = [];
+let _detailRecs = [];
+
+async function viewDetail(id){
+  _detailSession = _allSessions.find(s=>s.id===id);
+  if(!_detailSession) return;
+  document.getElementById('detailTitle').textContent = _detailSession.title;
+  document.getElementById('detailSub').textContent   = `${fmtDate(_detailSession.session_date)} · ${_detailSession.start_time}–${_detailSession.end_time} · ${_detailSession.class_name}`;
+  document.getElementById('detailStats').innerHTML   = '';
+  document.getElementById('detailList').innerHTML    = '<div style="text-align:center;padding:1.5rem;color:var(--text3)">⏳ Đang tải...</div>';
+  document.getElementById('detailModal').classList.add('open');
+
+  const {data:students} = await db.from('students').select('username,full_name,class_name').eq('active',true);
+  _detailStudents = (students||[]).filter(s =>
+    (s.class_name||'').split(',').map(c=>c.trim()).some(c => c === _detailSession.class_name.trim())
+  );
+
+  const {data:recs} = await db.from('dd_records').select('*').eq('session_id',id);
+  _detailRecs = recs||[];
+  const recMap = Object.fromEntries(_detailRecs.map(r=>[r.username,r]));
+
+  const present = _detailRecs.filter(r=>r.status==='present'||r.status==='late').length;
+  const excused = _detailRecs.filter(r=>r.status==='excused').length;
+  const absent  = _detailStudents.length - present - excused;
+
+  document.getElementById('detailStats').innerHTML = [
+    {l:'Có mặt',v:present,c:'var(--green)'},
+    {l:'Vắng',v:Math.max(0,absent),c:'var(--red)'},
+    {l:'Có phép',v:excused,c:'var(--purple)'},
+    {l:'Tổng HS',v:_detailStudents.length,c:'var(--accent)'},
+  ].map(x=>`
+    <div style="flex:1;min-width:90px;text-align:center;padding:.65rem;background:var(--card);border-radius:9px;border:1px solid var(--border)">
+      <div style="font-size:1.4rem;font-weight:900;color:${x.c}">${x.v}</div>
+      <div style="font-size:.72rem;color:var(--text3);margin-top:.2rem">${x.l}</div>
+    </div>`).join('');
+
+  if(!_detailStudents.length){
+    document.getElementById('detailList').innerHTML='<div style="text-align:center;padding:1.5rem;color:var(--text3)">Chưa có học sinh nào trong lớp này</div>';
+    return;
+  }
+  document.getElementById('detailList').innerHTML = _detailStudents.map(st=>{
+    const r = recMap[st.username];
+    const sm = r?(STATUS_MAP[r.status]||STATUS_MAP.absent):STATUS_MAP.absent;
+    const sessId = id;
+    return `
+      <div style="display:flex;align-items:center;gap:.75rem;padding:.7rem;border-radius:10px;background:var(--card);border:1px solid var(--border);margin-bottom:.5rem">
+        <div style="width:36px;height:36px;border-radius:50%;background:${avColor(st.full_name)};display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:800;color:#fff;flex-shrink:0">${initials(st.full_name)}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:.88rem">${esc(st.full_name||st.username)}</div>
+          <div style="font-size:.73rem;color:var(--text2)">@${esc(st.username)}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:.5rem;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end">
+          <span class="badge ${sm.cls}">${sm.icon} ${sm.label}</span>
+          ${r?.check_in_time?`<span style="font-size:.72rem;color:var(--text3)">${fmtDateTime(r.check_in_time)}</span>`:''}
+          <select onchange="adminSetStatus(${sessId},'${esc(st.username)}','${esc(st.full_name||st.username)}','${esc(_detailSession?.class_name||'')}',this.value)"
+            style="font-size:.72rem;padding:.2rem .4rem;border-radius:7px;background:rgba(255,255,255,.08);border:1px solid var(--border);color:var(--text2);cursor:pointer;color-scheme:dark">
+            <option value="">✏️ Sửa</option>
+            <option value="present">✅ Có mặt</option>
+            <option value="late">⏰ Đi muộn</option>
+            <option value="excused">📋 Có phép</option>
+            <option value="absent">❌ Vắng</option>
+          </select>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function exportCSV(){
+  if(!_detailSession||!_detailStudents.length) return;
+  const recMap = Object.fromEntries(_detailRecs.map(r=>[r.username,r]));
+  const rows   = [['Họ tên','Username','Trạng thái','Giờ điểm danh','Ghi chú']];
+  _detailStudents.forEach(st=>{
+    const r = recMap[st.username];
+    rows.push([st.full_name||st.username, st.username, r?(STATUS_MAP[r.status]?.label||r.status):'Vắng', r?.check_in_time?new Date(r.check_in_time).toLocaleString('vi-VN'):'', r?.note||'']);
+  });
+  const csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a   = document.createElement('a');
+  a.href    = URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'}));
+  a.download= `diemdanh_${_detailSession.class_name}_${_detailSession.session_date}.csv`;
+  a.click();
+}
+
+// ── LIVE ────────────────────────────────────────────────────────
+let _liveTimer = null;
+
+async function loadOpenSessions(){
+  const {data} = await db.from('dd_sessions').select('*').eq('status','open').order('session_date').order('start_time');
+  const sel = document.getElementById('liveSessionSelect');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">-- Chọn buổi đang mở --</option>'
+    + (data||[]).map(s=>`<option value="${s.id}">${esc(s.title)} — ${esc(s.class_name)}</option>`).join('');
+  if(cur) sel.value = cur;
+  // Populate class filter từ lớp hiện có
+  const allClasses=[...new Set((data||[]).map(s=>s.class_name))];
+  const cf=document.getElementById('liveClassFilter');
+  const cfCur=cf?.value||'';
+  if(cf){
+    cf.innerHTML='<option value="">Tất cả lớp</option>'+allClasses.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+    cf.value=cfCur;
+  }
+}
+
+let _liveCurrentId=null, _liveStudents=[], _liveRecs=[];
+
+async function loadLive(){
+  const id = parseInt(document.getElementById('liveSessionSelect').value);
+  const el = document.getElementById('liveContent');
+  if(!id){el.innerHTML='<div class="empty"><span>📡</span>Chọn buổi học để xem trực tiếp</div>';_liveCurrentId=null;return;}
+  if(_liveTimer) clearInterval(_liveTimer);
+  if(window._liveChannel){ try{ db.removeChannel(window._liveChannel); }catch(e){} window._liveChannel=null; }
+  _liveCurrentId=id;
+  _notifiedLate.clear(); // Reset thông báo muộn khi chuyển buổi
+  await renderLive(id, el);
+  window._liveChannel = db.channel('live-att-'+id)
+    .on('postgres_changes',{event:'*',schema:'public',table:'dd_records',filter:`session_id=eq.${id}`},
+      ()=>renderLive(id,el))
+    .subscribe();
+  _liveTimer = setInterval(()=>renderLive(id, el), 15000);
+}
+
+function renderCurrentLive(){
+  if(!_liveCurrentId) return;
+  const el=document.getElementById('liveContent');
+  renderLiveFiltered(_liveStudents,_liveRecs,el);
+}
+
+async function renderLive(id, el){
+  const [{data:session},{data:students},{data:recs}] = await Promise.all([
+    db.from('dd_sessions').select('*').eq('id',id).single(),
+    db.from('students').select('username,full_name,class_name').eq('active',true),
+    db.from('dd_records').select('*').eq('session_id',id),
+  ]);
+  if(!session){el.innerHTML='<div class="empty"><span>❓</span>Không tìm thấy buổi học</div>';return;}
+
+  // Lọc học sinh đúng lớp — so khớp từng lớp trong danh sách phân cách dấu phẩy
+  const targetClass = session.class_name.trim();
+  const classStudents = (students||[]).filter(s =>
+    (s.class_name||'').split(',').map(c=>c.trim()).some(c => c === targetClass)
+  );
+  _liveStudents=classStudents; _liveRecs=recs||[];
+  renderLiveFiltered(classStudents,recs||[],el,session);
+}
+
+// ── Theo dõi thông báo đã gửi để không bị lặp ──────────────────
+const _notifiedLate = new Set();
+
+function renderLiveFiltered(classStudents,recs,el,session){
+  const classFilter=document.getElementById('liveClassFilter')?.value||'';
+  let filtered=classStudents;
+  if(classFilter) filtered=classStudents.filter(s=>(s.class_name||'').split(',').map(c=>c.trim()).some(c=>c===classFilter));
+  const recMap = Object.fromEntries(recs.map(r=>[r.username,r]));
+
+  // Phân loại: đúng giờ, đi muộn, có phép, chưa điểm danh
+  const onTime  = filtered.filter(s=>recMap[s.username]?.status==='present');
+  const late    = filtered.filter(s=>recMap[s.username]?.status==='late');
+  const excused = filtered.filter(s=>recMap[s.username]?.status==='excused');
+  const notYet  = filtered.filter(s=>!recMap[s.username]);
+  const presentFiltered = onTime.length + late.length;
+  const rate = filtered.length>0?Math.round(presentFiltered/filtered.length*100):0;
+
+  // Thông báo browser + toast khi phát hiện học sinh đi muộn mới
+  late.forEach(st=>{
+    const key = (recMap[st.username]?.id||st.username) + '_late';
+    if(!_notifiedLate.has(key)){
+      _notifiedLate.add(key);
+      const r=recMap[st.username];
+      const timeStr=fmtDateTime(r?.check_in_time);
+      toast(`⏰ ${st.full_name||st.username} vào muộn (${timeStr})`, 'info');
+      _adminBrowserNotify('⏰ Học sinh đi muộn', `${st.full_name||st.username} vừa điểm danh muộn lúc ${timeStr}`);
+    }
+  });
+
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:.75rem;margin-bottom:1.25rem">
+      ${[
+        {l:'Đúng giờ',  v:onTime.length,  c:'var(--green)', bg:'rgba(16,185,129,.12)'},
+        {l:'Đi muộn',   v:late.length,    c:'var(--yellow)',bg:'rgba(245,158,11,.12)'},
+        {l:'Chưa vào',  v:notYet.length,  c:'var(--red)',   bg:'rgba(239,68,68,.08)'},
+        {l:'Có phép',   v:excused.length, c:'var(--purple)',bg:'rgba(139,92,246,.12)'},
+        {l:'Tổng',      v:filtered.length,c:'var(--accent)',bg:'rgba(59,130,246,.1)'},
+      ].map(x=>`
+        <div style="background:${x.bg};border-radius:var(--r);padding:1rem;text-align:center;border:1px solid var(--border)">
+          <div style="font-size:1.5rem;font-weight:900;color:${x.c}">${x.v}</div>
+          <div style="font-size:.72rem;color:var(--text2);margin-top:.2rem">${x.l}</div>
+        </div>`).join('')}
+    </div>
+    <div style="margin-bottom:1.1rem">
+      <div style="display:flex;justify-content:space-between;font-size:.82rem;color:var(--text2);margin-bottom:.35rem"><span>Tỉ lệ có mặt</span><strong style="color:${rate>=80?'var(--green)':rate>=60?'var(--yellow)':'var(--red)'}">${rate}%</strong></div>
+      <div class="prog-bar"><div class="prog-fill" style="width:${rate}%;background:${rate>=80?'var(--green)':rate>=60?'var(--yellow)':'var(--red)'}"></div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.75rem">
+
+      <!-- Cột 1: Đúng giờ -->
+      <div>
+        <div style="font-size:.73rem;font-weight:700;color:var(--green);letter-spacing:.04em;text-transform:uppercase;margin-bottom:.5rem;display:flex;align-items:center;gap:.4rem">
+          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green)"></span>Đúng giờ (${onTime.length})
+        </div>
+        <div class="live-grid" style="max-height:300px">
+          ${onTime.map(st=>{
+            const r=recMap[st.username];
+            return `<div class="live-item">
+              <div class="live-av" style="background:${avColor(st.full_name)}">${initials(st.full_name)}</div>
+              <div><div class="live-name">${esc(st.full_name||st.username)}</div><div class="live-sub">✅ Đúng giờ</div></div>
+              <div class="live-time">${fmtDateTime(r?.check_in_time)}</div>
+            </div>`;
+          }).join('')||`<div style="color:var(--text3);font-size:.83rem;padding:.5rem 0">Chưa có ai đúng giờ</div>`}
+        </div>
+      </div>
+
+      <!-- Cột 2: Đi muộn -->
+      <div>
+        <div style="font-size:.73rem;font-weight:700;color:var(--yellow);letter-spacing:.04em;text-transform:uppercase;margin-bottom:.5rem;display:flex;align-items:center;gap:.4rem">
+          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--yellow)"></span>Đi muộn (${late.length})
+        </div>
+        <div class="live-grid" style="max-height:300px">
+          ${late.map(st=>{
+            const r=recMap[st.username];
+            return `<div class="live-item" style="border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.05)">
+              <div class="live-av" style="background:#b45309">${initials(st.full_name)}</div>
+              <div><div class="live-name">${esc(st.full_name||st.username)}</div><div class="live-sub" style="color:var(--yellow)">⏰ Đi muộn</div></div>
+              <div class="live-time">${fmtDateTime(r?.check_in_time)}</div>
+            </div>`;
+          }).join('')||`<div style="color:var(--green);font-size:.83rem;padding:.5rem 0">🎉 Không ai đi muộn!</div>`}
+        </div>
+      </div>
+
+      <!-- Cột 3: Chưa điểm danh -->
+      <div>
+        <div style="font-size:.73rem;font-weight:700;color:var(--red);letter-spacing:.04em;text-transform:uppercase;margin-bottom:.5rem;display:flex;align-items:center;gap:.4rem">
+          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--red);animation:pulse 1.5s ease-in-out infinite"></span>Chưa vào (${notYet.length})
+        </div>
+        <div class="live-grid" style="max-height:300px">
+          ${notYet.map(st=>`<div class="live-item">
+            <div class="live-av" style="background:${avColor(st.full_name)}">${initials(st.full_name)}</div>
+            <div><div class="live-name">${esc(st.full_name||st.username)}</div><div class="live-sub" style="color:var(--text3)">❌ Chưa điểm danh</div></div>
+          </div>`).join('')||`<div style="color:var(--green);font-size:.83rem;padding:.5rem 0">🎉 Tất cả đã điểm danh!</div>`}
+        </div>
+      </div>
+
+    </div>`;
+}
+
+// ── ABSENCES ────────────────────────────────────────────────────
+async function loadAbsences(){
+  const status = document.getElementById('absFilterStatus').value;
+  let q = db.from('dd_absences').select('*, dd_sessions(title, session_date, class_name)').order('created_at',{ascending:false});
+  if(status) q=q.eq('status',status);
+  const {data, error} = await q;
+  const el = document.getElementById('absenceList');
+
+  if(error||!(data||[]).length){
+    el.innerHTML='<div class="empty"><span>📭</span>Không có đơn xin vắng nào</div>';
+    return;
+  }
+
+  const REASON_LABELS = {health:'Sức khỏe',family:'Việc gia đình',exam:'Học/Thi khác',personal:'Việc cá nhân',other:'Khác'};
+  el.innerHTML = `<div class="table-wrap"><table>
+    <thead><tr><th>Học viên</th><th>Buổi học</th><th>Lý do</th><th>Thời gian gửi</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+    <tbody>${(data||[]).map(a=>`
+      <tr>
+        <td><div style="font-weight:700">${esc(a.student_name||a.username)}</div><div style="font-size:.75rem;color:var(--text2)">@${esc(a.username)}</div></td>
+        <td><div style="font-size:.85rem">${esc(a.dd_sessions?.title||'—')}</div><div style="font-size:.73rem;color:var(--text2)">${fmtDate(a.dd_sessions?.session_date)} · ${esc(a.class_name||'')}</div></td>
+        <td><span style="font-size:.82rem">${REASON_LABELS[a.reason_type]||a.reason_type}</span></td>
+        <td style="font-size:.8rem;color:var(--text2)">${a.created_at?new Date(a.created_at).toLocaleString('vi-VN'):'—'}</td>
+        <td><span class="badge badge-${a.status}">${a.status==='pending'?'⏳ Chờ':a.status==='approved'?'✅ Duyệt':'❌ Từ chối'}</span></td>
+        <td><button class="btn btn-ghost btn-sm" onclick="viewAbsence(${JSON.stringify(a).replace(/"/g,'&quot;')})">Xem</button></td>
+      </tr>`).join('')}
+    </tbody></table></div>`;
+}
+
+function viewAbsence(a){
+  const REASON_LABELS = {health:'Sức khỏe',family:'Việc gia đình',exam:'Học/Thi khác',personal:'Việc cá nhân',other:'Khác'};
+  document.getElementById('absenceDetailBody').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:.65rem;font-size:.88rem">
+      <div style="display:flex;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid var(--border2)"><span style="color:var(--text2)">Học viên</span><strong>${esc(a.student_name||a.username)}</strong></div>
+      <div style="display:flex;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid var(--border2)"><span style="color:var(--text2)">Lớp</span><span>${esc(a.class_name||'—')}</span></div>
+      <div style="display:flex;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid var(--border2)"><span style="color:var(--text2)">Lý do</span><span>${REASON_LABELS[a.reason_type]||a.reason_type}</span></div>
+      ${a.reason_detail?`<div style="background:rgba(255,255,255,.04);border-radius:8px;padding:.75rem;font-size:.84rem;color:var(--text2)">${esc(a.reason_detail)}</div>`:''}
+      ${a.proof_url?`<a href="${esc(a.proof_url)}" target="_blank" class="btn btn-ghost btn-sm" style="width:fit-content">🔗 Xem minh chứng</a>`:''}
+      <div style="display:flex;justify-content:space-between;padding:.5rem 0"><span style="color:var(--text2)">Trạng thái</span><span class="badge badge-${a.status}">${a.status==='pending'?'⏳ Chờ duyệt':a.status==='approved'?'✅ Đã duyệt':'❌ Từ chối'}</span></div>
+      ${a.admin_note?`<div style="background:rgba(255,255,255,.04);border-radius:8px;padding:.75rem;font-size:.84rem">📝 ${esc(a.admin_note)}</div>`:''}
+    </div>`;
+  const footer = document.getElementById('absenceDetailFooter');
+  if(a.status==='pending'){
+    footer.innerHTML=`
+      <input type="text" class="form-control" id="absNote" placeholder="Ghi chú (tuỳ chọn)" style="flex:1;margin-right:.5rem"/>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('absenceDetailModal')">Hủy</button>
+      <button class="btn btn-danger btn-sm" onclick="reviewAbsence(${a.id},'rejected')">❌ Từ chối</button>
+      <button class="btn btn-success btn-sm" onclick="reviewAbsence(${a.id},'approved')">✅ Duyệt</button>`;
+  } else {
+    footer.innerHTML=`<button class="btn btn-ghost btn-sm" onclick="closeModal('absenceDetailModal')">Đóng</button>`;
+  }
+  document.getElementById('absenceDetailModal').classList.add('open');
+}
+
+async function reviewAbsence(id, status){
+  const note = document.getElementById('absNote')?.value.trim()||'';
+  await db.from('dd_absences').update({status,admin_note:note||null,reviewed_by:_u,reviewed_at:new Date().toISOString()}).eq('id',id);
+  // Nếu duyệt → cập nhật record điểm danh thành excused
+  if(status==='approved'){
+    const {data:ab} = await db.from('dd_absences').select('session_id,username,student_name,class_name').eq('id',id).single();
+    if(ab) await db.from('dd_records').upsert({session_id:ab.session_id,username:ab.username,student_name:ab.student_name,class_name:ab.class_name,status:'excused',updated_at:new Date().toISOString()},{onConflict:'session_id,username'});
+  }
+  closeModal('absenceDetailModal');
+  toast(status==='approved'?'✅ Đã duyệt đơn vắng':'❌ Đã từ chối đơn');
+  loadAbsences();
+}
+
+// ── REPORT ──────────────────────────────────────────────────────
+let _reportRows = [];
+
+async function loadReport(){
+  const cls  = document.getElementById('rptClass').value;
+  const from = document.getElementById('rptFrom').value;
+  const to   = document.getElementById('rptTo').value;
+  const el   = document.getElementById('reportContent');
+  document.getElementById('btnExportExcel').style.display='none';
+  el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text3)">⏳ Đang tải...</div>';
+
+  let q = db.from('dd_sessions').select('*').eq('status','closed').order('session_date');
+  if(cls)  q=q.eq('class_name',cls);
+  if(from) q=q.gte('session_date',from);
+  if(to)   q=q.lte('session_date',to);
+
+  const {data:sessions} = await q;
+  if(!(sessions||[]).length){el.innerHTML='<div class="empty"><span>📊</span>Không có dữ liệu trong khoảng thời gian này</div>';return;}
+
+  const ids = sessions.map(s=>s.id);
+  const {data:students} = await db.from('students').select('username,full_name,class_name').eq('active',true);
+  const {data:recs}     = await db.from('dd_records').select('*').in('session_id',ids);
+
+  const studentList = cls
+    ? (students||[]).filter(s=>(s.class_name||'').split(',').map(c=>c.trim()).includes(cls))
+    : (students||[]);
+
+  _reportRows = studentList.map(st=>{
+    const mySess = sessions.filter(s=>(st.class_name||'').split(',').map(c=>c.trim()).includes(s.class_name));
+    const myRecs = (recs||[]).filter(r=>r.username===st.username&&mySess.map(s=>s.id).includes(r.session_id));
+    const total   = mySess.length;
+    const present = myRecs.filter(r=>r.status==='present'||r.status==='late').length;
+    const excused = myRecs.filter(r=>r.status==='excused').length;
+    const absent  = total - present - excused;
+    const rate    = total>0?Math.round(present/total*100):0;
+    return {st,total,present,excused,absent:Math.max(0,absent),rate};
+  }).sort((a,b)=>b.rate-a.rate);
+
+  if(_reportRows.length) document.getElementById('btnExportExcel').style.display='';
+
+  el.innerHTML = `
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Học viên</th><th>Tổng buổi</th><th>Có mặt</th><th>Có phép</th><th>Vắng</th><th>Tỉ lệ</th></tr></thead>
+        <tbody>
+          ${_reportRows.map((r,i)=>`<tr>
+            <td style="color:var(--text3)">${i+1}</td>
+            <td>
+              <div style="font-weight:700">${esc(r.st.full_name||r.st.username)}</div>
+              <div style="font-size:.75rem;color:var(--text2)">@${esc(r.st.username)}</div>
+            </td>
+            <td>${r.total}</td>
+            <td style="color:var(--green);font-weight:700">${r.present}</td>
+            <td style="color:var(--purple)">${r.excused}</td>
+            <td style="color:var(--red)">${r.absent}</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:.5rem">
+                <span style="font-weight:900;color:${r.rate>=80?'var(--green)':r.rate>=60?'var(--yellow)':'var(--red)'}">${r.rate}%</span>
+                <div class="prog-bar" style="flex:1;max-width:80px"><div class="prog-fill" style="width:${r.rate}%;background:${r.rate>=80?'var(--green)':r.rate>=60?'var(--yellow)':'var(--red)'}"></div></div>
+                <button class="btn btn-ghost btn-sm" onclick="viewStudentReport('${esc(r.st.username)}','${esc(r.st.full_name||r.st.username)}')" title="Chi tiết">👁</button>
+              </div>
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function exportExcel(){
+  if(!_reportRows.length) return;
+  const cls  = document.getElementById('rptClass').value || 'TatCaLop';
+  const from = document.getElementById('rptFrom').value || '';
+  const to   = document.getElementById('rptTo').value || '';
+
+  const wsData = [['#','Họ tên','Username','Tổng buổi','Có mặt','Có phép','Vắng','Tỉ lệ (%)']];
+  _reportRows.forEach((r,i)=>{
+    wsData.push([i+1, r.st.full_name||r.st.username, r.st.username, r.total, r.present, r.excused, r.absent, r.rate]);
+  });
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  // Style header
+  ws['!cols'] = [{wch:4},{wch:25},{wch:20},{wch:10},{wch:10},{wch:10},{wch:8},{wch:10}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Chuyên cần');
+  XLSX.writeFile(wb, `BaoCaoChuyenCan_${cls}_${from||'all'}${to?'_'+to:''}.xlsx`);
+  toast('✅ Đã xuất file Excel');
+}
+
+// ── Admin sửa trạng thái thủ công ───────────────────────────────
+async function adminSetStatus(sessionId, username, studentName, className, newStatus){
+  if(!newStatus) return;
+  await db.from('dd_records').upsert({
+    session_id: sessionId, username, student_name: studentName,
+    class_name: className, status: newStatus,
+    updated_at: new Date().toISOString()
+  },{onConflict:'session_id,username'});
+  toast(`✅ Đã cập nhật: ${studentName} → ${STATUS_MAP[newStatus]?.label||newStatus}`);
+  // Reload chi tiết
+  viewDetail(sessionId);
+}
+
+// ── Drill-down báo cáo theo học viên ────────────────────────────
+async function viewStudentReport(username, name){
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay open';
+  modal.innerHTML = `
+    <div class="modal" style="max-width:600px">
+      <div class="modal-header">
+        <div><h3>📊 Chi tiết: ${esc(name)}</h3><p>@${esc(username)}</p></div>
+        <button class="btn-close" onclick="this.closest('.modal-overlay').remove()">✕</button>
+      </div>
+      <div class="modal-body" id="studentReportBody">⏳ Đang tải...</div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e=>{ if(e.target===modal) modal.remove(); });
+
+  const cls  = document.getElementById('rptClass').value;
+  const from = document.getElementById('rptFrom').value;
+  const to   = document.getElementById('rptTo').value;
+
+  let q = db.from('dd_sessions').select('*').eq('status','closed').order('session_date',{ascending:false});
+  if(cls)  q=q.eq('class_name',cls);
+  if(from) q=q.gte('session_date',from);
+  if(to)   q=q.lte('session_date',to);
+
+  const {data:sessions}=await q;
+  const ids=(sessions||[]).map(s=>s.id);
+  const {data:recs}=ids.length?await db.from('dd_records').select('*').eq('username',username).in('session_id',ids):{data:[]};
+  const recMap=Object.fromEntries((recs||[]).map(r=>[r.session_id,r]));
+
+  const body=document.getElementById('studentReportBody');
+  if(!(sessions||[]).length){body.innerHTML='<div class="empty"><span>📭</span>Không có dữ liệu</div>';return;}
+  body.innerHTML=`
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Buổi học</th><th>Lớp</th><th>Ngày</th><th>Trạng thái</th><th>Giờ vào</th></tr></thead>
+        <tbody>${(sessions||[]).map(s=>{
+          const r=recMap[s.id];
+          const sm=r?(STATUS_MAP[r.status]||STATUS_MAP.absent):STATUS_MAP.absent;
+          return `<tr>
+            <td style="font-weight:600">${esc(s.title)}</td>
+            <td style="font-size:.8rem">${esc(s.class_name)}</td>
+            <td style="font-size:.82rem;color:var(--text2)">${fmtDate(s.session_date)}</td>
+            <td><span class="badge ${sm.cls}">${sm.icon} ${sm.label}</span></td>
+            <td style="font-size:.8rem;color:var(--text3)">${r?.check_in_time?fmtDateTime(r.check_in_time):'—'}</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>
+    </div>`;
+}
+
+// ── Auto open/close theo giờ ────────────────────────────────────
+async function autoCheckSessions(){
+  const now   = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+  const nowTime  = now.toTimeString().slice(0,5); // HH:MM
+
+  // Lấy tất cả buổi hôm nay có bật auto
+  const {data:sessions} = await db.from('dd_sessions')
+    .select('id,title,start_time,end_time,status,auto_open,auto_close')
+    .eq('session_date', todayStr)
+    .in('status', ['scheduled','open']);
+
+  if(!sessions?.length) return;
+
+  let changed = false;
+  for(const s of sessions){
+    // Tự mở: đến giờ start, còn scheduled, auto_open = true
+    if(s.auto_open && s.status==='scheduled' && s.start_time && nowTime >= s.start_time.slice(0,5)){
+      await db.from('dd_sessions').update({status:'open'}).eq('id',s.id);
+      toast(`🔓 Tự động mở: ${s.title}`, 'success');
+      changed = true;
+    }
+    // Tự đóng: đến giờ end, còn open, auto_close = true
+    if(s.auto_close && s.status==='open' && s.end_time && nowTime >= s.end_time.slice(0,5)){
+      await db.from('dd_sessions').update({status:'closed'}).eq('id',s.id);
+      toast(`🔒 Tự động đóng: ${s.title}`, 'success');
+      changed = true;
+    }
+  }
+  if(changed){
+    loadDashboard();
+    const activePage = document.querySelector('.page.active')?.id;
+    if(activePage==='pageSessions') loadSessions();
+    if(activePage==='pageLive')     { loadOpenSessions(); loadLive(); }
+  }
+}
+
+// ── Init ─────────────────────────────────────────────────────────
+populateClassSelects();
+loadDashboard();
+
+// Chạy auto-check mỗi 60 giây
+autoCheckSessions();
+setInterval(autoCheckSessions, 60000);
+</script>
+</body>
+</html>
