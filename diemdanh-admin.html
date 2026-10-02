@@ -573,6 +573,10 @@ tr:hover td{background:rgba(255,255,255,.03)}
           <input type="checkbox" id="sRequireCheckin" checked style="accent-color:var(--accent);width:15px;height:15px"/>
           <div><div style="font-weight:700;color:var(--text)">✅ Bắt điểm danh</div><div style="font-size:.74rem">Học sinh phải điểm danh</div></div>
         </label>
+        <label style="display:flex;align-items:center;gap:.55rem;cursor:pointer;font-size:.87rem;color:var(--text2);background:rgba(249,115,22,.07);padding:.65rem .85rem;border-radius:9px;border:1px solid rgba(249,115,22,.15);grid-column:span 2">
+          <input type="checkbox" id="sAllowAbsence" checked style="accent-color:#f97316;width:15px;height:15px"/>
+          <div><div style="font-weight:700;color:var(--text)">📩 Cho phép xin vắng</div><div style="font-size:.74rem">Học sinh được gửi đơn xin vắng buổi này</div></div>
+        </label>
       </div>
       <div style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:9px;padding:.75rem .85rem">
         <div style="font-size:.75rem;font-weight:700;color:var(--yellow);letter-spacing:.04em;text-transform:uppercase;margin-bottom:.55rem">⏰ Tự động theo giờ</div>
@@ -690,6 +694,10 @@ tr:hover td{background:rgba(255,255,255,.03)}
           <input type="checkbox" id="bRequireCheckin" checked style="accent-color:var(--accent);width:15px;height:15px"/>
           <div><div style="font-weight:700;color:var(--text)">✅ Bắt điểm danh</div><div style="font-size:.74rem">Học sinh phải điểm danh</div></div>
         </label>
+        <label style="display:flex;align-items:center;gap:.55rem;cursor:pointer;font-size:.87rem;color:var(--text2);background:rgba(249,115,22,.07);padding:.65rem .85rem;border-radius:9px;border:1px solid rgba(249,115,22,.15);grid-column:span 2">
+          <input type="checkbox" id="bAllowAbsence" checked style="accent-color:#f97316;width:15px;height:15px"/>
+          <div><div style="font-weight:700;color:var(--text)">📩 Cho phép xin vắng</div><div style="font-size:.74rem">Học sinh được gửi đơn xin vắng buổi này</div></div>
+        </label>
       </div>
       <div id="bPreview" style="background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.15);border-radius:9px;padding:.75rem .9rem;font-size:.82rem;color:var(--text2);display:none"></div>
       <div id="batchError" style="display:none;margin-top:.75rem;padding:.6rem .85rem;border-radius:8px;background:#fef2f2;border:1px solid #fecaca;font-size:.82rem;color:#b91c1c"></div>
@@ -726,10 +734,13 @@ function fmtDateTime(ts){ return ts ? new Date(ts).toLocaleTimeString('vi-VN',{h
 function today(){ return new Date().toISOString().split('T')[0]; }
 function weekRange(){
   const now=new Date();
-  const mon=new Date(now); mon.setDate(now.getDate()-now.getDay()+1);
+  // Sửa lỗi: now.getDay()===0 (Chủ Nhật) phải lùi 6 ngày về T2, không phải +1
+  const dow = now.getDay()===0 ? -6 : 1-now.getDay();
+  const mon=new Date(now); mon.setDate(now.getDate()+dow);
   const sun=new Date(mon); sun.setDate(mon.getDate()+6);
   return [mon.toISOString().split('T')[0], sun.toISOString().split('T')[0]];
 }
+function fmtTime(ts){ return ts?new Date(ts).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}):'—'; }
 const AV_COLORS=['#4f46e5','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#ec4899'];
 function avColor(s){ let h=0; for(let i=0;i<(s||'').length;i++) h=s.charCodeAt(i)+((h<<5)-h); return AV_COLORS[Math.abs(h)%AV_COLORS.length]; }
 function initials(s){ return (s||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(); }
@@ -740,6 +751,20 @@ const STATUS_MAP = {
   absent:  { label:'Vắng',    icon:'❌', cls:'badge-absent'  },
   excused: { label:'Có phép', icon:'📋', cls:'badge-excused' },
 };
+
+function _platformBadge(s){
+  const pt = s.platform_type||s.live_type||(s.meet_link?'meet':'');
+  if(!pt) return '';
+  const map = {
+    meet:    {icon:'🎥', label:'Google Meet',  color:'#60a5fa', bg:'rgba(59,130,246,.12)',  border:'rgba(59,130,246,.25)'},
+    tiktok:  {icon:'🎵', label:'TikTok Live',  color:'#f472b6', bg:'rgba(244,114,182,.12)', border:'rgba(244,114,182,.25)'},
+    youtube: {icon:'▶️', label:'YouTube Live', color:'#f87171', bg:'rgba(248,113,113,.12)', border:'rgba(248,113,113,.25)'},
+    zoom:    {icon:'💻', label:'Zoom',          color:'#818cf8', bg:'rgba(129,140,248,.12)', border:'rgba(129,140,248,.25)'},
+    other:   {icon:'🔗', label:'Live stream',  color:'#a3e635', bg:'rgba(163,230,53,.1)',   border:'rgba(163,230,53,.25)'},
+  };
+  const m = map[pt]||map.other;
+  return `<span style="font-size:.68rem;padding:.15rem .55rem;border-radius:6px;font-weight:700;background:${m.bg};color:${m.color};border:1px solid ${m.border}">${m.icon} ${m.label}</span>`;
+}
 
 // ── Toast ───────────────────────────────────────────────────────
 function toast(msg, type='success'){
@@ -881,15 +906,19 @@ function showTab(name){
 
 // ── Populate class selects ───────────────────────────────────────
 let _classes = [];
-async function populateClassSelects(){
-  if(_classes.length) return;
+async function populateClassSelects(forceRefresh = false){
+  // forceRefresh=true để cập nhật khi admin thêm lớp mới trong cùng phiên
+  if(_classes.length && !forceRefresh) return;
   const {data} = await db.from('classes').select('name').order('name');
   _classes = (data||[]).map(c=>c.name);
-  ['sessFilterClass','sClass','rptClass'].forEach(id=>{
+  // Thêm 'bClass' (batch modal) vào danh sách cần populate
+  ['sessFilterClass','sClass','bClass','rptClass'].forEach(id=>{
     const el = document.getElementById(id);
     if(!el) return;
     const cur = el.value;
-    const blank = el.id==='sClass' ? '<option value="">-- Chọn lớp --</option>' : '<option value="">Tất cả lớp</option>';
+    const blank = (el.id==='sClass'||el.id==='bClass')
+      ? '<option value="">-- Chọn lớp --</option>'
+      : '<option value="">Tất cả lớp</option>';
     el.innerHTML = blank + _classes.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
     el.value = cur;
   });
@@ -913,7 +942,8 @@ function updateLivePlaceholder(){
 (async function checkLiveCols(){
   try {
     const { data, error } = await db.from('dd_sessions').select('live_link,live_type,platform_type').limit(1);
-    if(error && error.message.includes('column')) {
+    // Chỉ cảnh báo migration khi lỗi rõ ràng là "column does not exist"
+    if(error && (error.code==='42703' || (error.message&&error.message.toLowerCase().includes('does not exist')))) {
       const hint = document.getElementById('liveLinkHint');
       if(hint) hint.innerHTML = `<span style="color:var(--yellow)">⚠️ Cần chạy SQL migration trước khi dùng tính năng này. Xem file <strong>CHAY_SQL_DIEMDANH.sql</strong></span>`;
     }
@@ -954,11 +984,13 @@ async function loadDashboard(){
       else if(r.status==='late')late++;
       else if(r.status==='excused')excused++;
     });
-    // Tính số vắng = tổng học sinh * số buổi - số record có mặt/phép
+    // Tính số vắng = tổng học sinh (đúng lớp) * số buổi - số record có mặt/phép
     let totalExpected = 0;
+    // Lấy toàn bộ học sinh active 1 lần, filter client-side để tránh ilike match nhầm lớp
+    const {data:allStudents} = await db.from('students').select('class_name').eq('active',true);
     for(const s of (todaySess||[])){
-      const {count} = await db.from('students').select('*',{count:'exact',head:true}).eq('active',true).ilike('class_name','%'+s.class_name+'%');
-      totalExpected += count||0;
+      const cnt = (allStudents||[]).filter(st=>(st.class_name||'').split(',').map(c=>c.trim()).includes(s.class_name.trim())).length;
+      totalExpected += cnt;
     }
     absent = Math.max(0, totalExpected - present - late - excused);
   }
@@ -1003,10 +1035,8 @@ function statusBadge(s){
 
 // ── BATCH CREATE ─────────────────────────────────────────────────
 function openBatchCreate(){
-  populateClassSelects().then(()=>{
-    const bClass = document.getElementById('bClass');
-    if(bClass && _classes.length) bClass.innerHTML='<option value="">-- Chọn lớp --</option>'+_classes.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
-  });
+  // populateClassSelects đã bao gồm bClass — không cần populate riêng nữa
+  populateClassSelects();
 
   // Render checkbox ngày trong tuần bằng JS (tránh template literal trong HTML)
   const dowGroup = document.getElementById('bDowGroup');
@@ -1113,7 +1143,8 @@ async function saveBatch(){
       session_date:date, start_time:start, end_time:end,
       platform_type:platform||null, status:'scheduled', created_by:_u,
       count_attendance: document.getElementById('bCountAttendance').checked,
-      require_checkin:  document.getElementById('bRequireCheckin').checked
+      require_checkin:  document.getElementById('bRequireCheckin').checked,
+      allow_absence:    document.getElementById('bAllowAbsence').checked
     });
     if(!error) created++; else failed++;
     btn.textContent=`⏳ Đang tạo ${created}/${dates.length}...`;
@@ -1171,7 +1202,7 @@ async function loadSessions(){
         <div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;margin-top:.2rem">
           <span style="font-size:.75rem;background:rgba(59,130,246,.12);color:#60a5fa;padding:.12rem .5rem;border-radius:6px">${esc(s.class_name)}</span>
           ${statusBadge(s.status)}
-          ${(s.platform_type||s.live_type||s.meet_link)?`<span style="font-size:.68rem;padding:.1rem .4rem;border-radius:6px;font-weight:700;background:rgba(59,130,246,.1);color:#93c5fd">${{meet:'🎥 Meet',tiktok:'🎵 TikTok',youtube:'▶️ YouTube',zoom:'💻 Zoom',other:'🔗 Live'}[s.platform_type||s.live_type||(s.meet_link?'meet':'')]||'🔗 Live'}</span>`:''}
+          ${_platformBadge(s)}
           ${s.count_attendance===false?`<span style="font-size:.65rem;padding:.1rem .4rem;border-radius:6px;font-weight:700;background:rgba(100,116,139,.15);color:var(--text3)" title="Không tính chuyên cần">📊 Không tính</span>`:''}
           ${s.require_checkin===false?`<span style="font-size:.65rem;padding:.1rem .4rem;border-radius:6px;font-weight:700;background:rgba(100,116,139,.15);color:var(--text3)" title="Không bắt điểm danh">✅ Không ĐD</span>`:''}
         </div>
@@ -1208,6 +1239,7 @@ function openCreateSession(){
   document.getElementById('sOpenNow').checked = false;
   document.getElementById('sCountAttendance').checked = true;
   document.getElementById('sRequireCheckin').checked  = true;
+  document.getElementById('sAllowAbsence').checked    = true;
   document.getElementById('sessionModalError').style.display='none';
   document.getElementById('sessionSaveText').textContent='💾 Lưu';
   populateClassSelects();
@@ -1232,6 +1264,8 @@ function editSession(id){
   document.getElementById('sOpenNow').checked = s.status==='open';
   document.getElementById('sCountAttendance').checked = s.count_attendance !== false;
   document.getElementById('sRequireCheckin').checked  = s.require_checkin  !== false;
+  // allow_absence: mặc định true nếu cột chưa có (backward compat)
+  document.getElementById('sAllowAbsence').checked    = s.allow_absence !== false;
   document.getElementById('sAutoOpen').checked  = !!s.auto_open;
   document.getElementById('sAutoClose').checked = !!s.auto_close;
   document.getElementById('sessionModalError').style.display='none';
@@ -1288,8 +1322,9 @@ async function saveSession(){
 
   const isMeet = liveType === 'meet';
   const note   = document.getElementById('sNote').value.trim();
-  const countAtt = document.getElementById('sCountAttendance').checked;
-  const reqChk   = document.getElementById('sRequireCheckin').checked;
+  const countAtt    = document.getElementById('sCountAttendance').checked;
+  const reqChk      = document.getElementById('sRequireCheckin').checked;
+  const allowAbsence = document.getElementById('sAllowAbsence').checked;
   const payload={title,class_name:cls,session_date:date,start_time:start,end_time:end,
     platform_type: liveType||null,
     meet_link: isMeet ? (meet||null) : null,
@@ -1298,6 +1333,7 @@ async function saveSession(){
     session_note: note||null,
     count_attendance: countAtt,
     require_checkin:  reqChk,
+    allow_absence:    allowAbsence,
     status:open?'open':'scheduled',auto_open:autoOpen,auto_close:autoClose,created_by:_u};
   let error;
   if(_editSessionId){({error}=await db.from('dd_sessions').update(payload).eq('id',_editSessionId));}
@@ -1380,6 +1416,7 @@ async function cloneSession(id){
     auto_close: s.auto_close||false,
     count_attendance: s.count_attendance!==false,
     require_checkin:  s.require_checkin!==false,
+    allow_absence:    s.allow_absence!==false,
     status: 'scheduled',
     created_by: _u,
   });
@@ -1394,12 +1431,14 @@ async function showSessionSummary(id){
   const s = _allSessions.find(x=>x.id===id);
   if(!s) return;
 
-  const [{data:students},{data:recs}] = await Promise.all([
-    db.from('students').select('username,full_name').eq('active',true).ilike('class_name','%'+s.class_name+'%'),
+  const [{data:allStudents},{data:recs}] = await Promise.all([
+    db.from('students').select('username,full_name,class_name').eq('active',true),
     db.from('dd_records').select('*').eq('session_id',id),
   ]);
+  // Filter chính xác theo class_name, tránh ilike match nhầm lớp
+  const students = (allStudents||[]).filter(st=>(st.class_name||'').split(',').map(c=>c.trim()).includes(s.class_name.trim()));
 
-  const total      = (students||[]).length;
+  const total      = students.length;
   const presentList= (recs||[]).filter(r=>r.status==='present');
   const lateList   = (recs||[]).filter(r=>r.status==='late');
   const excusedList= (recs||[]).filter(r=>r.status==='excused');
@@ -1409,7 +1448,7 @@ async function showSessionSummary(id){
   const rate       = total>0 ? Math.round(present/total*100) : 0;
   const rateColor  = rate>=80?'#10b981':rate>=60?'#f59e0b':'#ef4444';
 
-  const absentStudents = (students||[]).filter(st=>{
+  const absentStudents = students.filter(st=>{
     const r=(recs||[]).find(r=>r.username===st.username);
     return !r||r.status==='absent';
   });
@@ -1725,12 +1764,14 @@ async function viewDetail(sessionId){
   document.getElementById('detailList').innerHTML = '';
   document.getElementById('detailModal').classList.add('open');
 
-  const [{data:students},{data:recs}] = await Promise.all([
-    db.from('students').select('username,full_name').eq('active',true).ilike('class_name','%'+s.class_name+'%'),
+  const [{data:allSt},{data:recs}] = await Promise.all([
+    db.from('students').select('username,full_name,class_name').eq('active',true),
     db.from('dd_records').select('*').eq('session_id',sessionId),
   ]);
+  // Filter chính xác: tránh ilike match nhầm lớp (VD: "A" khớp cả "12A")
+  const students = (allSt||[]).filter(st=>(st.class_name||'').split(',').map(c=>c.trim()).includes(s.class_name.trim()));
 
-  const total   = (students||[]).length;
+  const total   = students.length;
   const recMap  = Object.fromEntries((recs||[]).map(r=>[r.username,r]));
   const present = (recs||[]).filter(r=>r.status==='present'||r.status==='late').length;
   const excused = (recs||[]).filter(r=>r.status==='excused').length;
@@ -1792,13 +1833,15 @@ async function exportCSV(){
   if(!_detailSessionId){ toast('Chưa có dữ liệu','error'); return; }
   const s = _allSessions.find(x=>x.id===_detailSessionId);
   if(!s) return;
-  const [{data:students},{data:recs}] = await Promise.all([
-    db.from('students').select('username,full_name').eq('active',true).ilike('class_name','%'+s.class_name+'%'),
+  const [{data:allSt},{data:recs}] = await Promise.all([
+    db.from('students').select('username,full_name,class_name').eq('active',true),
     db.from('dd_records').select('*').eq('session_id',_detailSessionId),
   ]);
+  // Filter chính xác: tránh ilike match nhầm lớp
+  const students = (allSt||[]).filter(st=>(st.class_name||'').split(',').map(c=>c.trim()).includes(s.class_name.trim()));
   const recMap = Object.fromEntries((recs||[]).map(r=>[r.username,r]));
   const rows = [['Họ tên','Username','Trạng thái','Giờ điểm danh']];
-  (students||[]).forEach(st=>{
+  students.forEach(st=>{
     const rec = recMap[st.username];
     const status = rec ? (STATUS_MAP[rec.status]?.label||rec.status) : 'Vắng';
     const time = rec?.check_in_time ? new Date(rec.check_in_time).toLocaleTimeString('vi-VN') : '';

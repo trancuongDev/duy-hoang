@@ -69,6 +69,8 @@ alter table dd_sessions add column if not exists session_note text default null;
 -- Điều khiển chuyên cần và điểm danh
 alter table dd_sessions add column if not exists count_attendance boolean default true;  -- tính vào chuyên cần
 alter table dd_sessions add column if not exists require_checkin  boolean default true;  -- bắt buộc điểm danh
+-- Cho phép học sinh xin vắng buổi này (độc lập với count_attendance và require_checkin)
+alter table dd_sessions add column if not exists allow_absence    boolean default true;  -- true = học sinh được gửi đơn xin vắng
 
 create index if not exists idx_dd_sessions_date  on dd_sessions(session_date);
 create index if not exists idx_dd_sessions_class on dd_sessions(class_name);
