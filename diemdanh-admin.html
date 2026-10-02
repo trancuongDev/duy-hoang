@@ -462,7 +462,7 @@ tr:hover td{background:rgba(255,255,255,.03)}
     </div>
   </div>
   <!-- Session info panel -->
-  <div id="liveSessionInfo" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:.75rem 1rem;margin-bottom:.85rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap"></div>
+  <div id="liveSessionInfo" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:.75rem 1rem;margin-bottom:.85rem;align-items:center;gap:1rem;flex-wrap:wrap"></div>
   <div id="liveContent"><div class="empty"><span>📡</span>Chọn buổi học để xem trực tiếp</div></div>
 </div>
 
@@ -564,6 +564,16 @@ tr:hover td{background:rgba(255,255,255,.03)}
         <input type="checkbox" id="sOpenNow" style="accent-color:var(--accent);width:15px;height:15px"/>
         Mở điểm danh ngay sau khi lưu
       </label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+        <label style="display:flex;align-items:center;gap:.55rem;cursor:pointer;font-size:.87rem;color:var(--text2);background:rgba(16,185,129,.07);padding:.65rem .85rem;border-radius:9px;border:1px solid rgba(16,185,129,.15)">
+          <input type="checkbox" id="sCountAttendance" checked style="accent-color:var(--green);width:15px;height:15px"/>
+          <div><div style="font-weight:700;color:var(--text)">📊 Tính chuyên cần</div><div style="font-size:.74rem">Tính vào % chuyên cần</div></div>
+        </label>
+        <label style="display:flex;align-items:center;gap:.55rem;cursor:pointer;font-size:.87rem;color:var(--text2);background:rgba(59,130,246,.07);padding:.65rem .85rem;border-radius:9px;border:1px solid rgba(59,130,246,.15)">
+          <input type="checkbox" id="sRequireCheckin" checked style="accent-color:var(--accent);width:15px;height:15px"/>
+          <div><div style="font-weight:700;color:var(--text)">✅ Bắt điểm danh</div><div style="font-size:.74rem">Học sinh phải điểm danh</div></div>
+        </label>
+      </div>
       <div style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:9px;padding:.75rem .85rem">
         <div style="font-size:.75rem;font-weight:700;color:var(--yellow);letter-spacing:.04em;text-transform:uppercase;margin-bottom:.55rem">⏰ Tự động theo giờ</div>
         <div class="form-row" style="margin-bottom:0">
@@ -671,6 +681,16 @@ tr:hover td{background:rgba(255,255,255,.03)}
           <option value="zoom">Zoom</option>
         </select>
       </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-top:.25rem">
+        <label style="display:flex;align-items:center;gap:.55rem;cursor:pointer;font-size:.87rem;color:var(--text2);background:rgba(34,197,94,.07);padding:.65rem .85rem;border-radius:9px;border:1px solid rgba(34,197,94,.15)">
+          <input type="checkbox" id="bCountAttendance" checked style="accent-color:var(--green);width:15px;height:15px"/>
+          <div><div style="font-weight:700;color:var(--text)">📊 Tính chuyên cần</div><div style="font-size:.74rem">Tính vào % chuyên cần</div></div>
+        </label>
+        <label style="display:flex;align-items:center;gap:.55rem;cursor:pointer;font-size:.87rem;color:var(--text2);background:rgba(59,130,246,.07);padding:.65rem .85rem;border-radius:9px;border:1px solid rgba(59,130,246,.15)">
+          <input type="checkbox" id="bRequireCheckin" checked style="accent-color:var(--accent);width:15px;height:15px"/>
+          <div><div style="font-weight:700;color:var(--text)">✅ Bắt điểm danh</div><div style="font-size:.74rem">Học sinh phải điểm danh</div></div>
+        </label>
+      </div>
       <div id="bPreview" style="background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.15);border-radius:9px;padding:.75rem .9rem;font-size:.82rem;color:var(--text2);display:none"></div>
       <div id="batchError" style="display:none;margin-top:.75rem;padding:.6rem .85rem;border-radius:8px;background:#fef2f2;border:1px solid #fecaca;font-size:.82rem;color:#b91c1c"></div>
     </div>
@@ -738,6 +758,112 @@ document.querySelectorAll('.modal-overlay').forEach(m=>{
 });
 
 // ── Tab navigation ───────────────────────────────────────────────
+// ── Browser Notification ────────────────────────────────────────
+(function _initAdminNotif() {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'default') {
+    window.addEventListener('DOMContentLoaded', () => { setTimeout(() => Notification.requestPermission(), 2500); });
+  }
+})();
+function _adminBrowserNotify(title, body, icon = 'icons/icon-192.png') {
+  if (!('Notification' in window)) return;
+  if (Notification.permission !== 'granted') return;
+  if (document.visibilityState === 'visible') return;
+  try {
+    const n = new Notification(title, { body, icon, badge: icon, requireInteraction: false });
+    n.onclick = () => { window.focus(); n.close(); };
+    setTimeout(() => n.close(), 6000);
+  } catch(e) {}
+}
+
+// ── Live ─────────────────────────────────────────────────────────
+let _liveTimer = null;
+let _liveCountdown = null;
+let _liveLastRefresh = null;
+
+async function loadOpenSessions(){
+  const {data} = await db.from('dd_sessions').select('*').eq('status','open').order('session_date').order('start_time');
+  const sel = document.getElementById('liveSessionSelect');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">-- Chọn buổi đang mở --</option>'
+    + (data||[]).map(s=>`<option value="${s.id}">${esc(s.title)} — ${esc(s.class_name)}</option>`).join('');
+  if(cur) sel.value = cur;
+  const allClasses=[...new Set((data||[]).map(s=>s.class_name))];
+  const cf=document.getElementById('liveClassFilter');
+  const cfCur=cf?.value||'';
+  if(cf){
+    cf.innerHTML='<option value="">Tất cả lớp</option>'+allClasses.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+    cf.value=cfCur;
+  }
+}
+
+let _liveCurrentId=null, _liveStudents=[], _liveRecs=[], _liveSession=null;
+
+async function loadLive(){
+  const id = parseInt(document.getElementById('liveSessionSelect').value);
+  const el = document.getElementById('liveContent');
+  if(!id){el.innerHTML='<div class="empty"><span>📡</span>Chọn buổi học để xem trực tiếp</div>';_liveCurrentId=null;return;}
+  if(_liveTimer) clearInterval(_liveTimer);
+  if(_liveCountdown) clearInterval(_liveCountdown);
+  if(window._liveChannel){ try{ db.removeChannel(window._liveChannel); }catch(e){} window._liveChannel=null; }
+  _liveCurrentId=id;
+  if(typeof _notifiedLate!=='undefined') _notifiedLate.clear();
+  await renderLive(id, el);
+  window._liveChannel = db.channel('live-att-'+id)
+    .on('postgres_changes',{event:'*',schema:'public',table:'dd_records',filter:`session_id=eq.${id}`},()=>renderLive(id,el))
+    .subscribe();
+  _liveTimer = setInterval(()=>renderLive(id, el), 5000);
+  _liveLastRefresh = Date.now();
+  _liveCountdown = setInterval(()=>{
+    const el=document.getElementById('liveRefreshTimer');
+    if(!el) return;
+    const left=Math.max(0,5-Math.round((Date.now()-_liveLastRefresh)/1000));
+    el.textContent=`${left}s`;
+  },1000);
+}
+
+function renderCurrentLive(){
+  if(!_liveCurrentId) return;
+  const el=document.getElementById('liveContent');
+  renderLiveFiltered(_liveStudents,_liveRecs,el,_liveSession);
+}
+
+async function renderLive(id, el){
+  _liveLastRefresh = Date.now();
+  const [{data:session},{data:students},{data:recs}] = await Promise.all([
+    db.from('dd_sessions').select('*').eq('id',id).single(),
+    db.from('students').select('username,full_name,class_name').eq('active',true),
+    db.from('dd_records').select('*').eq('session_id',id),
+  ]);
+  if(!session){el.innerHTML='<div class="empty"><span>❓</span>Không tìm thấy buổi học</div>';return;}
+  _liveSession = session;
+  const targetClass = session.class_name.trim();
+  const classStudents = (students||[]).filter(s=>(s.class_name||'').split(',').map(c=>c.trim()).some(c=>c===targetClass));
+  _liveStudents=classStudents; _liveRecs=recs||[];
+  // Session info panel
+  const infoEl = document.getElementById('liveSessionInfo');
+  if(infoEl){
+    infoEl.style.display='flex';
+    const pt = session.platform_type||session.live_type||(session.meet_link?'meet':null);
+    const ptLabels={meet:'Google Meet',tiktok:'TikTok Live',youtube:'YouTube Live',zoom:'Zoom',other:'Live'};
+    const link = session.meet_link||session.live_link||'';
+    infoEl.innerHTML=`
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:800;font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(session.title)}</div>
+        <div style="font-size:.76rem;color:var(--text2);margin-top:.15rem">
+          📅 ${fmtDate(session.session_date)} &nbsp;·&nbsp; 🕐 ${session.start_time||'—'}–${session.end_time||'—'} &nbsp;·&nbsp; 📚 ${esc(session.class_name)}
+          ${pt?` &nbsp;·&nbsp; <span style="color:#93c5fd">${ptLabels[pt]||pt}</span>`:''}
+        </div>
+      </div>
+      ${link?`<a href="${esc(link)}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm" style="flex-shrink:0">🔗 Vào lớp</a>`:''}
+      ${session.session_note?`<div style="font-size:.78rem;color:#fcd34d;background:rgba(252,211,77,.08);border:1px solid rgba(252,211,77,.2);border-radius:8px;padding:.3rem .65rem;flex-shrink:0">📝 ${esc(session.session_note)}</div>`:''}
+      <button class="btn btn-ghost btn-sm" onclick="toggleStatus(${session.id},'closed')" style="flex-shrink:0;color:var(--red)">🔒 Đóng buổi</button>`;
+    document.getElementById('btnExportAbsent').style.display='';
+  }
+  renderLiveFiltered(classStudents,recs||[],el,session);
+}
+
+const _notifiedLate = new Set();
 function showTab(name){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab-btn,.mob-nav-btn').forEach(b=>b.classList.remove('active'));
@@ -971,7 +1097,7 @@ async function saveBatch(){
     .neq('status','closed');
 
   const DOW=['CN','T2','T3','T4','T5','T6','T7'];
-  let created=0, skipped=0;
+  let created=0, skipped=0, failed=0;
   btn.textContent=`⏳ Đang tạo 0/${dates.length}...`;
   for(const date of dates){
     // Kiểm tra trùng
@@ -985,17 +1111,21 @@ async function saveBatch(){
     const {error}=await db.from('dd_sessions').insert({
       title:sessionTitle, class_name:cls,
       session_date:date, start_time:start, end_time:end,
-      platform_type:platform||null, status:'scheduled', created_by:_u
+      platform_type:platform||null, status:'scheduled', created_by:_u,
+      count_attendance: document.getElementById('bCountAttendance').checked,
+      require_checkin:  document.getElementById('bRequireCheckin').checked
     });
-    if(!error) created++;
+    if(!error) created++; else failed++;
     btn.textContent=`⏳ Đang tạo ${created}/${dates.length}...`;
   }
   btn.textContent='💾 Tạo tất cả';
   closeModal('batchModal');
-  const msg = skipped>0
-    ? `✅ Đã tạo ${created} buổi · ⚠️ Bỏ qua ${skipped} buổi trùng lịch`
-    : `✅ Đã tạo ${created}/${dates.length} buổi học`;
-  toast(msg);
+  const msg = [
+    created>0 ? `✅ Đã tạo ${created} buổi` : null,
+    skipped>0 ? `⚠️ Bỏ qua ${skipped} buổi trùng lịch` : null,
+    failed>0  ? `❌ Lỗi ${failed} buổi` : null,
+  ].filter(Boolean).join(' · ');
+  toast(msg, failed>0?'error':'success');
   loadSessions(); loadDashboard();
 }
 
@@ -1042,6 +1172,8 @@ async function loadSessions(){
           <span style="font-size:.75rem;background:rgba(59,130,246,.12);color:#60a5fa;padding:.12rem .5rem;border-radius:6px">${esc(s.class_name)}</span>
           ${statusBadge(s.status)}
           ${(s.platform_type||s.live_type||s.meet_link)?`<span style="font-size:.68rem;padding:.1rem .4rem;border-radius:6px;font-weight:700;background:rgba(59,130,246,.1);color:#93c5fd">${{meet:'🎥 Meet',tiktok:'🎵 TikTok',youtube:'▶️ YouTube',zoom:'💻 Zoom',other:'🔗 Live'}[s.platform_type||s.live_type||(s.meet_link?'meet':'')]||'🔗 Live'}</span>`:''}
+          ${s.count_attendance===false?`<span style="font-size:.65rem;padding:.1rem .4rem;border-radius:6px;font-weight:700;background:rgba(100,116,139,.15);color:var(--text3)" title="Không tính chuyên cần">📊 Không tính</span>`:''}
+          ${s.require_checkin===false?`<span style="font-size:.65rem;padding:.1rem .4rem;border-radius:6px;font-weight:700;background:rgba(100,116,139,.15);color:var(--text3)" title="Không bắt điểm danh">✅ Không ĐD</span>`:''}
         </div>
       </td>
       <td data-label="Ngày" style="color:var(--text2)">${fmtDate(s.session_date)}</td>
@@ -1074,6 +1206,8 @@ function openCreateSession(){
   document.getElementById('sNote').value  = '';
   updateLivePlaceholder();
   document.getElementById('sOpenNow').checked = false;
+  document.getElementById('sCountAttendance').checked = true;
+  document.getElementById('sRequireCheckin').checked  = true;
   document.getElementById('sessionModalError').style.display='none';
   document.getElementById('sessionSaveText').textContent='💾 Lưu';
   populateClassSelects();
@@ -1096,6 +1230,8 @@ function editSession(id){
   document.getElementById('sNote').value  = s.session_note||'';
   updateLivePlaceholder();
   document.getElementById('sOpenNow').checked = s.status==='open';
+  document.getElementById('sCountAttendance').checked = s.count_attendance !== false;
+  document.getElementById('sRequireCheckin').checked  = s.require_checkin  !== false;
   document.getElementById('sAutoOpen').checked  = !!s.auto_open;
   document.getElementById('sAutoClose').checked = !!s.auto_close;
   document.getElementById('sessionModalError').style.display='none';
@@ -1111,7 +1247,7 @@ async function saveSession(){
   const start = document.getElementById('sStart').value;
   const end   = document.getElementById('sEnd').value;
   const meet  = document.getElementById('sMeet').value.trim();
-  const liveType = document.getElementById('sLiveType').value || 'meet';
+  const liveType = document.getElementById('sLiveType').value || '';
   const liveLink = meet; // dùng chung 1 input
   const open  = document.getElementById('sOpenNow').checked;
   const autoOpen  = document.getElementById('sAutoOpen').checked;
@@ -1152,12 +1288,16 @@ async function saveSession(){
 
   const isMeet = liveType === 'meet';
   const note   = document.getElementById('sNote').value.trim();
+  const countAtt = document.getElementById('sCountAttendance').checked;
+  const reqChk   = document.getElementById('sRequireCheckin').checked;
   const payload={title,class_name:cls,session_date:date,start_time:start,end_time:end,
     platform_type: liveType||null,
     meet_link: isMeet ? (meet||null) : null,
     live_link: !isMeet ? (meet||null) : null,
     live_type: !isMeet ? (liveType||null) : null,
     session_note: note||null,
+    count_attendance: countAtt,
+    require_checkin:  reqChk,
     status:open?'open':'scheduled',auto_open:autoOpen,auto_close:autoClose,created_by:_u};
   let error;
   if(_editSessionId){({error}=await db.from('dd_sessions').update(payload).eq('id',_editSessionId));}
@@ -1175,11 +1315,18 @@ async function toggleStatus(id, newStatus){
   toast(newStatus==='open'?'🔓 Đã mở điểm danh':'🔒 Đã đóng điểm danh');
   loadSessions();
   loadDashboard();
-  if(newStatus==='open'){loadOpenSessions();}
+  if(newStatus==='open'){
+    loadOpenSessions(); // Cập nhật dropdown Live ngay khi mở
+  }
   // Hiện tổng kết tự động khi đóng buổi
   if(newStatus==='closed'){
-    // Cập nhật cache rồi mới show summary
-    setTimeout(()=>showSessionSummary(id), 800);
+    // Cập nhật _allSessions trước
+    const {data:updated} = await db.from('dd_sessions').select('*').eq('id',id).single();
+    if(updated){
+      const idx = _allSessions.findIndex(s=>s.id===id);
+      if(idx>=0) _allSessions[idx]=updated; else _allSessions.push(updated);
+    }
+    setTimeout(()=>showSessionSummary(id), 600);
   }
 }
 
@@ -1231,6 +1378,8 @@ async function cloneSession(id){
     session_note: s.session_note||null,
     auto_open: s.auto_open||false,
     auto_close: s.auto_close||false,
+    count_attendance: s.count_attendance!==false,
+    require_checkin:  s.require_checkin!==false,
     status: 'scheduled',
     created_by: _u,
   });
@@ -1384,6 +1533,561 @@ async function autoCheckSessions(){
   }
 }
 
+
+// ── renderLiveFiltered ──────────────────────────────────────────
+function renderLiveFiltered(classStudents,recs,el,session){
+  const classFilter=document.getElementById('liveClassFilter')?.value||'';
+  const searchQ=(document.getElementById('liveSearchInput')?.value||'').toLowerCase().trim();
+  let filtered=classStudents;
+  if(classFilter) filtered=classStudents.filter(s=>(s.class_name||'').split(',').map(c=>c.trim()).some(c=>c===classFilter));
+  if(searchQ) filtered=filtered.filter(s=>(s.full_name||s.username||'').toLowerCase().includes(searchQ));
+  const recMap = Object.fromEntries(recs.map(r=>[r.username,r]));
+  const onTime  = filtered.filter(s=>recMap[s.username]?.status==='present');
+  const late    = filtered.filter(s=>recMap[s.username]?.status==='late');
+  const excused = filtered.filter(s=>recMap[s.username]?.status==='excused');
+  const notYet  = filtered.filter(s=>!recMap[s.username]);
+  const presentCount = onTime.length + late.length;
+  const rate = filtered.length>0?Math.round(presentCount/filtered.length*100):0;
+  const rateColor = rate>=80?'var(--green)':rate>=60?'var(--yellow)':'var(--red)';
+  late.forEach(st=>{
+    const key=(recMap[st.username]?.id||st.username)+'_late';
+    if(!_notifiedLate.has(key)){
+      _notifiedLate.add(key);
+      const timeStr=fmtDateTime(recMap[st.username]?.check_in_time);
+      toast(`⏰ ${st.full_name||st.username} vào muộn (${timeStr})`, 'info');
+      _adminBrowserNotify('⏰ Học sinh đi muộn',`${st.full_name||st.username} vừa điểm danh muộn lúc ${timeStr}`);
+    }
+  });
+  const statItems=[
+    {icon:'✅',label:'Đúng giờ', v:onTime.length,  color:'var(--green)'},
+    {icon:'⏰',label:'Đi muộn',  v:late.length,    color:'var(--yellow)'},
+    {icon:'⏳',label:'Chưa vào', v:notYet.length,  color:'var(--red)'},
+    {icon:'📋',label:'Có phép',  v:excused.length, color:'var(--purple)'},
+    {icon:'👥',label:'Tổng',     v:filtered.length,color:'var(--accent)'},
+  ];
+  el.innerHTML=`
+    <div class="live-stat-row" style="display:grid;grid-template-columns:repeat(5,1fr);gap:.6rem;margin-bottom:1rem">
+      ${statItems.map(x=>`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:.8rem .5rem;text-align:center">
+        <div style="font-size:.9rem;margin-bottom:.25rem">${x.icon}</div>
+        <div style="font-size:1.5rem;font-weight:900;line-height:1;color:${x.color}">${x.v}</div>
+        <div style="font-size:.68rem;color:var(--text3);margin-top:.25rem;font-weight:600">${x.label}</div>
+      </div>`).join('')}
+    </div>
+    <div style="margin-bottom:1.1rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:.8rem;color:var(--text2);margin-bottom:.4rem">
+        <span>Tỉ lệ có mặt</span><strong style="color:${rateColor};font-size:.88rem">${rate}%</strong>
+      </div>
+      <div class="prog-bar"><div class="prog-fill" style="width:${rate}%;background:${rateColor}"></div></div>
+    </div>
+    <div class="live-cols" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem;align-items:start">
+      <div style="background:var(--bg2);border:1px solid rgba(16,185,129,.2);border-radius:12px;overflow:hidden">
+        <div style="padding:.6rem .85rem;background:rgba(16,185,129,.08);border-bottom:1px solid rgba(16,185,129,.15);display:flex;align-items:center;gap:.45rem">
+          <span style="width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;display:inline-block"></span>
+          <span style="font-size:.73rem;font-weight:700;color:var(--green);letter-spacing:.04em;text-transform:uppercase">Đúng giờ</span>
+          <span style="margin-left:auto;font-size:.78rem;font-weight:800;color:var(--green)">${onTime.length}</span>
+        </div>
+        <div style="max-height:340px;overflow-y:auto;padding:.4rem .5rem;display:flex;flex-direction:column;gap:.35rem">
+          ${onTime.length?onTime.map(st=>{const r=recMap[st.username];return `<div style="display:flex;align-items:center;gap:.55rem;padding:.5rem .6rem;border-radius:8px;background:rgba(255,255,255,.03)"><div style="width:32px;height:32px;border-radius:50%;background:${avColor(st.full_name)};display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;color:#fff;flex-shrink:0">${initials(st.full_name)}</div><div style="flex:1;min-width:0"><div style="font-size:.82rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(st.full_name||st.username)}</div><div style="font-size:.68rem;color:var(--text3)">${fmtDateTime(r?.check_in_time)}</div></div></div>`;}).join(''):`<div style="text-align:center;padding:.85rem;font-size:.8rem;color:var(--text3)">Chưa có ai</div>`}
+        </div>
+      </div>
+      <div style="background:var(--bg2);border:1px solid rgba(245,158,11,.2);border-radius:12px;overflow:hidden">
+        <div style="padding:.6rem .85rem;background:rgba(245,158,11,.07);border-bottom:1px solid rgba(245,158,11,.15);display:flex;align-items:center;gap:.45rem">
+          <span style="width:7px;height:7px;border-radius:50%;background:var(--yellow);flex-shrink:0;display:inline-block"></span>
+          <span style="font-size:.73rem;font-weight:700;color:var(--yellow);letter-spacing:.04em;text-transform:uppercase">Đi muộn</span>
+          <span style="margin-left:auto;font-size:.78rem;font-weight:800;color:var(--yellow)">${late.length}</span>
+        </div>
+        <div style="max-height:340px;overflow-y:auto;padding:.4rem .5rem;display:flex;flex-direction:column;gap:.35rem">
+          ${late.length?late.map(st=>{const r=recMap[st.username];return `<div style="display:flex;align-items:center;gap:.55rem;padding:.5rem .6rem;border-radius:8px;background:rgba(245,158,11,.05)"><div style="width:32px;height:32px;border-radius:50%;background:${avColor(st.full_name)};display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;color:#fff;flex-shrink:0">${initials(st.full_name)}</div><div style="flex:1;min-width:0"><div style="font-size:.82rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(st.full_name||st.username)}</div><div style="font-size:.68rem;color:var(--yellow)">${fmtDateTime(r?.check_in_time)}</div></div></div>`;}).join(''):`<div style="text-align:center;padding:.85rem;font-size:.8rem;color:var(--green)">🎉 Không ai muộn</div>`}
+        </div>
+      </div>
+      <div style="background:var(--bg2);border:1px solid rgba(239,68,68,.2);border-radius:12px;overflow:hidden">
+        <div style="padding:.6rem .85rem;background:rgba(239,68,68,.07);border-bottom:1px solid rgba(239,68,68,.15);display:flex;align-items:center;gap:.45rem">
+          <span style="width:7px;height:7px;border-radius:50%;background:var(--red);animation:pulse 1.5s ease-in-out infinite;flex-shrink:0;display:inline-block"></span>
+          <span style="font-size:.73rem;font-weight:700;color:var(--red);letter-spacing:.04em;text-transform:uppercase">Chưa vào</span>
+          <span style="margin-left:auto;font-size:.78rem;font-weight:800;color:var(--red)">${notYet.length}</span>
+        </div>
+        <div style="max-height:340px;overflow-y:auto;padding:.4rem .5rem;display:flex;flex-direction:column;gap:.35rem">
+          ${notYet.length?notYet.map(st=>`<div style="display:flex;align-items:center;gap:.55rem;padding:.5rem .6rem;border-radius:8px;background:rgba(255,255,255,.03)"><div style="width:32px;height:32px;border-radius:50%;background:${avColor(st.full_name)};display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;color:#fff;flex-shrink:0">${initials(st.full_name)}</div><div style="flex:1;min-width:0"><div style="font-size:.82rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(st.full_name||st.username)}</div><div style="font-size:.68rem;color:var(--text3)">Chưa điểm danh</div></div><button onclick="liveQuickCheckin('${esc(st.username)}','${esc(st.full_name||st.username)}','${esc(st.class_name||'')}')" style="flex-shrink:0;font-size:.68rem;font-weight:700;padding:.2rem .5rem;border-radius:6px;background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.25);color:var(--green);cursor:pointer" title="Điểm danh thủ công">✓</button></div>`).join(''):`<div style="text-align:center;padding:.85rem;font-size:.8rem;color:var(--green)">🎉 Tất cả đã vào!</div>`}
+        </div>
+      </div>
+    </div>`;
+}
+
+// ── liveQuickCheckin ─────────────────────────────────────────────
+async function liveQuickCheckin(username, studentName, className){
+  const {error}=await db.from('dd_records').upsert({
+    session_id:_liveCurrentId, username, student_name:studentName, class_name:className,
+    status:'present', check_in_time:new Date().toISOString(), device:'Admin-Manual', updated_at:new Date().toISOString()
+  },{onConflict:'session_id,username'});
+  if(!error){ toast(`✅ Đã điểm danh cho ${studentName}`); renderLive(_liveCurrentId, document.getElementById('liveContent')); _liveLastRefresh=Date.now(); }
+}
+
+// ── exportLiveAbsent ─────────────────────────────────────────────
+function exportLiveAbsent(){
+  if(!_liveStudents.length||!_liveCurrentId) return;
+  const recMap=Object.fromEntries(_liveRecs.map(r=>[r.username,r]));
+  const notYet=_liveStudents.filter(s=>!recMap[s.username]);
+  if(!notYet.length){toast('🎉 Tất cả học sinh đã điểm danh!');return;}
+  const sess=_liveSession;
+  const wsData=[['Họ tên','Username','Lớp','Trạng thái']];
+  notYet.forEach(st=>wsData.push([st.full_name||st.username, st.username, st.class_name||'', 'Chưa điểm danh']));
+  const wb=XLSX.utils.book_new(); const ws=XLSX.utils.aoa_to_sheet(wsData);
+  ws['!cols']=[{wch:25},{wch:25},{wch:15},{wch:15}];
+  XLSX.utils.book_append_sheet(wb,ws,'Chưa điểm danh');
+  XLSX.writeFile(wb,`VangMat_${esc(sess?.class_name||'')}_${sess?.session_date||''}.xlsx`);
+  toast(`⬇ Đã xuất ${notYet.length} học sinh chưa điểm danh`);
+}
+
+// ── loadAbsences ─────────────────────────────────────────────────
+async function loadAbsences(){
+  const status = document.getElementById('absFilterStatus').value;
+  let q = db.from('dd_absences').select('*, dd_sessions(title, session_date, class_name)').order('created_at',{ascending:false});
+  if(status) q=q.eq('status',status);
+  const {data, error} = await q;
+  const el = document.getElementById('absenceList');
+  if(error||!(data||[]).length){ el.innerHTML='<div class="empty"><span>📭</span>Không có đơn xin vắng nào</div>'; return; }
+  const REASON_LABELS = {health:'Sức khỏe',family:'Việc gia đình',exam:'Học/Thi khác',personal:'Việc cá nhân',other:'Khác'};
+  el.innerHTML = `<div class="table-wrap"><table style="table-layout:fixed">
+    <colgroup><col style="width:22%"/><col style="width:28%"/><col style="width:13%"/><col style="width:16%"/><col style="width:10%"/><col style="width:11%"/></colgroup>
+    <thead><tr><th>Học viên</th><th>Buổi học</th><th>Lý do</th><th>Thời gian gửi</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+    <tbody>${(data||[]).map(a=>`<tr>
+      <td class="td-main"><div style="font-weight:700;font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(a.student_name||a.username)}</div><div style="font-size:.74rem;color:var(--text2);margin-top:.12rem">@${esc(a.username)} · ${esc(a.class_name||'')}</div></td>
+      <td data-label="Buổi học"><div style="font-size:.84rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(a.dd_sessions?.title||'—')}">${esc(a.dd_sessions?.title||'—')}</div><div style="font-size:.72rem;color:var(--text2)">${fmtDate(a.dd_sessions?.session_date)}</div></td>
+      <td data-label="Lý do"><span style="font-size:.83rem">${REASON_LABELS[a.reason_type]||a.reason_type}</span></td>
+      <td data-label="Gửi lúc" style="font-size:.8rem;color:var(--text2)">${a.created_at?new Date(a.created_at).toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—'}</td>
+      <td data-label="Trạng thái"><span class="badge badge-${a.status}">${a.status==='pending'?'⏳ Chờ':a.status==='approved'?'✅ Duyệt':'❌ Từ chối'}</span></td>
+      <td class="td-actions"><button class="btn btn-ghost btn-sm" onclick="viewAbsence(${JSON.stringify(a).replace(/"/g,'&quot;')})">👁 Xem</button></td>
+    </tr>`).join('')}</tbody></table></div>`;
+}
+
+// ── viewAbsence ──────────────────────────────────────────────────
+function viewAbsence(a){
+  const REASON_LABELS = {health:'Sức khỏe',family:'Việc gia đình',exam:'Học/Thi khác',personal:'Việc cá nhân',other:'Khác'};
+  document.getElementById('absenceDetailBody').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:.65rem;font-size:.88rem">
+      <div style="display:flex;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid var(--border2)"><span style="color:var(--text2)">Học viên</span><strong>${esc(a.student_name||a.username)}</strong></div>
+      <div style="display:flex;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid var(--border2)"><span style="color:var(--text2)">Lớp</span><span>${esc(a.class_name||'—')}</span></div>
+      <div style="display:flex;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid var(--border2)"><span style="color:var(--text2)">Lý do</span><span>${REASON_LABELS[a.reason_type]||a.reason_type}</span></div>
+      ${a.reason_detail?`<div style="background:rgba(255,255,255,.04);border-radius:8px;padding:.75rem;font-size:.84rem;color:var(--text2)">${esc(a.reason_detail)}</div>`:''}
+      <div style="display:flex;justify-content:space-between;padding:.5rem 0"><span style="color:var(--text2)">Trạng thái</span><span class="badge badge-${a.status}">${a.status==='pending'?'⏳ Chờ duyệt':a.status==='approved'?'✅ Đã duyệt':'❌ Từ chối'}</span></div>
+      ${a.admin_note?`<div style="background:rgba(255,255,255,.04);border-radius:8px;padding:.75rem;font-size:.84rem">📝 ${esc(a.admin_note)}</div>`:''}
+    </div>`;
+  const footer = document.getElementById('absenceDetailFooter');
+  if(a.status==='pending'){
+    footer.innerHTML=`<input type="text" class="form-control" id="absNote" placeholder="Ghi chú (tuỳ chọn)" style="flex:1;margin-right:.5rem"/>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('absenceDetailModal')">Hủy</button>
+      <button class="btn btn-danger btn-sm" onclick="reviewAbsence(${a.id},'rejected')">❌ Từ chối</button>
+      <button class="btn btn-success btn-sm" onclick="reviewAbsence(${a.id},'approved')">✅ Duyệt</button>`;
+  } else { footer.innerHTML=`<button class="btn btn-ghost btn-sm" onclick="closeModal('absenceDetailModal')">Đóng</button>`; }
+  document.getElementById('absenceDetailModal').classList.add('open');
+}
+
+// ── reviewAbsence ────────────────────────────────────────────────
+async function reviewAbsence(id, status){
+  const note = document.getElementById('absNote')?.value.trim()||'';
+  await db.from('dd_absences').update({status,admin_note:note||null,reviewed_by:_u,reviewed_at:new Date().toISOString()}).eq('id',id);
+  if(status==='approved'){
+    const {data:ab} = await db.from('dd_absences').select('session_id,username,student_name,class_name').eq('id',id).single();
+    if(ab) await db.from('dd_records').upsert({session_id:ab.session_id,username:ab.username,student_name:ab.student_name,class_name:ab.class_name,status:'excused',updated_at:new Date().toISOString()},{onConflict:'session_id,username'});
+  }
+  closeModal('absenceDetailModal');
+  toast(status==='approved'?'✅ Đã duyệt đơn vắng':'❌ Đã từ chối đơn');
+  loadAbsences();
+}
+
+// ── Admin sửa trạng thái thủ công ───────────────────────────────
+async function adminSetStatus(sessionId, username, studentName, className, newStatus){
+  if(!newStatus) return;
+  await db.from('dd_records').upsert({
+    session_id: sessionId, username, student_name: studentName,
+    class_name: className, status: newStatus,
+    updated_at: new Date().toISOString()
+  },{onConflict:'session_id,username'});
+  toast(`✅ Đã cập nhật: ${studentName} → ${STATUS_MAP[newStatus]?.label||newStatus}`);
+  viewDetail(sessionId);
+}
+
+// ── Xem chi tiết điểm danh buổi học ─────────────────────────────
+let _detailSessionId = null;
+async function viewDetail(sessionId){
+  _detailSessionId = sessionId;
+  const s = _allSessions.find(x=>x.id===sessionId);
+  if(!s){ toast('Không tìm thấy buổi học','error'); return; }
+
+  document.getElementById('detailTitle').textContent = s.title;
+  document.getElementById('detailSub').textContent =
+    `${fmtDate(s.session_date)} · ${s.start_time||''}${s.end_time?'–'+s.end_time:''} · ${s.class_name}`;
+  const noteEl = document.getElementById('detailNote');
+  if(s.session_note){ noteEl.textContent='📝 '+s.session_note; noteEl.style.display=''; }
+  else noteEl.style.display='none';
+
+  document.getElementById('detailStats').innerHTML = '<span style="color:var(--text3);font-size:.82rem">⏳ Đang tải...</span>';
+  document.getElementById('detailList').innerHTML = '';
+  document.getElementById('detailModal').classList.add('open');
+
+  const [{data:students},{data:recs}] = await Promise.all([
+    db.from('students').select('username,full_name').eq('active',true).ilike('class_name','%'+s.class_name+'%'),
+    db.from('dd_records').select('*').eq('session_id',sessionId),
+  ]);
+
+  const total   = (students||[]).length;
+  const recMap  = Object.fromEntries((recs||[]).map(r=>[r.username,r]));
+  const present = (recs||[]).filter(r=>r.status==='present'||r.status==='late').length;
+  const excused = (recs||[]).filter(r=>r.status==='excused').length;
+  const absent  = Math.max(0, total - present - excused);
+  const rate    = total>0 ? Math.round(present/total*100) : 0;
+  const rateColor = rate>=80?'var(--green)':rate>=60?'var(--yellow)':'var(--red)';
+
+  document.getElementById('detailStats').innerHTML = [
+    {l:'Tổng', v:total,   c:'var(--accent)'},
+    {l:'Có mặt',v:present,c:'var(--green)'},
+    {l:'Vắng', v:absent,  c:'var(--red)'},
+    {l:'Có phép',v:excused,c:'var(--yellow)'},
+    {l:'Tỉ lệ', v:rate+'%',c:rateColor},
+  ].map(x=>`<span style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:.35rem .75rem;font-size:.82rem">
+    <span style="color:${x.c};font-weight:800">${x.v}</span>
+    <span style="color:var(--text3);margin-left:.3rem">${x.l}</span>
+  </span>`).join('');
+
+  const statusOptions = Object.entries(STATUS_MAP).map(([k,v])=>
+    `<option value="${k}">${v.icon} ${v.label}</option>`).join('');
+
+  document.getElementById('detailList').innerHTML = (students||[]).length===0
+    ? '<div class="empty"><span>👥</span>Không có học sinh nào trong lớp này</div>'
+    : `<table style="width:100%;border-collapse:collapse;font-size:.85rem">
+        <thead><tr style="color:var(--text3);font-size:.75rem;font-weight:700;text-transform:uppercase">
+          <th style="padding:.5rem .75rem;text-align:left">Học sinh</th>
+          <th style="padding:.5rem .75rem;text-align:center">Trạng thái</th>
+          <th style="padding:.5rem .75rem;text-align:center">Giờ ĐD</th>
+          <th style="padding:.5rem .75rem;text-align:center">Sửa</th>
+        </tr></thead>
+        <tbody>${(students||[]).map(st=>{
+          const rec = recMap[st.username];
+          const sm  = rec ? (STATUS_MAP[rec.status]||STATUS_MAP.absent) : STATUS_MAP.absent;
+          return `<tr style="border-top:1px solid var(--border2)">
+            <td style="padding:.55rem .75rem">
+              <div style="font-weight:600">${esc(st.full_name||st.username)}</div>
+              <div style="font-size:.73rem;color:var(--text3)">@${esc(st.username)}</div>
+            </td>
+            <td style="padding:.55rem .75rem;text-align:center">
+              <span class="badge ${sm.cls}">${sm.icon} ${sm.label}</span>
+            </td>
+            <td style="padding:.55rem .75rem;text-align:center;color:var(--text3);font-size:.78rem">
+              ${rec?.check_in_time ? fmtTime(rec.check_in_time) : '—'}
+            </td>
+            <td style="padding:.55rem .75rem;text-align:center">
+              <select style="font-size:.78rem;background:var(--bg2);border:1px solid var(--border);border-radius:7px;color:var(--text);padding:.2rem .4rem;cursor:pointer"
+                onchange="adminSetStatus(${sessionId},'${esc(st.username)}','${esc(st.full_name||st.username)}','${esc(s.class_name)}',this.value);this.value=''">
+                <option value="">✏️ Sửa...</option>
+                ${statusOptions}
+              </select>
+            </td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>`;
+}
+
+// ── Xuất CSV từ modal chi tiết ───────────────────────────────────
+async function exportCSV(){
+  if(!_detailSessionId){ toast('Chưa có dữ liệu','error'); return; }
+  const s = _allSessions.find(x=>x.id===_detailSessionId);
+  if(!s) return;
+  const [{data:students},{data:recs}] = await Promise.all([
+    db.from('students').select('username,full_name').eq('active',true).ilike('class_name','%'+s.class_name+'%'),
+    db.from('dd_records').select('*').eq('session_id',_detailSessionId),
+  ]);
+  const recMap = Object.fromEntries((recs||[]).map(r=>[r.username,r]));
+  const rows = [['Họ tên','Username','Trạng thái','Giờ điểm danh']];
+  (students||[]).forEach(st=>{
+    const rec = recMap[st.username];
+    const status = rec ? (STATUS_MAP[rec.status]?.label||rec.status) : 'Vắng';
+    const time = rec?.check_in_time ? new Date(rec.check_in_time).toLocaleTimeString('vi-VN') : '';
+    rows.push([st.full_name||st.username, st.username, status, time]);
+  });
+  const csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const bom = '\uFEFF';
+  const blob = new Blob([bom+csv],{type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download=`diemdanh_${s.class_name}_${s.session_date}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
+// ── Báo cáo chuyên cần ───────────────────────────────────────────
+let _reportRows = [];
+let _rptActiveRange = '';
+
+function setRptRange(range){
+  _rptActiveRange = range;
+  ['rptBtnWeek','rptBtnMonth','rptBtnAll'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.classList.toggle('btn-primary', id===`rptBtn${range.charAt(0).toUpperCase()+range.slice(1)}`);
+    if(el) el.classList.toggle('btn-ghost',   id!==`rptBtn${range.charAt(0).toUpperCase()+range.slice(1)}`);
+  });
+  const now = new Date();
+  if(range==='week'){
+    const dow = now.getDay()===0?6:now.getDay()-1;
+    const mon = new Date(now); mon.setDate(now.getDate()-dow);
+    const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+    document.getElementById('rptFrom').value = mon.toISOString().split('T')[0];
+    document.getElementById('rptTo').value   = sun.toISOString().split('T')[0];
+  } else if(range==='month'){
+    const y=now.getFullYear(), m=now.getMonth();
+    document.getElementById('rptFrom').value = `${y}-${String(m+1).padStart(2,'0')}-01`;
+    const lastDay = new Date(y,m+1,0).getDate();
+    document.getElementById('rptTo').value   = `${y}-${String(m+1).padStart(2,'0')}-${lastDay}`;
+  } else {
+    document.getElementById('rptFrom').value = '';
+    document.getElementById('rptTo').value   = '';
+  }
+  loadReport();
+}
+
+async function loadReport(){
+  const cls  = document.getElementById('rptClass').value;
+  const from = document.getElementById('rptFrom').value;
+  const to   = document.getElementById('rptTo').value;
+  const el   = document.getElementById('reportContent');
+  document.getElementById('btnExportExcel').style.display='none';
+  document.getElementById('btnExportPDF').style.display='none';
+  document.getElementById('reportClassStats').style.display='none';
+  el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text3)">⏳ Đang tải...</div>';
+
+  let q = db.from('dd_sessions').select('*').eq('status','closed').order('session_date');
+  if(cls)  q=q.eq('class_name',cls);
+  if(from) q=q.gte('session_date',from);
+  if(to)   q=q.lte('session_date',to);
+
+  const {data:sessions} = await q;
+  if(!(sessions||[]).length){el.innerHTML='<div class="empty"><span>📊</span>Không có dữ liệu trong khoảng thời gian này</div>';return;}
+
+  // Chỉ tính chuyên cần cho buổi có count_attendance !== false
+  const countedSessions = (sessions||[]).filter(s=>s.count_attendance!==false);
+
+  const ids = (sessions||[]).map(s=>s.id);
+  const {data:students} = await db.from('students').select('username,full_name,class_name').eq('active',true);
+  const {data:recs}     = await db.from('dd_records').select('*').in('session_id',ids);
+
+  const studentList = cls
+    ? (students||[]).filter(s=>(s.class_name||'').split(',').map(c=>c.trim()).includes(cls))
+    : (students||[]);
+
+  _reportRows = studentList.map(st=>{
+    // Chỉ tính buổi count_attendance=true
+    const mySess = countedSessions.filter(s=>(st.class_name||'').split(',').map(c=>c.trim()).includes(s.class_name));
+    const myRecs = (recs||[]).filter(r=>r.username===st.username&&mySess.map(s=>s.id).includes(r.session_id));
+    const total   = mySess.length;
+    const present = myRecs.filter(r=>r.status==='present'||r.status==='late').length;
+    const excused = myRecs.filter(r=>r.status==='excused').length;
+    const absent  = total - present - excused;
+    const rate    = total>0?Math.round(present/total*100):0;
+    return {st,total,present,excused,absent:Math.max(0,absent),rate};
+  }).filter(r=>r.total>0).sort((a,b)=>b.rate-a.rate);
+
+  if(_reportRows.length){
+    document.getElementById('btnExportExcel').style.display='';
+    document.getElementById('btnExportPDF').style.display='';
+    _renderReportClassStats(countedSessions, _reportRows);
+  }
+
+  const atRisk = _reportRows.filter(r=>r.rate<80&&r.total>0);
+  const warningBar = atRisk.length ? `
+    <div style="background:rgba(239,68,68,.09);border:1px solid rgba(239,68,68,.25);border-radius:12px;padding:.85rem 1rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:.65rem">
+        <span style="font-size:1.1rem">⚠️</span>
+        <div>
+          <div style="font-size:.88rem;font-weight:700;color:#fca5a5">${atRisk.length} học viên có tỉ lệ chuyên cần dưới 80%</div>
+          <div style="font-size:.76rem;color:var(--text3);margin-top:.15rem">${atRisk.slice(0,3).map(r=>r.st.full_name||r.st.username).join(', ')}${atRisk.length>3?` và ${atRisk.length-3} người khác`:''}</div>
+        </div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="sendLowAttendanceAlert()" style="border-color:rgba(239,68,68,.3);color:#fca5a5;flex-shrink:0">📢 Gửi nhắc nhở</button>
+    </div>` : '';
+
+  // Ghi chú về buổi không tính chuyên cần
+  const skippedCount = (sessions||[]).length - countedSessions.length;
+  const skipNote = skippedCount>0 ? `<div style="background:rgba(100,116,139,.1);border:1px solid rgba(100,116,139,.2);border-radius:9px;padding:.55rem .9rem;margin-bottom:.75rem;font-size:.8rem;color:var(--text3)">ℹ️ Đã bỏ qua ${skippedCount} buổi không tính chuyên cần trong khoảng thời gian này.</div>` : '';
+
+  el.innerHTML = warningBar + skipNote + `
+    <div class="table-wrap">
+      <table style="table-layout:fixed">
+        <colgroup><col style="width:32px"/><col style="width:auto"/><col style="width:70px"/><col style="width:80px"/><col style="width:80px"/><col style="width:70px"/><col style="width:200px"/></colgroup>
+        <thead><tr>
+          <th style="padding-left:.75rem">#</th>
+          <th>Học viên</th>
+          <th style="text-align:center">Tổng</th>
+          <th style="text-align:center">Có mặt</th>
+          <th style="text-align:center">Có phép</th>
+          <th style="text-align:center">Vắng</th>
+          <th>Tỉ lệ chuyên cần</th>
+        </tr></thead>
+        <tbody>
+          ${_reportRows.map((r,i)=>{
+            const rateColor = r.rate>=80?'var(--green)':r.rate>=60?'var(--yellow)':'var(--red)';
+            const rankIcon  = i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+            const isAtRisk  = r.rate<80&&r.total>0;
+            return `<tr${isAtRisk?' style="background:rgba(239,68,68,.04)"':''}>
+              <td style="padding-left:.75rem;color:var(--text3);font-size:.78rem;font-weight:700;text-align:center">${rankIcon||i+1}</td>
+              <td class="td-main">
+                <div style="font-weight:700;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.st.full_name||r.st.username)}</div>
+                <div style="font-size:.73rem;color:var(--text3);margin-top:.08rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">@${esc(r.st.username)}</div>
+              </td>
+              <td style="text-align:center;font-size:.88rem;color:var(--text2)">${r.total}</td>
+              <td style="text-align:center;font-weight:800;color:var(--green);font-size:.92rem">${r.present}</td>
+              <td style="text-align:center;font-weight:600;color:var(--purple);font-size:.88rem">${r.excused}</td>
+              <td style="text-align:center;font-weight:600;color:${r.absent>0?'var(--red)':'var(--text3)'};font-size:.88rem">${r.absent}</td>
+              <td>
+                <div style="display:flex;align-items:center;gap:.6rem">
+                  <span style="font-weight:900;color:${rateColor};font-size:.9rem;min-width:40px">${r.rate}%</span>
+                  <div style="flex:1;height:8px;background:rgba(255,255,255,.07);border-radius:999px;overflow:hidden">
+                    <div style="height:100%;width:${r.rate}%;background:${rateColor};border-radius:999px;transition:width .8s ease"></div>
+                  </div>
+                  <button class="btn btn-ghost btn-sm btn-icon" onclick="viewStudentReport('${esc(r.st.username)}','${esc(r.st.full_name||r.st.username)}')" title="Xem chi tiết" style="flex-shrink:0">👁</button>
+                </div>
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function _renderReportClassStats(sessions, rows){
+  const statsEl = document.getElementById('reportClassStats');
+  const byClass = {};
+  rows.forEach(r=>{
+    const cls = (r.st.class_name||'').split(',')[0].trim()||'Khác';
+    if(!byClass[cls]) byClass[cls]={cls,students:0,totalRate:0,atRisk:0};
+    byClass[cls].students++;
+    byClass[cls].totalRate += r.rate;
+    if(r.rate<80&&r.total>0) byClass[cls].atRisk++;
+  });
+  const classes = Object.values(byClass).sort((a,b)=>b.totalRate/b.students - a.totalRate/a.students);
+  if(classes.length<=1){statsEl.style.display='none';return;}
+  statsEl.style.display='';
+  statsEl.innerHTML=`
+    <div style="font-size:.82rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.6rem">📊 Thống kê theo lớp</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.6rem">
+      ${classes.map(c=>{
+        const avg = Math.round(c.totalRate/c.students);
+        const color = avg>=80?'var(--green)':avg>=60?'var(--yellow)':'var(--red)';
+        return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:11px;padding:.75rem .9rem">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem">
+            <span style="font-size:.82rem;font-weight:700">${esc(c.cls)}</span>
+            <span style="font-size:.92rem;font-weight:900;color:${color}">${avg}%</span>
+          </div>
+          <div style="height:6px;background:rgba(255,255,255,.07);border-radius:999px;overflow:hidden;margin-bottom:.35rem">
+            <div style="height:100%;width:${avg}%;background:${color};border-radius:999px"></div>
+          </div>
+          <div style="font-size:.72rem;color:var(--text3);display:flex;justify-content:space-between">
+            <span>${c.students} học viên</span>
+            ${c.atRisk>0?`<span style="color:var(--red)">⚠️ ${c.atRisk} dưới 80%</span>`:'<span style="color:var(--green)">✅ Tốt</span>'}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+async function sendLowAttendanceAlert(){
+  const atRisk = _reportRows.filter(r=>r.rate<80&&r.total>0);
+  if(!atRisk.length){toast('Không có học viên nào dưới 80%','info');return;}
+  const names = atRisk.map(r=>r.st.full_name||r.st.username).join(', ');
+  if(!confirm(`Gửi thông báo nhắc nhở đến ${atRisk.length} học viên có tỉ lệ dưới 80%?\n\n${names}`)) return;
+  const by = sessionStorage.getItem('dh_name')||'Giáo viên';
+  const cls = document.getElementById('rptClass').value||'';
+  let sent=0;
+  for(const r of atRisk){
+    const {error} = await db.from('announcements').insert({
+      title:'⚠️ Cần cải thiện chuyên cần',
+      content:`Xin chào ${r.st.full_name||r.st.username},\n\nTỉ lệ chuyên cần của bạn hiện là ${r.rate}% (${r.present}/${r.total} buổi). Hãy cố gắng tham gia đầy đủ.\n\n— ${by}`,
+      class_name:cls||null, target_username:r.st.username, pinned:false,
+    });
+    if(!error) sent++;
+  }
+  toast(`📢 Đã gửi nhắc nhở đến ${sent}/${atRisk.length} học viên`);
+}
+
+function exportReportPDF(){
+  if(!_reportRows.length) return;
+  const cls  = document.getElementById('rptClass').value || 'Tất cả lớp';
+  const from = document.getElementById('rptFrom').value || '—';
+  const to   = document.getElementById('rptTo').value   || '—';
+  const now  = new Date().toLocaleDateString('vi-VN');
+  const rows = _reportRows.map((r,i)=>`<tr style="background:${i%2===0?'#f8fafc':'#fff'}">
+    <td style="text-align:center;color:#64748b;font-size:12px">${i+1}</td>
+    <td><strong>${r.st.full_name||r.st.username}</strong><br/><span style="color:#94a3b8;font-size:11px">@${r.st.username}</span></td>
+    <td style="text-align:center">${r.total}</td>
+    <td style="text-align:center;color:#10b981;font-weight:700">${r.present}</td>
+    <td style="text-align:center;color:#8b5cf6">${r.excused}</td>
+    <td style="text-align:center;color:${r.absent>0?'#ef4444':'#64748b'}">${r.absent}</td>
+    <td style="text-align:center"><span style="font-weight:900;color:${r.rate>=80?'#10b981':r.rate>=60?'#f59e0b':'#ef4444'}">${r.rate}%</span></td>
+  </tr>`).join('');
+  const html=`<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"/><title>Báo cáo chuyên cần</title>
+  <style>body{font-family:'Segoe UI',sans-serif;color:#1e293b;padding:24px;font-size:13px}h1{font-size:20px;font-weight:800;margin-bottom:4px}.meta{color:#64748b;font-size:12px;margin-bottom:20px}table{width:100%;border-collapse:collapse}th{background:#1e293b;color:#fff;padding:8px 12px;font-size:11px;text-align:left;font-weight:700;letter-spacing:.05em;text-transform:uppercase}td{padding:8px 12px;border-bottom:1px solid #f1f5f9}.footer{margin-top:16px;font-size:11px;color:#94a3b8;text-align:center}@media print{body{padding:0}}</style>
+  </head><body>
+  <h1>📊 Báo cáo chuyên cần</h1>
+  <div class="meta">Lớp: <strong>${cls}</strong> | Từ: <strong>${from}</strong> → <strong>${to}</strong> | Xuất lúc: ${now}</div>
+  <table><thead><tr><th>#</th><th>Học viên</th><th style="text-align:center">Tổng</th><th style="text-align:center">Có mặt</th><th style="text-align:center">Có phép</th><th style="text-align:center">Vắng</th><th style="text-align:center">Tỉ lệ</th></tr></thead><tbody>${rows}</tbody></table>
+  <div class="footer">DHDT LMS · Tổng ${_reportRows.length} học viên</div></body></html>`;
+  const w=window.open('','_blank','width=900,height=700');
+  if(!w){toast('Trình duyệt chặn popup','error');return;}
+  w.document.write(html); w.document.close();
+  w.onload=()=>{ w.focus(); w.print(); };
+  toast('🖨 Đang mở cửa sổ in PDF...');
+}
+
+function exportExcel(){
+  if(!_reportRows.length) return;
+  const cls  = document.getElementById('rptClass').value||'TatCaLop';
+  const from = document.getElementById('rptFrom').value||'';
+  const to   = document.getElementById('rptTo').value||'';
+  const wsData=[['#','Họ tên','Username','Tổng buổi','Có mặt','Có phép','Vắng','Tỉ lệ (%)']];
+  _reportRows.forEach((r,i)=>wsData.push([i+1,r.st.full_name||r.st.username,r.st.username,r.total,r.present,r.excused,r.absent,r.rate]));
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet(wsData);
+  ws['!cols']=[{wch:4},{wch:25},{wch:20},{wch:10},{wch:10},{wch:10},{wch:8},{wch:10}];
+  XLSX.utils.book_append_sheet(wb,ws,'Chuyên cần');
+  XLSX.writeFile(wb,`BaoCaoChuyenCan_${cls}_${from||'all'}${to?'_'+to:''}.xlsx`);
+  toast('✅ Đã xuất file Excel');
+}
+
+async function viewStudentReport(username, name){
+  const modal = document.createElement('div');
+  modal.className='modal-overlay open';
+  modal.innerHTML=`<div class="modal" style="max-width:600px">
+    <div class="modal-header"><div><h3>📊 Chi tiết: ${esc(name)}</h3><p>@${esc(username)}</p></div>
+    <button class="btn-close" onclick="this.closest('.modal-overlay').remove()">✕</button></div>
+    <div class="modal-body" id="studentReportBody">⏳ Đang tải...</div></div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click',e=>{ if(e.target===modal) modal.remove(); });
+  const cls=document.getElementById('rptClass').value;
+  const from=document.getElementById('rptFrom').value;
+  const to=document.getElementById('rptTo').value;
+  let q=db.from('dd_sessions').select('*').eq('status','closed').order('session_date',{ascending:false});
+  if(cls) q=q.eq('class_name',cls);
+  if(from) q=q.gte('session_date',from);
+  if(to) q=q.lte('session_date',to);
+  const {data:sessions}=await q;
+  const ids=(sessions||[]).map(s=>s.id);
+  const {data:recs}=ids.length?await db.from('dd_records').select('*').eq('username',username).in('session_id',ids):{data:[]};
+  const recMap=Object.fromEntries((recs||[]).map(r=>[r.session_id,r]));
+  const body=document.getElementById('studentReportBody');
+  if(!(sessions||[]).length){body.innerHTML='<div class="empty"><span>📭</span>Không có dữ liệu</div>';return;}
+  body.innerHTML=`<div class="table-wrap"><table>
+    <thead><tr><th>Buổi học</th><th>Lớp</th><th>Ngày</th><th>Chuyên cần</th><th>Trạng thái</th><th>Giờ vào</th></tr></thead>
+    <tbody>${(sessions||[]).map(s=>{
+      const r=recMap[s.id];
+      const sm=r?(STATUS_MAP[r.status]||STATUS_MAP.absent):STATUS_MAP.absent;
+      const notCount=s.count_attendance===false;
+      return `<tr${notCount?' style="opacity:.6"':''}>
+        <td style="font-weight:600">${esc(s.title)}</td>
+        <td style="font-size:.8rem">${esc(s.class_name)}</td>
+        <td style="font-size:.82rem;color:var(--text2)">${fmtDate(s.session_date)}</td>
+        <td style="text-align:center">${notCount?'<span style="font-size:.72rem;color:var(--text3)">Không tính</span>':'<span style="font-size:.72rem;color:var(--green)">✓ Tính</span>'}</td>
+        <td><span class="badge ${sm.cls}">${sm.icon} ${sm.label}</span></td>
+        <td style="font-size:.8rem;color:var(--text3)">${r?.check_in_time?fmtDateTime(r.check_in_time):'—'}</td>
+      </tr>`;
+    }).join('')}</tbody></table></div>`;
+}
 // ── Init ─────────────────────────────────────────────────────────
 populateClassSelects();
 loadDashboard();

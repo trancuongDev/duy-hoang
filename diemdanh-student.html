@@ -663,7 +663,7 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
         <p id="sucSess"></p>
         <p id="sucTime"></p>
       </div>
-      <a id="sucMeetLink" href="#" target="_blank" rel="noopener" class="btn-meet" id="sucMeetWrap" style="display:none">
+      <a id="sucMeetWrap" href="#" target="_blank" rel="noopener" class="btn-meet" style="display:none">
         🎥 Vào Google Meet ngay
       </a>
       <button class="btn-ok" onclick="closeSuccess()">Đóng</button>
@@ -889,6 +889,22 @@ function renderSessCard(s, rec, isOpenSection){
             ${s.start_time?`<span>🕐 ${s.start_time}${s.end_time?' – '+s.end_time:''}</span>`:''}
             <span>📚 ${esc(s.class_name)}</span>
           </div>
+          <div style="display:flex;gap:.35rem;flex-wrap:wrap;margin-top:.3rem">
+            ${s.count_attendance===false
+              ?`<span style="font-size:.68rem;padding:.1rem .5rem;border-radius:6px;font-weight:700;background:rgba(100,116,139,.15);color:var(--text3)">📊 Không tính CC</span>`
+              :`<span style="font-size:.68rem;padding:.1rem .5rem;border-radius:6px;font-weight:700;background:rgba(16,185,129,.12);color:#6ee7b7">📊 Tính chuyên cần</span>`}
+            ${s.require_checkin===false
+              ?`<span style="font-size:.68rem;padding:.1rem .5rem;border-radius:6px;font-weight:700;background:rgba(100,116,139,.15);color:var(--text3)">✋ Không bắt ĐD</span>`
+              :`<span style="font-size:.68rem;padding:.1rem .5rem;border-radius:6px;font-weight:700;background:rgba(59,130,246,.12);color:#93c5fd">✍️ Bắt điểm danh</span>`}
+          </div>
+          <div style="margin-top:.4rem;font-size:.78rem;color:var(--text3);line-height:1.6">
+            ${s.count_attendance===false
+              ?`⚠️ Buổi này <strong style="color:var(--text2)">không tính</strong> vào tỉ lệ chuyên cần của bạn.`
+              :`✅ Buổi này <strong style="color:#6ee7b7">được tính</strong> vào tỉ lệ chuyên cần của bạn.`}
+            ${s.require_checkin===false
+              ?` · Giáo viên sẽ điểm danh cho bạn, <strong style="color:var(--text2)">không cần tự bấm</strong>.`
+              :`· Bạn <strong style="color:#93c5fd">phải tự bấm điểm danh</strong> khi buổi mở.`}
+          </div>
           ${renderLivePlatformBadge(s)}
         </div>
         ${statusBadge}
@@ -905,12 +921,19 @@ function renderSessCard(s, rec, isOpenSection){
           ${renderLiveBtns(s)}
         </div>
       `:''}
-      ${isOpen&&!done?`
+      ${isOpen&&!done&&s.require_checkin!==false?`
         <button class="btn-attend-big" onclick='openCheckin(${JSON.stringify(s).replace(/'/g,"\\'")})'  >
           ✍️ Điểm danh ngay
         </button>
         ${s.session_note?`<div style="margin-top:.5rem;padding:.5rem .75rem;background:rgba(252,211,77,.08);border:1px solid rgba(252,211,77,.2);border-radius:10px;font-size:.82rem;color:#fcd34d;line-height:1.5">📝 ${esc(s.session_note)}</div>`:''}
         ${renderLiveBtns(s)}
+      `:''}
+      ${isOpen&&!done&&s.require_checkin===false?`
+        <div style="background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.2);border-radius:10px;padding:.65rem .9rem;font-size:.84rem;color:var(--text2);line-height:1.6">
+          ✅ Buổi học này không yêu cầu điểm danh thủ công.
+          ${s.session_note?`<div style="margin-top:.4rem;padding:.5rem .7rem;background:rgba(252,211,77,.08);border:1px solid rgba(252,211,77,.2);border-radius:8px;font-size:.82rem;color:#fcd34d;line-height:1.5">📝 ${esc(s.session_note)}</div>`:''}
+          ${renderLiveBtns(s)}
+        </div>
       `:''}
       ${!isOpen&&!done&&s.status==='scheduled'?`
         <div style="background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.15);border-radius:10px;padding:.65rem .9rem;font-size:.84rem;color:var(--text2);line-height:1.6">
@@ -1041,6 +1064,22 @@ function _renderSchedDay(){
               <span>📚 ${esc(s.class_name)}</span>
             </div>
             ${renderLivePlatformBadge(s)}
+            <div style="display:flex;gap:.35rem;flex-wrap:wrap;margin-top:.35rem">
+              ${s.count_attendance===false
+                ?`<span style="font-size:.67rem;padding:.1rem .5rem;border-radius:6px;font-weight:700;background:rgba(100,116,139,.15);color:var(--text3)">📊 Không tính CC</span>`
+                :`<span style="font-size:.67rem;padding:.1rem .5rem;border-radius:6px;font-weight:700;background:rgba(16,185,129,.12);color:#6ee7b7">📊 Tính chuyên cần</span>`}
+              ${s.require_checkin===false
+                ?`<span style="font-size:.67rem;padding:.1rem .5rem;border-radius:6px;font-weight:700;background:rgba(100,116,139,.15);color:var(--text3)">✋ Không bắt ĐD</span>`
+                :`<span style="font-size:.67rem;padding:.1rem .5rem;border-radius:6px;font-weight:700;background:rgba(59,130,246,.12);color:#93c5fd">✍️ Bắt điểm danh</span>`}
+            </div>
+            <div style="margin-top:.3rem;font-size:.76rem;color:var(--text3);line-height:1.6">
+              ${s.count_attendance===false
+                ?`⚠️ Buổi này <strong style="color:var(--text2)">không tính</strong> vào tỉ lệ chuyên cần.`
+                :`✅ Buổi này <strong style="color:#6ee7b7">được tính</strong> vào tỉ lệ chuyên cần.`}
+              ${s.require_checkin===false
+                ?` · Giáo viên điểm danh hộ, <strong style="color:var(--text2)">không cần tự bấm</strong>.`
+                :` · Bạn <strong style="color:#93c5fd">phải tự bấm điểm danh</strong> khi buổi mở.`}
+            </div>
           </div>
           <span style="background:${statusBg};color:${statusColor};font-size:.72rem;font-weight:700;padding:.25rem .65rem;border-radius:999px;white-space:nowrap;flex-shrink:0">${statusLabel}</span>
         </div>
@@ -1049,11 +1088,16 @@ function _renderSchedDay(){
             📌 Buổi học bắt đầu lúc <strong style="color:var(--text)">${s.start_time||'—'}</strong>${(s.platform_type||s.live_type||s.meet_link)?` — học qua <strong style="color:var(--text)">${{meet:'Google Meet',tiktok:'TikTok Live',youtube:'YouTube Live',zoom:'Zoom',other:'Live stream'}[s.platform_type||s.live_type||(s.meet_link?'meet':'')]||'Live stream'}</strong>`:''}, hãy chuẩn bị trước 5 phút.
             ${s.session_note?`<div style="margin-top:.4rem;padding:.5rem .7rem;background:rgba(252,211,77,.08);border:1px solid rgba(252,211,77,.2);border-radius:8px;font-size:.82rem;color:#fcd34d;line-height:1.5">📝 ${esc(s.session_note)}</div>`:''}
           </div>
-        `:s.status==='open'?`
+        `:s.status==='open'&&s.require_checkin!==false?`
           <button onclick='openCheckin(${JSON.stringify(s).replace(/'/g,"\\'")})' class="btn-attend-big">
             ✍️ Điểm danh ngay
           </button>
           ${renderLiveBtns(s)}
+        `:s.status==='open'&&s.require_checkin===false?`
+          <div style="background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.2);border-radius:10px;padding:.65rem .9rem;font-size:.84rem;color:var(--text2);line-height:1.6">
+            ✅ Buổi học này không yêu cầu điểm danh thủ công. Giáo viên sẽ điểm danh cho bạn.
+            ${renderLiveBtns(s)}
+          </div>
         `:s.status==='closed'?`
           <div style="font-size:.82rem;color:var(--text3);text-align:center;padding:.35rem 0">🔒 Buổi học đã kết thúc</div>
         `:''}
@@ -1178,10 +1222,16 @@ async function loadStats(){
     db.from('dd_records').select('*').eq('username',_u),
   ]);
   const recMap=Object.fromEntries((recs||[]).map(r=>[r.session_id,r]));
-  const total=(sessions||[]).length;
-  const present=(recs||[]).filter(r=>r.status==='present'||r.status==='late').length;
-  const excused=(recs||[]).filter(r=>r.status==='excused').length;
-  const absent=Math.max(0,total-present-excused);
+
+  // Chỉ tính chuyên cần cho buổi có count_attendance !== false
+  const countedSessions=(sessions||[]).filter(s=>s.count_attendance!==false);
+  const countedIds=new Set(countedSessions.map(s=>s.id));
+
+  const total=countedSessions.length;
+  const present=(recs||[]).filter(r=>countedIds.has(r.session_id)&&(r.status==='present'||r.status==='late')).length;
+  const excused=(recs||[]).filter(r=>countedIds.has(r.session_id)&&r.status==='excused').length;
+  const attended=present+excused;
+  const absent=attended<=total ? total-attended : 0;
   const rate=total>0?Math.round(present/total*100):0;
   document.getElementById('sSTotal').textContent=total;
   document.getElementById('sSPresent').textContent=present;
@@ -1197,11 +1247,12 @@ async function loadStats(){
   el.innerHTML=(sessions||[]).map(s=>{
     const rec=recMap[s.id];
     const sm=rec?(STATUS[rec.status]||STATUS.absent):STATUS.absent;
-    return `<div style="display:flex;align-items:center;gap:.75rem;padding:.75rem .9rem;border-radius:12px;background:var(--card);border:1px solid var(--border);margin-bottom:.5rem">
+    const notCounted=s.count_attendance===false;
+    return `<div style="display:flex;align-items:center;gap:.75rem;padding:.75rem .9rem;border-radius:12px;background:var(--card);border:1px solid var(--border);margin-bottom:.5rem${notCounted?';opacity:.55':''}">
       <span style="font-size:1.1rem">${sm.icon}</span>
       <div style="flex:1;min-width:0">
         <div style="font-weight:700;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(s.title)}</div>
-        <div style="font-size:.75rem;color:var(--text2)">${fmtDate(s.session_date)} · ${esc(s.class_name)}</div>
+        <div style="font-size:.75rem;color:var(--text2)">${fmtDate(s.session_date)} · ${esc(s.class_name)}${notCounted?' · <span style="color:var(--text3)">Không tính CC</span>':''}</div>
       </div>
       <span class="badge ${sm.cls}">${sm.label}</span>
     </div>`;
@@ -1302,7 +1353,6 @@ async function submitCheckin(){
     const liveLink=fresh.status==='open'?(fresh.live_link||_curSess.live_link||''):'';
     const liveType=fresh.live_type||_curSess.live_type||'';
     const mWrap=document.getElementById('sucMeetWrap');
-    const mLink=document.getElementById('sucMeetLink');
     // Xây nút dynamic
     let liveBtnsHtml = '';
     if(meetLink){ liveBtnsHtml += `<a href="${meetLink}" target="_blank" rel="noopener" class="btn-meet">🎥 Vào Google Meet ngay</a>`; }
@@ -1311,7 +1361,7 @@ async function submitCheckin(){
       liveBtnsHtml += `<a href="${liveLink}" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:.5rem;width:100%;padding:.85rem;border-radius:13px;background:${m.bg};border:1px solid ${m.border};color:${m.color};font-size:.92rem;font-weight:800;text-decoration:none;margin-bottom:.75rem">${m.icon} ${m.label}</a>`;
     }
     mWrap.style.display = liveBtnsHtml ? '' : 'none';
-    mWrap.innerHTML = liveBtnsHtml + `<a id="sucMeetLink" href="#" style="display:none"></a>`;
+    mWrap.innerHTML = liveBtnsHtml;
     document.getElementById('successSheet').classList.add('open');
   } catch(e){
     errEl.textContent='Lỗi: '+e.message;
