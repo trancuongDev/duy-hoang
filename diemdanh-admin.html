@@ -731,14 +731,28 @@ const db = DH_CFG.createDb();
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function fmtDate(d){ if(!d)return''; const[y,m,dd]=(d+'').split('-'); return `${dd}/${m}/${y}`; }
 function fmtDateTime(ts){ return ts ? new Date(ts).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}) : '—'; }
-function today(){ return new Date().toISOString().split('T')[0]; }
+// Trả về ngày LOCAL (YYYY-MM-DD) — không dùng toISOString() vì trả UTC, lệch múi giờ VN (UTC+7)
+function today(){
+  const d=new Date();
+  const y=d.getFullYear();
+  const m=String(d.getMonth()+1).padStart(2,'0');
+  const dd=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${dd}`;
+}
+// Helper format YYYY-MM-DD an toàn với local time
+function _toLocalDate(d){
+  const y=d.getFullYear();
+  const m=String(d.getMonth()+1).padStart(2,'0');
+  const dd=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${dd}`;
+}
 function weekRange(){
-  const now=new Date();
-  // Sửa lỗi: now.getDay()===0 (Chủ Nhật) phải lùi 6 ngày về T2, không phải +1
+  const todayStr=today();
+  const now=new Date(todayStr+'T00:00:00'); // midnight local, tránh UTC shift
   const dow = now.getDay()===0 ? -6 : 1-now.getDay();
   const mon=new Date(now); mon.setDate(now.getDate()+dow);
   const sun=new Date(mon); sun.setDate(mon.getDate()+6);
-  return [mon.toISOString().split('T')[0], sun.toISOString().split('T')[0]];
+  return [_toLocalDate(mon), _toLocalDate(sun)];
 }
 function fmtTime(ts){ return ts?new Date(ts).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}):'—'; }
 const AV_COLORS=['#4f46e5','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#ec4899'];
@@ -1057,9 +1071,9 @@ function openBatchCreate(){
   }
 
   const now = new Date();
-  document.getElementById('bFrom').value = now.toISOString().split('T')[0];
+  document.getElementById('bFrom').value = today();
   const end = new Date(now); end.setDate(now.getDate()+27);
-  document.getElementById('bTo').value = end.toISOString().split('T')[0];
+  document.getElementById('bTo').value = _toLocalDate(end);
   document.getElementById('bTitle').value = '';
   document.getElementById('bStart').value = '';
   document.getElementById('bEnd').value   = '';
@@ -1086,7 +1100,7 @@ function _getBatchDates(){
   const d=new Date(from+'T00:00:00');
   const end=new Date(to+'T00:00:00');
   while(d<=end){
-    if(dows.includes(d.getDay())) dates.push(d.toISOString().split('T')[0]);
+    if(dows.includes(d.getDay())) dates.push(_toLocalDate(d));
     d.setDate(d.getDate()+1);
   }
   return dates;
@@ -1383,7 +1397,7 @@ async function cloneSession(id){
   const orig = new Date(s.session_date+'T00:00:00');
   const next = new Date(orig);
   next.setDate(orig.getDate()+7);
-  const nextDate = next.toISOString().split('T')[0];
+  const nextDate = _toLocalDate(next);
 
   // Kiểm tra trùng lịch
   const {data:existing} = await db.from('dd_sessions')
@@ -1538,7 +1552,7 @@ async function showSessionSummary(id){
 // ── Auto open/close theo giờ ────────────────────────────────────
 async function autoCheckSessions(){
   const now   = new Date();
-  const todayStr = now.toISOString().split('T')[0];
+  const todayStr = today();
   const nowTime  = now.toTimeString().slice(0,5); // HH:MM
 
   // Lấy tất cả buổi hôm nay có bật auto
@@ -1869,11 +1883,13 @@ function setRptRange(range){
   });
   const now = new Date();
   if(range==='week'){
-    const dow = now.getDay()===0?6:now.getDay()-1;
-    const mon = new Date(now); mon.setDate(now.getDate()-dow);
+    // Dùng today() làm base để tránh UTC shift múi giờ VN
+    const base = new Date(today()+'T00:00:00');
+    const dow = base.getDay()===0?6:base.getDay()-1;
+    const mon = new Date(base); mon.setDate(base.getDate()-dow);
     const sun = new Date(mon); sun.setDate(mon.getDate()+6);
-    document.getElementById('rptFrom').value = mon.toISOString().split('T')[0];
-    document.getElementById('rptTo').value   = sun.toISOString().split('T')[0];
+    document.getElementById('rptFrom').value = _toLocalDate(mon);
+    document.getElementById('rptTo').value   = _toLocalDate(sun);
   } else if(range==='month'){
     const y=now.getFullYear(), m=now.getMonth();
     document.getElementById('rptFrom').value = `${y}-${String(m+1).padStart(2,'0')}-01`;

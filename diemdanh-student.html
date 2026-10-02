@@ -1048,7 +1048,14 @@ document.getElementById('homeNameMob').textContent = `Xin chào, ${_n||'bạn'}!
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function fmtDate(d){ if(!d)return''; const[y,m,dd]=(d+'').split('-'); return`${dd}/${m}/${y}`; }
 function fmtTime(ts){ return ts?new Date(ts).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}):'—'; }
-function today(){ return new Date().toISOString().split('T')[0]; }
+// Trả về ngày LOCAL (YYYY-MM-DD) — KHÔNG dùng toISOString() vì trả UTC, lệch múi giờ VN (UTC+7)
+function today(){
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const dd = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${dd}`;
+}
 
 const STATUS = {
   present:{ label:'Đúng giờ', icon:'✅', cls:'badge-present' },
@@ -1127,7 +1134,23 @@ function renderLivePlatformBadge(s){
 
 // ── Tab navigation ───────────────────────────────────────────────
 const TAB_TITLES = {home:'Điểm danh',schedule:'Lịch học',history:'Lịch sử',absence:'Báo vắng',stats:'Chuyên cần',guide:'Hướng dẫn',profile:'Hồ sơ'};
+
+// Theo dõi ngày để tự động reset khi qua ngày mới (trang mở qua đêm)
+let _lastKnownDate = today();
+function _checkDateChange(){
+  const nowDate = today();
+  if(nowDate !== _lastKnownDate){
+    _lastKnownDate = nowDate;
+    // Reset lịch về hôm nay nếu user đang ở tuần hiện tại
+    if(_schedWeekOffset === 0) _schedSelectedDate = nowDate;
+    return true; // ngày đã thay đổi
+  }
+  return false;
+}
+
 function showTab(name){
+  // Kiểm tra ngày thay đổi mỗi khi user chuyển tab
+  _checkDateChange();
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.bnav-btn,.dtab').forEach(b=>b.classList.remove('active'));
   const pageId = 'page'+name.charAt(0).toUpperCase()+name.slice(1);
@@ -1379,16 +1402,21 @@ let _schedSessions = [];    // cache buổi của tuần đang xem
 let _schedRecMap = {};      // cache records điểm danh của tuần đang xem
 
 function _weekDates(offset){
-  const now = new Date();
+  // Dùng today() để lấy ngày local chuẩn, tránh lỗi múi giờ UTC
+  const todayStr = today(); // 'YYYY-MM-DD' theo giờ local
+  const now = new Date(todayStr + 'T00:00:00'); // midnight local
   const dow = now.getDay()===0 ? 6 : now.getDay()-1; // T2=0 … CN=6
   const mon = new Date(now);
   mon.setDate(now.getDate() - dow + offset*7);
-  mon.setHours(0,0,0,0);
   const days = [];
   for(let i=0;i<7;i++){
     const d = new Date(mon);
     d.setDate(mon.getDate()+i);
-    days.push(d.toISOString().split('T')[0]);
+    // Format YYYY-MM-DD theo local time, không dùng toISOString() để tránh UTC shift
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const dd = String(d.getDate()).padStart(2,'0');
+    days.push(`${y}-${m}-${dd}`);
   }
   return days;
 }
@@ -1398,6 +1426,12 @@ async function loadSchedule(){
   if(!myClasses.length){
     document.getElementById('schedList').innerHTML='<div class="empty"><span>⚠️</span>Chưa được gán lớp</div>';
     return;
+  }
+
+  // Nếu ngày đang chọn là ngày hôm qua (trang mở qua đêm) → tự động nhảy về hôm nay
+  const realToday = today();
+  if(_schedSelectedDate < realToday && _schedWeekOffset === 0) {
+    _schedSelectedDate = realToday;
   }
   const days = _weekDates(_schedWeekOffset);
   const monStr = days[0], sunStr = days[6];
@@ -1525,19 +1559,21 @@ async function loadHistory(){
 
 // ── ABSENCE ─────────────────────────────────────────────────────
 function _getCurrentWeekRange(){
-  const now = new Date();
+  // Dùng today() làm base để tránh UTC shift múi giờ VN
+  const todayStr = today();
+  const now = new Date(todayStr+'T00:00:00');
   const dow = now.getDay(); // 0=CN, 1=T2...6=T7
-  // T2 đầu tuần
   const diffToMon = dow === 0 ? -6 : 1 - dow;
   const mon = new Date(now);
   mon.setDate(now.getDate() + diffToMon);
-  mon.setHours(0,0,0,0);
-  // CN cuối tuần
   const sun = new Date(mon);
   sun.setDate(mon.getDate() + 6);
-  sun.setHours(23,59,59,999);
-  const toISO = d => d.toISOString().split('T')[0];
-  return { from: toISO(mon), to: toISO(sun) };
+  // Format local date an toàn
+  const fmt = d => {
+    const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), dd=String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${dd}`;
+  };
+  return { from: fmt(mon), to: fmt(sun) };
 }
 
 async function loadAbsenceSessions(){
@@ -1829,6 +1865,17 @@ db.channel('dd-student-watch')
     if(document.getElementById('pageHome').classList.contains('active')) loadHome();
   })
   .subscribe();
+
+// ── Tự động detect qua ngày mới mỗi 60 giây ──────────────────────
+setInterval(()=>{
+  if(_checkDateChange()){
+    // Ngày vừa thay đổi — reload trang đang active
+    const activeTab = document.querySelector('.page.active')?.id?.replace('page','').toLowerCase();
+    if(activeTab === 'home')     loadHome();
+    if(activeTab === 'schedule') loadSchedule();
+    if(activeTab === 'absence')  { loadAbsenceSessions(); loadMyAbsences(); }
+  }
+}, 60000);
 
 // ── Cập nhật badge "Đang mở" trên mobile header ─────────────────
 function _updateLiveBadge(hasOpen){
