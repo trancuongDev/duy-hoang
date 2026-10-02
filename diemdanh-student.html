@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi">
 <head>
 <meta charset="UTF-8"/>
@@ -364,11 +364,12 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
   <span class="brand">DHDT LMS</span>
   <span class="tag">Điểm danh</span>
   <div class="dtab-wrap">
-    <button class="dtab active" onclick="showTab('home')"    id="dtab-home">🏠 Trang chủ</button>
-    <button class="dtab"        onclick="showTab('history')" id="dtab-history">📝 Lịch sử</button>
-    <button class="dtab"        onclick="showTab('absence')" id="dtab-absence">🔴 Báo vắng</button>
-    <button class="dtab"        onclick="showTab('stats')"   id="dtab-stats">📊 Chuyên cần</button>
-    <button class="dtab"        onclick="showTab('guide')"   id="dtab-guide">📖 Hướng dẫn</button>
+    <button class="dtab active" onclick="showTab('home')"     id="dtab-home">🏠 Trang chủ</button>
+    <button class="dtab"        onclick="showTab('schedule')" id="dtab-schedule">📆 Lịch học</button>
+    <button class="dtab"        onclick="showTab('history')"  id="dtab-history">📝 Lịch sử</button>
+    <button class="dtab"        onclick="showTab('absence')"  id="dtab-absence">🔴 Báo vắng</button>
+    <button class="dtab"        onclick="showTab('stats')"    id="dtab-stats">📊 Chuyên cần</button>
+    <button class="dtab"        onclick="showTab('guide')"    id="dtab-guide">📖 Hướng dẫn</button>
   </div>
   <div class="topbar-user">
     <a href="student.html" class="btn-back-top">← Học sinh</a>
@@ -421,6 +422,25 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
     <div class="sec-hdr">📅 Hôm nay</div>
     <div id="todayList"><div class="empty"><span>📭</span>Không có buổi nào hôm nay</div></div>
   </div>
+
+</div>
+
+<!-- ══ SCHEDULE ══ -->
+<div class="page" id="pageSchedule">
+  <div style="margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.6rem">
+    <div style="font-size:1.05rem;font-weight:800">📆 Lịch học sắp tới</div>
+    <div style="display:flex;gap:.5rem;align-items:center">
+      <button onclick="schedPrev()" style="width:34px;height:34px;border-radius:9px;background:var(--card);border:1px solid var(--border);color:var(--text2);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center">‹</button>
+      <span id="schedWeekLabel" style="font-size:.84rem;font-weight:700;color:var(--text);min-width:120px;text-align:center">—</span>
+      <button onclick="schedNext()" style="width:34px;height:34px;border-radius:9px;background:var(--card);border:1px solid var(--border);color:var(--text2);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center">›</button>
+      <button onclick="schedGoToday()" style="padding:.3rem .75rem;border-radius:9px;background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.25);color:#60a5fa;font-size:.78rem;font-weight:700;cursor:pointer">Hôm nay</button>
+    </div>
+  </div>
+  <!-- Mini calendar strip (7 ngày trong tuần) -->
+  <div id="schedStrip" style="display:grid;grid-template-columns:repeat(7,1fr);gap:.35rem;margin-bottom:1.1rem"></div>
+  <!-- Danh sách buổi của ngày được chọn -->
+  <div id="schedDayLabel" style="font-size:.73rem;font-weight:800;color:var(--text3);letter-spacing:.05em;text-transform:uppercase;margin-bottom:.6rem"></div>
+  <div id="schedList"><div class="empty"><span>⏳</span>Đang tải...</div></div>
 </div>
 
 <!-- ══ HISTORY ══ -->
@@ -540,7 +560,40 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
     </div>
   </div>
 
-  <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.1rem">
+
+  <div class="guide-step" style="margin-bottom:.85rem">
+    <div class="guide-step-hd" style="background:linear-gradient(135deg,rgba(59,130,246,.2),rgba(59,130,246,.07))">
+      <div class="guide-num" style="background:#3b82f6">4</div>
+      <div><div style="font-weight:800;font-size:.96rem">Xem l&#7883;ch h&#7885;c</div><div style="font-size:.78rem;color:var(--text2)">Bi&#7871;t tr&#432;&#7899;c l&#7883;ch &#273;&#7875; ch&#7911; &#273;&#7897;ng s&#7855;p x&#7871;p</div></div>
+    </div>
+    <div class="guide-step-body">
+      <div class="guide-row">
+        <div class="guide-dot" style="background:rgba(59,130,246,.12);color:#60a5fa">&#9312;</div>
+        <p style="font-size:.86rem;color:var(--text2);line-height:1.6">V&#224;o tab <strong style="color:var(--text)">&#x1F4C6; L&#7883;ch h&#7885;c</strong> &mdash; h&#7879; th&#7889;ng hi&#7875;n th&#7883; 7 ng&#224;y trong tu&#7847;n d&#432;&#7899;i d&#7841;ng thanh l&#7883;ch.</p>
+      </div>
+      <div class="guide-row">
+        <div class="guide-dot" style="background:rgba(59,130,246,.12);color:#60a5fa">&#9313;</div>
+        <p style="font-size:.86rem;color:var(--text2);line-height:1.6">B&#7845;m v&#224;o ng&#224;y b&#7845;t k&#7923; &#273;&#7875; xem danh s&#225;ch bu&#7893;i h&#7885;c. Ng&#224;y c&#243; bu&#7893;i h&#7885;c s&#7869; c&#243; <strong style="color:var(--accent)">ch&#7845;m xanh</strong> b&#234;n d&#432;&#7899;i.</p>
+      </div>
+      <div class="guide-row">
+        <div class="guide-dot" style="background:rgba(59,130,246,.12);color:#60a5fa">&#9314;</div>
+        <p style="font-size:.86rem;color:var(--text2);line-height:1.6">D&#249;ng n&#250;t <strong style="color:var(--text)">&lsaquo; &rsaquo;</strong> &#273;&#7875; xem tu&#7847;n tr&#432;&#7899;c / sau. B&#7845;m <strong style="color:var(--text)">H&#244;m nay</strong> &#273;&#7875; quay v&#7873; tu&#7847;n hi&#7879;n t&#7841;i.</p>
+      </div>
+      <div class="guide-row">
+        <div class="guide-dot" style="background:rgba(59,130,246,.12);color:#60a5fa">&#9315;</div>
+        <p style="font-size:.86rem;color:var(--text2);line-height:1.6">N&#7871;u bu&#7893;i &#273;ang m&#7903;, n&#250;t <strong style="color:var(--green)">&#x270D;&#xFE0F; &#272;i&#7875;m danh</strong> xu&#7845;t hi&#7879;n ngay trong l&#7883;ch &mdash; kh&#244;ng c&#7847;n ra trang ch&#7911;.</p>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.45rem;margin-top:.35rem">
+        <div style="background:rgba(59,130,246,.08);border-radius:10px;padding:.55rem .65rem;font-size:.76rem;color:#60a5fa;text-align:center">&#x1F550; S&#7855;p h&#7885;c<br/><strong>Ch&#432;a m&#7903;</strong></div>
+        <div style="background:rgba(16,185,129,.08);border-radius:10px;padding:.55rem .65rem;font-size:.76rem;color:#6ee7b7;text-align:center">&#x1F7E2; &#272;ang m&#7903;<br/><strong>V&#224;o &#273;i&#7875;m danh</strong></div>
+        <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:.55rem .65rem;font-size:.76rem;color:var(--text3);text-align:center">&#x1F512; &#272;&#227; &#273;&#243;ng<br/><strong>K&#7871;t th&#250;c</strong></div>
+      </div>
+      <div class="guide-note" style="background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);color:#93c5fd;margin-top:.5rem">
+        &#x1F4A1; L&#7883;ch h&#7885;c ch&#7881; hi&#7875;n th&#7883; bu&#7893;i m&#224; <strong>gi&#225;o vi&#234;n &#273;&#227; l&#234;n l&#7883;ch</strong> trong h&#7879; th&#7889;ng. Ki&#7875;m tra th&#432;&#7901;ng xuy&#234;n &#273;&#7875; kh&#244;ng b&#7887; l&#7905; bu&#7893;i n&#224;o.
+      </div>
+    </div>
+  </div>
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.1rem;margin-bottom:.85rem">
     <div style="font-weight:800;font-size:.9rem;margin-bottom:.85rem">❓ Câu hỏi thường gặp</div>
     <div style="display:flex;flex-direction:column;gap:.75rem;font-size:.86rem">
       <div><strong>Mã học viên ở đâu?</strong><p style="color:var(--text2);margin-top:.2rem;line-height:1.5">Hiển thị ngay trên trang chủ sau khi đăng nhập. Liên hệ giáo viên nếu không thấy.</p></div>
@@ -567,11 +620,12 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
 
 <!-- ══ BOTTOM NAV ══ -->
 <nav class="bottom-nav" id="bottomNav">
-  <button class="bnav-btn active" onclick="showTab('home')"    id="bnav-home">    <span class="ico">🏠</span>Trang chủ</button>
-  <button class="bnav-btn"        onclick="showTab('history')" id="bnav-history"> <span class="ico">📝</span>Lịch sử</button>
-  <button class="bnav-btn"        onclick="showTab('absence')" id="bnav-absence"> <span class="ico">🔴</span>Báo vắng</button>
-  <button class="bnav-btn"        onclick="showTab('stats')"   id="bnav-stats">   <span class="ico">📊</span>Chuyên cần</button>
-  <button class="bnav-btn"        onclick="showTab('guide')"   id="bnav-guide">   <span class="ico">📖</span>Hướng dẫn</button>
+  <button class="bnav-btn active" onclick="showTab('home')"     id="bnav-home">    <span class="ico">🏠</span>Trang chủ</button>
+  <button class="bnav-btn"        onclick="showTab('schedule')" id="bnav-schedule"><span class="ico">&#x1F4C6;</span>Lịch học</button>
+  <button class="bnav-btn"        onclick="showTab('history')"  id="bnav-history"><span class="ico">&#x1F4DD;</span>Lịch sử</button>
+  <button class="bnav-btn"        onclick="showTab('absence')"  id="bnav-absence"><span class="ico">&#x1F534;</span>Báo vắng</button>
+  <button class="bnav-btn"        onclick="showTab('stats')"    id="bnav-stats"><span class="ico">&#x1F4CA;</span>Chuyên cần</button>
+  <button class="bnav-btn" onclick="showTab('guide')" id="bnav-guide"><span class="ico">&#x1F4D6;</span>H&#432;&#7899;ng d&#7851;n</button>
 </nav>
 
 <!-- ══ CHECK-IN BOTTOM SHEET ══ -->
@@ -624,6 +678,13 @@ const _n = sessionStorage.getItem('dh_name') || localStorage.getItem('dh_name') 
 const _r = sessionStorage.getItem('dh_role') || localStorage.getItem('dh_role');
 if (!_u || _r !== 'student') location.href = 'login.html';
 
+// Sync vào sessionStorage để student.js đọc được khi quay về
+if(_u && !sessionStorage.getItem('dh_user')){
+  sessionStorage.setItem('dh_user', _u);
+  sessionStorage.setItem('dh_name', _n||_u);
+  sessionStorage.setItem('dh_role', _r||'student');
+}
+
 const db = DH_CFG.createDb();
 
 // Điền tên
@@ -658,8 +719,65 @@ function toast(msg, type='ok'){
   setTimeout(()=>t.remove(),3500);
 }
 
+// ── Live link helper ─────────────────────────────────────────────
+const LIVE_META = {
+  meet:    { icon:'🎥', label:'Vào Google Meet',   color:'#60a5fa', bg:'rgba(59,130,246,.15)',  border:'rgba(59,130,246,.3)'  },
+  tiktok:  { icon:'🎵', label:'Xem TikTok Live',   color:'#f472b6', bg:'rgba(244,114,182,.12)', border:'rgba(244,114,182,.3)' },
+  youtube: { icon:'▶️', label:'Xem YouTube Live',  color:'#f87171', bg:'rgba(248,113,113,.12)', border:'rgba(248,113,113,.3)' },
+  zoom:    { icon:'💻', label:'Vào Zoom',           color:'#60a5fa', bg:'rgba(59,130,246,.12)',  border:'rgba(59,130,246,.3)'  },
+  other:   { icon:'🔗', label:'Vào lớp học trực tiếp', color:'#a3e635', bg:'rgba(163,230,53,.1)',border:'rgba(163,230,53,.25)'},
+};
+function renderLiveBtns(s, onlyOpen=true){
+  if(onlyOpen && s.status!=='open') return '';
+  let html = '';
+  // Xác định nền tảng từ platform_type hoặc live_type
+  const pt = s.platform_type || s.live_type || (s.meet_link ? 'meet' : null);
+  // Link: meet_link hoặc live_link
+  const link = s.meet_link || s.live_link || '';
+  if(!link) return ''; // không có link thì không hiện nút bấm
+
+  const m = LIVE_META[pt] || LIVE_META.meet;
+  html = `<a href="${esc(link)}" target="_blank" rel="noopener"
+    style="display:flex;align-items:center;justify-content:center;gap:.5rem;
+      width:100%;padding:.85rem;border-radius:13px;margin-top:.6rem;
+      background:${m.bg};border:1px solid ${m.border};
+      color:${m.color};font-size:.92rem;font-weight:800;text-decoration:none;
+      transition:opacity .15s"
+    onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">
+    ${m.icon} ${m.label}
+  </a>`;
+  return html;
+}
+
+// Hiển thị badge nền tảng học (dùng cho buổi scheduled — học sinh biết trước học ở đâu)
+function renderLivePlatformBadge(s){
+  // Xác định nền tảng: ưu tiên platform_type → live_type → suy từ meet_link
+  const pt = s.platform_type || s.live_type || (s.meet_link ? 'meet' : null);
+  if(!pt) return '';
+
+  const labels  = {meet:'Google Meet', tiktok:'TikTok Live', youtube:'YouTube Live', zoom:'Zoom', other:'Live stream'};
+  const icons   = {meet:'🎥', tiktok:'🎵', youtube:'▶️', zoom:'💻', other:'🔗'};
+  const colors  = {meet:'#60a5fa', tiktok:'#f472b6', youtube:'#f87171', zoom:'#60a5fa', other:'#a3e635'};
+  const bgs     = {meet:'rgba(59,130,246,.1)', tiktok:'rgba(244,114,182,.1)', youtube:'rgba(248,113,113,.1)', zoom:'rgba(59,130,246,.1)', other:'rgba(163,230,53,.1)'};
+  const borders = {meet:'rgba(59,130,246,.25)', tiktok:'rgba(244,114,182,.25)', youtube:'rgba(248,113,113,.25)', zoom:'rgba(59,130,246,.25)', other:'rgba(163,230,53,.2)'};
+
+  const label  = labels[pt]  || 'Live stream';
+  const icon   = icons[pt]   || '🔗';
+  const color  = colors[pt]  || '#a3e635';
+  const bg     = bgs[pt]     || bgs.other;
+  const border = borders[pt] || borders.other;
+
+  return `<div style="margin-top:.4rem">
+    <span style="display:inline-flex;align-items:center;gap:.35rem;font-size:.78rem;font-weight:700;
+      color:${color};background:${bg};border:1px solid ${border};
+      padding:.25rem .7rem;border-radius:999px">
+      ${icon} Học qua ${label}
+    </span>
+  </div>`;
+}
+
 // ── Tab navigation ───────────────────────────────────────────────
-const TAB_TITLES = {home:'Điểm danh',history:'Lịch sử',absence:'Báo vắng',stats:'Chuyên cần',guide:'Hướng dẫn',profile:'Hồ sơ'};
+const TAB_TITLES = {home:'Điểm danh',schedule:'Lịch học',history:'Lịch sử',absence:'Báo vắng',stats:'Chuyên cần',guide:'Hướng dẫn',profile:'Hồ sơ'};
 function showTab(name){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.bnav-btn,.dtab').forEach(b=>b.classList.remove('active'));
@@ -672,15 +790,17 @@ function showTab(name){
   if(dt) dt.classList.add('active');
   const mt = document.getElementById('mobTitle');
   if(mt) mt.textContent = TAB_TITLES[name]||'Điểm danh';
-  if(name==='home')    loadHome();
-  if(name==='history') loadHistory();
-  if(name==='absence') { loadAbsenceSessions(); loadMyAbsences(); }
-  if(name==='stats')   loadStats();
-  if(name==='profile') loadProfile();
+  if(name==='home')     loadHome();
+  if(name==='schedule') loadSchedule();
+  if(name==='history')  loadHistory();
+  if(name==='absence')  { loadAbsenceSessions(); loadMyAbsences(); }
+  if(name==='stats')    loadStats();
+  if(name==='profile')  loadProfile();
 }
 
 // ── My classes ──────────────────────────────────────────────────
 let myClasses=[];
+
 async function loadMyClasses(){
   if(myClasses.length) return;
   const {data:st}=await db.from('students').select('id,class_name,student_code').eq('username',_u).single();
@@ -692,7 +812,6 @@ async function loadMyClasses(){
     const extra=(sc||[]).flatMap(r=>r.class_name.split(',').map(c=>c.trim())).filter(Boolean);
     myClasses=[...new Set([...baseClasses,...extra])];
   } else myClasses=baseClasses;
-  // Cập nhật UI mã HV
   if(code){
     document.getElementById('homeCodeRow').style.display='inline-flex';
     document.getElementById('homeCodeVal').textContent=code;
@@ -717,12 +836,13 @@ async function loadHome(){
     return;
   }
 
+  const todayStr=today();
   const [
     {data:openSessions},
     {data:todaySessions},
   ] = await Promise.all([
     db.from('dd_sessions').select('*').eq('status','open').in('class_name',myClasses).order('start_time'),
-    db.from('dd_sessions').select('*').in('class_name',myClasses).eq('session_date',today()).order('start_time'),
+    db.from('dd_sessions').select('*').in('class_name',myClasses).eq('session_date',todayStr).order('start_time'),
   ]);
 
   // Lấy record điểm danh của tôi
@@ -747,9 +867,9 @@ async function loadHome(){
   const todayEl=document.getElementById('todayList');
   if(!(todaySessions||[]).length){
     todayEl.innerHTML='<div class="empty"><span>📭</span>Không có buổi nào hôm nay</div>';
-    return;
+  } else {
+    todayEl.innerHTML=(todaySessions||[]).map(s=>renderSessCard(s,myRecMap[s.id],false)).join('');
   }
-  todayEl.innerHTML=(todaySessions||[]).map(s=>renderSessCard(s,myRecMap[s.id],false)).join('');
 }
 
 function renderSessCard(s, rec, isOpenSection){
@@ -769,30 +889,181 @@ function renderSessCard(s, rec, isOpenSection){
             ${s.start_time?`<span>🕐 ${s.start_time}${s.end_time?' – '+s.end_time:''}</span>`:''}
             <span>📚 ${esc(s.class_name)}</span>
           </div>
+          ${renderLivePlatformBadge(s)}
         </div>
         ${statusBadge}
       </div>
       ${done?`
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:.6rem .75rem;background:rgba(255,255,255,.04);border-radius:11px">
-          <div style="display:flex;align-items:center;gap:.5rem">
-            <span class="badge ${sm.cls}">${sm.icon} ${sm.label}</span>
-            <span style="font-size:.75rem;color:var(--text3)">${fmtTime(rec.check_in_time)}</span>
+        <div style="padding:.6rem .75rem;background:rgba(255,255,255,.04);border-radius:11px">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem">
+            <div style="display:flex;align-items:center;gap:.5rem">
+              <span class="badge ${sm.cls}">${sm.icon} ${sm.label}</span>
+              <span style="font-size:.75rem;color:var(--text3)">${fmtTime(rec.check_in_time)}</span>
+            </div>
           </div>
-          ${s.meet_link?`<a href="${esc(s.meet_link)}" target="_blank" rel="noopener" style="font-size:.8rem;color:#60a5fa;font-weight:700;text-decoration:none">🎥 Vào lớp →</a>`:''}
+          ${s.session_note?`<div style="margin-top:.5rem;padding:.45rem .7rem;background:rgba(252,211,77,.08);border:1px solid rgba(252,211,77,.2);border-radius:8px;font-size:.8rem;color:#fcd34d;line-height:1.5">📝 ${esc(s.session_note)}</div>`:''}
+          ${renderLiveBtns(s)}
         </div>
       `:''}
       ${isOpen&&!done?`
         <button class="btn-attend-big" onclick='openCheckin(${JSON.stringify(s).replace(/'/g,"\\'")})'  >
           ✍️ Điểm danh ngay
         </button>
+        ${s.session_note?`<div style="margin-top:.5rem;padding:.5rem .75rem;background:rgba(252,211,77,.08);border:1px solid rgba(252,211,77,.2);border-radius:10px;font-size:.82rem;color:#fcd34d;line-height:1.5">📝 ${esc(s.session_note)}</div>`:''}
+        ${renderLiveBtns(s)}
       `:''}
       ${!isOpen&&!done&&s.status==='scheduled'?`
-        <div style="text-align:center;font-size:.8rem;color:var(--text3);padding:.4rem 0">
-          ⏳ Chờ giáo viên mở điểm danh
+        <div style="background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.15);border-radius:10px;padding:.65rem .9rem;font-size:.84rem;color:var(--text2);line-height:1.6">
+          📌 Buổi học bắt đầu lúc <strong style="color:var(--text)">${s.start_time||'—'}</strong>${(s.platform_type||s.live_type||s.meet_link)?` — học qua <strong style="color:var(--text)">${{meet:'Google Meet',tiktok:'TikTok Live',youtube:'YouTube Live',zoom:'Zoom',other:'Live stream'}[s.platform_type||s.live_type||(s.meet_link?'meet':'')]||'Live stream'}</strong>`:''}, hãy chuẩn bị trước 5 phút.
+          ${s.session_note?`<div style="margin-top:.4rem;padding:.5rem .7rem;background:rgba(252,211,77,.08);border:1px solid rgba(252,211,77,.2);border-radius:8px;font-size:.82rem;color:#fcd34d;line-height:1.5">📝 ${esc(s.session_note)}</div>`:''}
         </div>
       `:''}
     </div>`;
 }
+
+// ── SCHEDULE ─────────────────────────────────────────────────────
+let _schedWeekOffset = 0;   // 0 = tuần hiện tại, 1 = tuần sau, -1 = tuần trước
+let _schedSelectedDate = today();
+let _schedSessions = [];    // cache buổi của tuần đang xem
+
+function _weekDates(offset){
+  const now = new Date();
+  const dow = now.getDay()===0 ? 6 : now.getDay()-1; // T2=0 … CN=6
+  const mon = new Date(now);
+  mon.setDate(now.getDate() - dow + offset*7);
+  mon.setHours(0,0,0,0);
+  const days = [];
+  for(let i=0;i<7;i++){
+    const d = new Date(mon);
+    d.setDate(mon.getDate()+i);
+    days.push(d.toISOString().split('T')[0]);
+  }
+  return days;
+}
+
+async function loadSchedule(){
+  await loadMyClasses();
+  if(!myClasses.length){
+    document.getElementById('schedList').innerHTML='<div class="empty"><span>⚠️</span>Chưa được gán lớp</div>';
+    return;
+  }
+  const days = _weekDates(_schedWeekOffset);
+  const monStr = days[0], sunStr = days[6];
+
+  // Label tuần
+  const fmtShort = d => { const [,m,dd]=d.split('-'); return `${dd}/${m}`; };
+  document.getElementById('schedWeekLabel').textContent = `${fmtShort(monStr)} – ${fmtShort(sunStr)}`;
+
+  // Render strip ngày
+  _renderSchedStrip(days);
+
+  // Fetch buổi học trong tuần (tất cả status)
+  const {data} = await db.from('dd_sessions')
+    .select('*')
+    .in('class_name', myClasses)
+    .gte('session_date', monStr)
+    .lte('session_date', sunStr)
+    .order('session_date').order('start_time');
+  _schedSessions = data||[];
+
+  // Nếu ngày đang chọn không nằm trong tuần mới → reset về T2 của tuần
+  if(!days.includes(_schedSelectedDate)) _schedSelectedDate = days[0];
+
+  _renderSchedStrip(days); // re-render để highlight active
+  _renderSchedDay();
+}
+
+function _renderSchedStrip(days){
+  const DOW_SHORT=['CN','T2','T3','T4','T5','T6','T7'];
+  const todayStr = today();
+  const strip = document.getElementById('schedStrip');
+  strip.innerHTML = days.map(d=>{
+    const dow = new Date(d+'T00:00:00').getDay();
+    const isToday = d===todayStr;
+    const isSelected = d===_schedSelectedDate;
+    const hasSess = _schedSessions.some(s=>s.session_date===d);
+    return `<button onclick="schedSelectDay('${d}')" style="
+      display:flex;flex-direction:column;align-items:center;gap:.2rem;
+      padding:.5rem .25rem;border-radius:11px;border:none;cursor:pointer;
+      background:${isSelected?'var(--accent)':isToday?'rgba(59,130,246,.12)':'var(--card)'};
+      border:1.5px solid ${isSelected?'var(--accent)':isToday?'rgba(59,130,246,.3)':'var(--border)'};
+      transition:all .15s;
+    ">
+      <span style="font-size:.62rem;font-weight:700;color:${isSelected?'rgba(255,255,255,.8)':'var(--text3)'}">${DOW_SHORT[dow]}</span>
+      <span style="font-size:.95rem;font-weight:900;color:${isSelected?'#fff':isToday?'var(--accent)':'var(--text)'}">${d.split('-')[2]}</span>
+      <span style="width:5px;height:5px;border-radius:50%;background:${hasSess?(isSelected?'#fff':'var(--accent)'):'transparent'}"></span>
+    </button>`;
+  }).join('');
+}
+
+function schedSelectDay(date){
+  _schedSelectedDate = date;
+  const days = _weekDates(_schedWeekOffset);
+  _renderSchedStrip(days);
+  _renderSchedDay();
+}
+
+function _renderSchedDay(){
+  const DOW_FULL = ['Chủ nhật','Thứ hai','Thứ ba','Thứ tư','Thứ năm','Thứ sáu','Thứ bảy'];
+  const d = new Date(_schedSelectedDate+'T00:00:00');
+  const todayStr = today();
+  const isToday = _schedSelectedDate===todayStr;
+  const isPast  = _schedSelectedDate<todayStr;
+
+  document.getElementById('schedDayLabel').textContent =
+    `${DOW_FULL[d.getDay()]} – ${fmtDate(_schedSelectedDate)}`+(isToday?' (Hôm nay)':isPast?' (Đã qua)':'');
+
+  const sessions = _schedSessions.filter(s=>s.session_date===_schedSelectedDate);
+  const el = document.getElementById('schedList');
+
+  if(!sessions.length){
+    el.innerHTML=`<div style="text-align:center;padding:2rem 1rem;color:var(--text3);font-size:.88rem">
+      ${isPast?'📘 Không có buổi học ngày này':'📭 Chưa có lịch học ngày này'}
+    </div>`;
+    return;
+  }
+
+  el.innerHTML = sessions.map(s=>{
+    const statusColor = s.status==='open'?'var(--green)':s.status==='closed'?'var(--text3)':'var(--accent)';
+    const statusLabel = s.status==='open'?'🟢 Đang mở':s.status==='closed'?'🔒 Đã đóng':'🕐 Sắp học';
+    const statusBg    = s.status==='open'?'rgba(16,185,129,.1)':s.status==='closed'?'rgba(255,255,255,.04)':'rgba(59,130,246,.08)';
+    return `
+      <div style="
+        background:var(--card);border:1px solid ${s.status==='open'?'rgba(16,185,129,.3)':'var(--border)'};
+        border-radius:16px;padding:1rem 1.1rem;margin-bottom:.7rem;
+        ${s.status==='open'?'box-shadow:0 0 0 1px rgba(16,185,129,.15)':''}
+      ">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.75rem;margin-bottom:.6rem">
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:800;font-size:.96rem;margin-bottom:.25rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(s.title)}</div>
+            <div style="display:flex;flex-wrap:wrap;gap:.4rem;font-size:.78rem;color:var(--text2)">
+              <span>🕐 ${s.start_time||'—'}${s.end_time?' – '+s.end_time:''}</span>
+              <span>📚 ${esc(s.class_name)}</span>
+            </div>
+            ${renderLivePlatformBadge(s)}
+          </div>
+          <span style="background:${statusBg};color:${statusColor};font-size:.72rem;font-weight:700;padding:.25rem .65rem;border-radius:999px;white-space:nowrap;flex-shrink:0">${statusLabel}</span>
+        </div>
+        ${s.status==='scheduled'?`
+          <div style="background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.15);border-radius:10px;padding:.65rem .9rem;font-size:.84rem;color:var(--text2);line-height:1.6">
+            📌 Buổi học bắt đầu lúc <strong style="color:var(--text)">${s.start_time||'—'}</strong>${(s.platform_type||s.live_type||s.meet_link)?` — học qua <strong style="color:var(--text)">${{meet:'Google Meet',tiktok:'TikTok Live',youtube:'YouTube Live',zoom:'Zoom',other:'Live stream'}[s.platform_type||s.live_type||(s.meet_link?'meet':'')]||'Live stream'}</strong>`:''}, hãy chuẩn bị trước 5 phút.
+            ${s.session_note?`<div style="margin-top:.4rem;padding:.5rem .7rem;background:rgba(252,211,77,.08);border:1px solid rgba(252,211,77,.2);border-radius:8px;font-size:.82rem;color:#fcd34d;line-height:1.5">📝 ${esc(s.session_note)}</div>`:''}
+          </div>
+        `:s.status==='open'?`
+          <button onclick='openCheckin(${JSON.stringify(s).replace(/'/g,"\\'")})' class="btn-attend-big">
+            ✍️ Điểm danh ngay
+          </button>
+          ${renderLiveBtns(s)}
+        `:s.status==='closed'?`
+          <div style="font-size:.82rem;color:var(--text3);text-align:center;padding:.35rem 0">🔒 Buổi học đã kết thúc</div>
+        `:''}
+      </div>`;
+  }).join('');
+}
+
+function schedPrev(){ _schedWeekOffset--; loadSchedule(); }
+function schedNext(){ _schedWeekOffset++; loadSchedule(); }
+function schedGoToday(){ _schedWeekOffset=0; _schedSelectedDate=today(); loadSchedule(); }
 
 // ── HISTORY ─────────────────────────────────────────────────────
 async function loadHistory(){
@@ -814,12 +1085,13 @@ async function loadHistory(){
         <div class="hist-info">
           <div class="hist-title">${esc(s.title)}</div>
           <div class="hist-sub">📅 ${fmtDate(s.session_date)} · ${esc(s.class_name)}</div>
-          ${s.meet_link&&done?`<a href="${esc(s.meet_link)}" target="_blank" rel="noopener" style="font-size:.76rem;color:#60a5fa;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:.2rem;margin-top:.25rem">🎥 Vào lớp</a>`:''}
+          ${isOpen&&done?`<div style="margin-top:.35rem;display:flex;flex-direction:column;gap:.3rem">${renderLiveBtns(s)}</div>`:''}
         </div>
         <div class="hist-right">
           <span class="badge ${sm.cls}">${sm.icon} ${sm.label}</span>
           ${rec?.check_in_time?`<span class="hist-time">${fmtTime(rec.check_in_time)}</span>`:''}
           ${isOpen&&(!rec||rec.status==='absent')?`<button onclick='openCheckin(${JSON.stringify(s).replace(/'/g,"\\'")})' style="font-size:.74rem;font-weight:700;color:var(--accent);background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);border-radius:7px;padding:.25rem .6rem;cursor:pointer">✍️ Điểm danh</button>`:''}
+
         </div>
       </div>`;
   }).join('');
@@ -1026,10 +1298,20 @@ async function submitCheckin(){
     closeCheckin();
     document.getElementById('sucSess').textContent='📚 '+_curSess.title;
     document.getElementById('sucTime').textContent=(attendStatus==='late'?'⏰ Đi muộn — ':'✅ Đúng giờ — ')+new Date().toLocaleTimeString('vi-VN');
-    const meetLink=fresh.meet_link||_curSess.meet_link||'';
-    const mLink=document.getElementById('sucMeetLink');
+    const meetLink=fresh.status==='open'?(fresh.meet_link||_curSess.meet_link||''):'';
+    const liveLink=fresh.status==='open'?(fresh.live_link||_curSess.live_link||''):'';
+    const liveType=fresh.live_type||_curSess.live_type||'';
     const mWrap=document.getElementById('sucMeetWrap');
-    if(meetLink){mLink.href=meetLink;mWrap.style.display='';}else{mWrap.style.display='none';}
+    const mLink=document.getElementById('sucMeetLink');
+    // Xây nút dynamic
+    let liveBtnsHtml = '';
+    if(meetLink){ liveBtnsHtml += `<a href="${meetLink}" target="_blank" rel="noopener" class="btn-meet">🎥 Vào Google Meet ngay</a>`; }
+    if(liveLink && liveType){
+      const m = {tiktok:{icon:'🎵',label:'Xem TikTok Live',color:'#f472b6',bg:'rgba(244,114,182,.15)',border:'rgba(244,114,182,.3)'},youtube:{icon:'▶️',label:'Xem YouTube Live',color:'#f87171',bg:'rgba(248,113,113,.12)',border:'rgba(248,113,113,.3)'},zoom:{icon:'💻',label:'Vào Zoom',color:'#60a5fa',bg:'rgba(59,130,246,.12)',border:'rgba(59,130,246,.3)'},other:{icon:'🔗',label:'Vào lớp trực tiếp',color:'#a3e635',bg:'rgba(163,230,53,.1)',border:'rgba(163,230,53,.25)'}}[liveType]||{icon:'🔗',label:'Vào lớp',color:'#a3e635',bg:'rgba(163,230,53,.1)',border:'rgba(163,230,53,.25)'};
+      liveBtnsHtml += `<a href="${liveLink}" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:.5rem;width:100%;padding:.85rem;border-radius:13px;background:${m.bg};border:1px solid ${m.border};color:${m.color};font-size:.92rem;font-weight:800;text-decoration:none;margin-bottom:.75rem">${m.icon} ${m.label}</a>`;
+    }
+    mWrap.style.display = liveBtnsHtml ? '' : 'none';
+    mWrap.innerHTML = liveBtnsHtml + `<a id="sucMeetLink" href="#" style="display:none"></a>`;
     document.getElementById('successSheet').classList.add('open');
   } catch(e){
     errEl.textContent='Lỗi: '+e.message;

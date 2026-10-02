@@ -18,19 +18,43 @@ async function decryptUrl(enc) {
   } catch { return enc; }
 }
 
-// Auth guard
-if (sessionStorage.getItem('dh_role') !== 'student') location.href = 'login.html';
+// Auth guard — sync localStorage → sessionStorage nếu tab mới
+(function(){
+  if(sessionStorage.getItem('dh_role') !== 'student'){
+    const lsRole = localStorage.getItem('dh_role');
+    const lsUser = localStorage.getItem('dh_user');
+    const lsName = localStorage.getItem('dh_name');
+    if(lsRole === 'student' && lsUser){
+      // Restore vào sessionStorage để trang hoạt động
+      sessionStorage.setItem('dh_role', lsRole);
+      sessionStorage.setItem('dh_user', lsUser);
+      sessionStorage.setItem('dh_name', lsName||lsUser);
+      // token không có → sẽ được verify async bên dưới, nếu fail mới redirect
+    } else {
+      location.href = 'login.html';
+    }
+  }
+})();
 
 // ── Xác thực session token với DB ngay khi load ──
 (async () => {
   const username = sessionStorage.getItem('dh_user');
   const token    = sessionStorage.getItem('dh_token');
-  if (!username || !token) { sessionStorage.clear(); location.href = 'login.html'; return; }
+  if (!username) { sessionStorage.clear(); location.href = 'login.html'; return; }
+  // Nếu không có token (tab mới từ localStorage) → verify active status từ DB
   try {
     const { data: s } = await db.from('students').select('session_token,active').eq('username', username).single();
-    if (!s || s.session_token !== token || s.active === false) {
-      sessionStorage.clear();
-      location.href = 'login.html';
+    if (!s || s.active === false) {
+      sessionStorage.clear(); localStorage.removeItem('dh_user'); localStorage.removeItem('dh_role');
+      location.href = 'login.html'; return;
+    }
+    // Có token thì verify khớp
+    if (token && s.session_token !== token) {
+      sessionStorage.clear(); location.href = 'login.html'; return;
+    }
+    // Không có token thì lưu lại token từ DB vào session để các lần sau dùng
+    if (!token && s.session_token) {
+      sessionStorage.setItem('dh_token', s.session_token);
     }
   } catch(e) { /* network error — cho qua */ }
 })();

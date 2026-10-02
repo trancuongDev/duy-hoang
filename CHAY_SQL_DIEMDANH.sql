@@ -61,6 +61,12 @@ alter table dd_absences disable row level security;
 -- Thêm cột nếu bảng đã tồn tại (migration)
 alter table dd_sessions add column if not exists auto_open  boolean default false;
 alter table dd_sessions add column if not exists auto_close boolean default false;
+-- Link học trực tiếp (Google Meet, TikTok Live, Zoom, YouTube...)
+alter table dd_sessions add column if not exists live_link text default null;
+alter table dd_sessions add column if not exists live_type text default null; -- meet | tiktok | zoom | youtube | other
+alter table dd_sessions add column if not exists platform_type text default null; -- nền tảng học: meet | tiktok | zoom | youtube | other (lưu ngay cả khi ko có link)
+alter table dd_sessions add column if not exists session_note text default null; -- ghi chú buổi học (hiện cho cả GV và HS)
+
 create index if not exists idx_dd_sessions_date  on dd_sessions(session_date);
 create index if not exists idx_dd_sessions_class on dd_sessions(class_name);
 create index if not exists idx_dd_sessions_status on dd_sessions(status);

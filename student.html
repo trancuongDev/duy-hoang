@@ -81,9 +81,6 @@
       <a href="groups.html" class="slink" data-label="Nhóm trao đổi">
         <span class="slink-icon">💬</span><span class="slink-label">Nhóm trao đổi</span>
       </a>
-      <a href="#" class="slink" data-page="schedule" data-label="Lịch học">
-        <span class="slink-icon">📅</span><span class="slink-label">Lịch học</span>
-      </a>
       <a href="diemdanh-student.html" class="slink" data-label="Điểm danh"
          onclick="localStorage.setItem('dh_user',sessionStorage.getItem('dh_user')||'');localStorage.setItem('dh_name',sessionStorage.getItem('dh_name')||'');localStorage.setItem('dh_role',sessionStorage.getItem('dh_role')||'')"
          target="_blank">
@@ -152,6 +149,7 @@
       </div>
       <style>
         @media (max-width: 768px) { #studentGreetingBanner { display: none !important; } }
+        @media (max-width: 768px) { #pageGuide .guide-grid { grid-template-columns: 1fr !important; } #pageGuide .guide-grid > [style*="grid-column:span 2"] { grid-column: span 1 !important; } }
       </style>
 
       <!-- Hero banner -->
@@ -367,75 +365,192 @@
     <!-- HƯỚNG DẪN -->
     <section class="page" id="pageGuide">
       <h1 class="page-title">📖 Hướng dẫn sử dụng</h1>
-      <div class="form-panel" style="max-width:720px;gap:1rem">
+      <div class="guide-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;align-items:start">
 
-        <!-- Dang nhap -->
-        <div style="background:var(--primary-light);border-radius:12px;padding:1rem 1.25rem">
-          <div style="font-weight:800;font-size:.95rem;color:var(--primary);margin-bottom:.5rem">🔐 Đăng nhập</div>
-          <p style="font-size:.88rem;line-height:1.7;color:var(--text)">Nhắn <b>Trợ Lý - Trần Cường hoặc Quốc Toàn</b> cung cấp tên lớp, Gmail + SĐT để nhận thông tin đăng nhập. Mỗi tài khoản chỉ hoạt động trên <b>01 thiết bị</b> tại một thời điểm. Sau <b>5 lần nhập sai</b> mật khẩu, tài khoản sẽ bị khóa tự động.</p>
-          <div style="background:#fff;border-radius:8px;padding:.6rem .9rem;margin-top:.6rem;border:1px solid var(--primary-light,#e0e7ff);font-size:.82rem;color:var(--primary)">
-            <div style="font-weight:700;margin-bottom:.35rem">📌 Mẫu nhắn tin (4 tin riêng):</div>
-            <div style="display:flex;flex-direction:column;gap:.25rem;font-family:monospace">
-              <span><b>Tin 1:</b> xin cấp tài khoản học tập trên web</span>
-              <span><b>Tin 2:</b> Tên lớp (VD: vsat 6)</span>
-              <span><b>Tin 3:</b> Số điện thoại</span>
-              <span><b>Tin 4:</b> Gmail</span>
+        <!-- Đăng nhập -->
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden">
+          <div style="background:linear-gradient(135deg,rgba(99,102,241,.25),rgba(99,102,241,.1));padding:.9rem 1.25rem;display:flex;align-items:center;gap:.75rem;border-bottom:1px solid var(--border)">
+            <div style="width:36px;height:36px;background:#6366f1;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0">🔐</div>
+            <div>
+              <div style="font-weight:800;font-size:.95rem">Đăng nhập lần đầu</div>
+              <div style="font-size:.76rem;color:var(--muted);margin-top:.1rem">Cách nhận tài khoản học tập</div>
+            </div>
+          </div>
+          <div style="padding:1rem 1.25rem;display:flex;flex-direction:column;gap:.65rem;font-size:.87rem;line-height:1.65;color:var(--text)">
+            <p>Nhắn tin cho <strong>Trợ Lý - Trần Cường hoặc Quốc Toàn</strong> theo mẫu sau (4 tin riêng):</p>
+            <div style="background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.2);border-radius:10px;padding:.75rem 1rem;font-family:monospace;font-size:.84rem;display:flex;flex-direction:column;gap:.3rem">
+              <span>📩 <b>Tin 1:</b> xin cấp tài khoản học tập trên web</span>
+              <span>📩 <b>Tin 2:</b> Tên lớp (VD: Toán 12A)</span>
+              <span>📩 <b>Tin 3:</b> Số điện thoại</span>
+              <span>📩 <b>Tin 4:</b> Gmail</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:.35rem">
+              <div style="display:flex;align-items:flex-start;gap:.5rem"><span style="color:#f59e0b;flex-shrink:0">⚠️</span><span>Mỗi tài khoản chỉ đăng nhập được trên <strong>1 thiết bị</strong> tại một thời điểm.</span></div>
+              <div style="display:flex;align-items:flex-start;gap:.5rem"><span style="color:#f59e0b;flex-shrink:0">⚠️</span><span>Nhập sai mật khẩu <strong>5 lần</strong> → tài khoản bị khóa tự động.</span></div>
+              <div style="display:flex;align-items:flex-start;gap:.5rem"><span style="color:#10b981;flex-shrink:0">✅</span><span>Mật khẩu mặc định = <strong>Mã học viên</strong> (nhận khi được cấp tài khoản).</span></div>
             </div>
           </div>
         </div>
 
-        <!-- Xem bai hoc -->
-        <div style="background:#e0f2fe;border-radius:12px;padding:1rem 1.25rem">
-          <div style="font-weight:800;font-size:.95rem;color:#0369a1;margin-bottom:.5rem">📚 Xem bài học</div>
-          <p style="font-size:.88rem;line-height:1.7;color:var(--text)">Vào mục <b>Bài học</b> → chọn nhóm bài → nhấn vào bài học để xem video và tài liệu. Hệ thống chỉ hiển thị nội dung đúng lớp bạn đã đăng ký. Dùng ô <b>tìm kiếm</b> để tìm nhanh bài học theo tên. Khi xem xong, nhấn <b>Đánh dấu đã học xong</b>. Trang chủ và mục Bài học sẽ hiện <b>Tiếp tục học</b> cho bài bạn đang học dở.</p>
-        </div>
-
-        <!-- Xem video -->
-        <div style="background:#d1fae5;border-radius:12px;padding:1rem 1.25rem">
-          <div style="font-weight:800;font-size:.95rem;color:#065f46;margin-bottom:.5rem">🎬 Xem video bài giảng</div>
-          <p style="font-size:.88rem;line-height:1.7;color:var(--text)">Nhấn vào thumbnail để phát video. Với điện thoại, nên <b>xoay ngang màn hình</b> để có trải nghiệm tốt nhất. Video được bảo vệ bản quyền và <b>không hỗ trợ tải xuống</b> dưới mọi hình thức.</p>
-        </div>
-
-        <!-- Tai lieu -->
-        <div style="background:#fef3c7;border-radius:12px;padding:1rem 1.25rem">
-          <div style="font-weight:800;font-size:.95rem;color:#92400e;margin-bottom:.5rem">📄 Tài liệu học tập</div>
-          <p style="font-size:.88rem;line-height:1.7;color:var(--text)">Nhấn vào tài liệu để xem trực tiếp trên trình duyệt. Một số tài liệu hỗ trợ tải xuống. Tài liệu chỉ dành cho học viên đã đăng ký và <b>không được phép chia sẻ</b> ra ngoài.</p>
-        </div>
-
-        <div style="background:#fef3c7;border-radius:12px;padding:1rem 1.25rem">
-          <div style="font-weight:800;font-size:.95rem;color:#92400e;margin-bottom:.5rem">💡 Góp ý buổi học</div>
-          <p style="font-size:.88rem;line-height:1.7;color:var(--text)">Sau mỗi buổi, giáo viên mở form góp ý. Vào mục <b>Góp ý buổi học</b> → chọn buổi đang mở → đánh giá tốc độ, mức hiểu bài và viết góp ý. Không ảnh hưởng điểm số — dùng để điều chỉnh buổi sau.</p>
-        </div>
-
-        <!-- Bao mat -->
-        <div style="background:#fee2e2;border-radius:12px;padding:1rem 1.25rem">
-          <div style="font-weight:800;font-size:.95rem;color:#991b1b;margin-bottom:.5rem">🚨 Lưu ý bảo mật quan trọng</div>
-          <ul style="padding-left:1.25rem;line-height:2.1;font-size:.88rem;color:var(--text)">
-            <li>Không chia sẻ tài khoản cho người khác dưới bất kỳ hình thức nào.</li>
-            <li>Nghiêm cấm chụp màn hình, quay video hoặc phát tán nội dung bài giảng.</li>
-            <li>Hệ thống giám sát toàn bộ hoạt động — mọi vi phạm đều được ghi nhận và báo cáo đến giáo viên.</li>
-            <li>Khi chuyển tab hoặc thoát khỏi trang, màn hình sẽ tự động ẩn nội dung.</li>
-            <li>Tài khoản vi phạm sẽ bị <b>khóa vĩnh viễn</b> mà không cần báo trước.</li>
-            <li>Mỗi lần đăng nhập từ thiết bị mới sẽ được ghi lại và thông báo đến giáo viên.</li>
-          </ul>
-        </div>
-
-        <!-- Lien he -->
-        <div style="background:var(--bg);border-radius:12px;padding:1rem 1.25rem;border:1.5px solid var(--border)">
-          <div style="font-weight:800;font-size:.95rem;margin-bottom:.75rem">📞 Liên hệ hỗ trợ</div>
-          <div style="display:flex;flex-direction:column;gap:.6rem;font-size:.88rem">
-            <div style="display:flex;align-items:center;gap:.75rem;padding:.6rem .75rem;background:var(--card);border-radius:10px">
-              <span style="font-size:1.2rem">🛠️</span>
-              <div><div style="font-weight:700">Kỹ thuật & Tài khoản</div><div style="color:var(--muted);font-size:.8rem">Liên hệ <b>Trợ Lý - Trần Cường hoặc Quốc Toàn</b> — cung cấp tên lớp, Gmail, SĐT và Mã HV</div></div>
+        <!-- Điểm danh -->
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden">
+          <div style="background:linear-gradient(135deg,rgba(16,185,129,.25),rgba(16,185,129,.1));padding:.9rem 1.25rem;display:flex;align-items:center;gap:.75rem;border-bottom:1px solid var(--border)">
+            <div style="width:36px;height:36px;background:#10b981;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0">✅</div>
+            <div>
+              <div style="font-weight:800;font-size:.95rem">Điểm danh buổi học</div>
+              <div style="font-size:.76rem;color:var(--muted);margin-top:.1rem">Bắt buộc làm trước khi vào lớp</div>
             </div>
-            <div style="display:flex;align-items:center;gap:.75rem;padding:.6rem .75rem;background:var(--card);border-radius:10px">
-              <span style="font-size:1.2rem">📐</span>
-              <div><div style="font-weight:700">Thắc mắc chuyên môn</div><div style="color:var(--muted);font-size:.8rem">Liên hệ trực tiếp <b>Duy Hoàng Giáo viên</b></div></div>
+          </div>
+          <div style="padding:1rem 1.25rem;font-size:.87rem;line-height:1.65;color:var(--text)">
+            <div style="display:flex;flex-direction:column;gap:.5rem">
+              <div style="display:flex;gap:.65rem;align-items:flex-start">
+                <span style="width:22px;height:22px;background:rgba(16,185,129,.15);color:#10b981;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;flex-shrink:0;margin-top:.15rem">1</span>
+                <span>Vào <strong>Điểm danh</strong> (menu bên trái hoặc nút trên trang chủ).</span>
+              </div>
+              <div style="display:flex;gap:.65rem;align-items:flex-start">
+                <span style="width:22px;height:22px;background:rgba(16,185,129,.15);color:#10b981;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;flex-shrink:0;margin-top:.15rem">2</span>
+                <span>Khi giáo viên mở buổi, nút <strong>✍️ Điểm danh ngay</strong> xuất hiện → bấm vào.</span>
+              </div>
+              <div style="display:flex;gap:.65rem;align-items:flex-start">
+                <span style="width:22px;height:22px;background:rgba(16,185,129,.15);color:#10b981;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;flex-shrink:0;margin-top:.15rem">3</span>
+                <span>Nhập <strong>Mã học viên</strong> của bạn → bấm Xác nhận.</span>
+              </div>
+              <div style="display:flex;gap:.65rem;align-items:flex-start">
+                <span style="width:22px;height:22px;background:rgba(16,185,129,.15);color:#10b981;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;flex-shrink:0;margin-top:.15rem">4</span>
+                <span>Sau khi điểm danh thành công → bấm nút vào lớp (Google Meet / TikTok Live...).</span>
+              </div>
+            </div>
+            <div style="margin-top:.85rem;display:flex;flex-direction:column;gap:.35rem">
+              <div style="display:flex;align-items:flex-start;gap:.5rem"><span style="color:#f59e0b;flex-shrink:0">⏰</span><span>Điểm danh sau <strong>30 phút</strong> kể từ giờ bắt đầu → ghi nhận <strong>Đi muộn</strong>.</span></div>
+              <div style="display:flex;align-items:flex-start;gap:.5rem"><span style="color:#ef4444;flex-shrink:0">❌</span><span>Buổi đã đóng → không điểm danh được nữa. Liên hệ giáo viên để điều chỉnh.</span></div>
             </div>
           </div>
         </div>
 
-        <p style="text-align:center;font-style:italic;color:var(--muted);font-size:.85rem;padding:.5rem 0">Chúng tôi luôn đồng hành cùng bạn trên hành trình chinh phục đại học. 💪</p>
+        <!-- Xem bài học -->
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden">
+          <div style="background:linear-gradient(135deg,rgba(14,165,233,.25),rgba(14,165,233,.1));padding:.9rem 1.25rem;display:flex;align-items:center;gap:.75rem;border-bottom:1px solid var(--border)">
+            <div style="width:36px;height:36px;background:#0ea5e9;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0">📚</div>
+            <div>
+              <div style="font-weight:800;font-size:.95rem">Xem bài học & Video</div>
+              <div style="font-size:.76rem;color:var(--muted);margin-top:.1rem">Học theo lớp, theo nhóm bài</div>
+            </div>
+          </div>
+          <div style="padding:1rem 1.25rem;font-size:.87rem;line-height:1.65;color:var(--text);display:flex;flex-direction:column;gap:.5rem">
+            <div style="display:flex;gap:.65rem;align-items:flex-start">
+              <span style="width:22px;height:22px;background:rgba(14,165,233,.15);color:#0ea5e9;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;flex-shrink:0;margin-top:.15rem">1</span>
+              <span>Vào mục <strong>Bài học</strong> → chọn nhóm bài → nhấn vào bài học muốn học.</span>
+            </div>
+            <div style="display:flex;gap:.65rem;align-items:flex-start">
+              <span style="width:22px;height:22px;background:rgba(14,165,233,.15);color:#0ea5e9;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;flex-shrink:0;margin-top:.15rem">2</span>
+              <span>Bấm vào thumbnail video để xem. Trên điện thoại nên <strong>xoay ngang</strong> màn hình.</span>
+            </div>
+            <div style="display:flex;gap:.65rem;align-items:flex-start">
+              <span style="width:22px;height:22px;background:rgba(14,165,233,.15);color:#0ea5e9;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;flex-shrink:0;margin-top:.15rem">3</span>
+              <span>Xem xong → nhấn <strong>✅ Đánh dấu đã học xong</strong> để lưu tiến độ.</span>
+            </div>
+            <div style="display:flex;gap:.65rem;align-items:flex-start">
+              <span style="width:22px;height:22px;background:rgba(14,165,233,.15);color:#0ea5e9;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;flex-shrink:0;margin-top:.15rem">4</span>
+              <span>Dùng ô <strong>🔍 tìm kiếm</strong> để tìm nhanh bài học theo tên.</span>
+            </div>
+            <div style="margin-top:.25rem;padding:.6rem .85rem;background:rgba(14,165,233,.07);border-radius:9px;font-size:.82rem;color:#38bdf8">
+              💡 Trang chủ hiện nút <strong>Tiếp tục học</strong> cho bài bạn đang học dở — bấm vào để tiếp tục ngay.
+            </div>
+          </div>
+        </div>
+
+        <!-- Báo vắng -->
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden">
+          <div style="background:linear-gradient(135deg,rgba(239,68,68,.25),rgba(239,68,68,.1));padding:.9rem 1.25rem;display:flex;align-items:center;gap:.75rem;border-bottom:1px solid var(--border)">
+            <div style="width:36px;height:36px;background:#ef4444;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0">🔴</div>
+            <div>
+              <div style="font-weight:800;font-size:.95rem">Báo vắng</div>
+              <div style="font-size:.76rem;color:var(--muted);margin-top:.1rem">Gửi đơn xin phép trước buổi học</div>
+            </div>
+          </div>
+          <div style="padding:1rem 1.25rem;font-size:.87rem;line-height:1.65;color:var(--text);display:flex;flex-direction:column;gap:.5rem">
+            <div style="display:flex;gap:.65rem;align-items:flex-start">
+              <span style="width:22px;height:22px;background:rgba(239,68,68,.12);color:#ef4444;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;flex-shrink:0;margin-top:.15rem">1</span>
+              <span>Vào <strong>Điểm danh → tab Báo vắng</strong>.</span>
+            </div>
+            <div style="display:flex;gap:.65rem;align-items:flex-start">
+              <span style="width:22px;height:22px;background:rgba(239,68,68,.12);color:#ef4444;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;flex-shrink:0;margin-top:.15rem">2</span>
+              <span>Chọn buổi học cần xin phép, chọn lý do → bấm <strong>📩 Gửi đơn</strong>.</span>
+            </div>
+            <div style="display:flex;gap:.65rem;align-items:flex-start">
+              <span style="width:22px;height:22px;background:rgba(239,68,68,.12);color:#ef4444;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;flex-shrink:0;margin-top:.15rem">3</span>
+              <span>Giáo viên duyệt → trạng thái đổi thành <strong style="color:#10b981">✅ Có phép</strong> hoặc <strong style="color:#ef4444">❌ Từ chối</strong>.</span>
+            </div>
+            <div style="padding:.6rem .85rem;background:rgba(239,68,68,.07);border-radius:9px;font-size:.82rem;color:#fca5a5">
+              ⚠️ Nên gửi đơn <strong>trước</strong> buổi học. Vắng không phép ảnh hưởng tỉ lệ chuyên cần.
+            </div>
+          </div>
+        </div>
+
+        <!-- Lịch học -->
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden">
+          <div style="background:linear-gradient(135deg,rgba(59,130,246,.25),rgba(59,130,246,.1));padding:.9rem 1.25rem;display:flex;align-items:center;gap:.75rem;border-bottom:1px solid var(--border)">
+            <div style="width:36px;height:36px;background:#3b82f6;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0">📆</div>
+            <div>
+              <div style="font-weight:800;font-size:.95rem">Xem lịch học</div>
+              <div style="font-size:.76rem;color:var(--muted);margin-top:.1rem">Biết trước lịch để sắp xếp thời gian</div>
+            </div>
+          </div>
+          <div style="padding:1rem 1.25rem;font-size:.87rem;line-height:1.65;color:var(--text);display:flex;flex-direction:column;gap:.5rem">
+            <p>Vào <strong>Điểm danh → tab 📆 Lịch học</strong> để xem lịch các buổi học sắp tới theo tuần.</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.4rem;margin-top:.1rem">
+              <div style="background:rgba(59,130,246,.08);border-radius:9px;padding:.55rem .7rem;font-size:.8rem;color:#60a5fa;text-align:center">🕐 Sắp học<br/><strong>Chưa mở</strong></div>
+              <div style="background:rgba(16,185,129,.08);border-radius:9px;padding:.55rem .7rem;font-size:.8rem;color:#6ee7b7;text-align:center">🟢 Đang mở<br/><strong>Vào điểm danh</strong></div>
+              <div style="background:rgba(255,255,255,.04);border-radius:9px;padding:.55rem .7rem;font-size:.8rem;color:var(--muted);text-align:center">🔒 Đã đóng<br/><strong>Kết thúc</strong></div>
+            </div>
+            <p>Dùng nút <strong>‹ ›</strong> để xem tuần trước/sau. Bấm <strong>Hôm nay</strong> để quay về tuần hiện tại.</p>
+          </div>
+        </div>
+
+        <!-- Bảo mật -->
+        <div style="background:var(--card);border:1px solid rgba(239,68,68,.3);border-radius:16px;overflow:hidden;grid-column:span 2">
+          <div style="background:linear-gradient(135deg,rgba(239,68,68,.2),rgba(239,68,68,.07));padding:.9rem 1.25rem;display:flex;align-items:center;gap:.75rem;border-bottom:1px solid rgba(239,68,68,.2)">
+            <div style="width:36px;height:36px;background:#ef4444;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0">🚨</div>
+            <div>
+              <div style="font-weight:800;font-size:.95rem">Lưu ý bảo mật quan trọng</div>
+              <div style="font-size:.76rem;color:var(--muted);margin-top:.1rem">Đọc kỹ để tránh bị khóa tài khoản</div>
+            </div>
+          </div>
+          <div style="padding:1rem 1.25rem;font-size:.87rem;display:flex;flex-direction:column;gap:.45rem">
+            <div style="display:flex;align-items:flex-start;gap:.5rem;color:var(--text)"><span style="color:#ef4444;flex-shrink:0">❌</span><span>Không chia sẻ tài khoản cho người khác dưới bất kỳ hình thức nào.</span></div>
+            <div style="display:flex;align-items:flex-start;gap:.5rem;color:var(--text)"><span style="color:#ef4444;flex-shrink:0">❌</span><span>Nghiêm cấm chụp màn hình, quay video hoặc phát tán nội dung bài giảng.</span></div>
+            <div style="display:flex;align-items:flex-start;gap:.5rem;color:var(--text)"><span style="color:#ef4444;flex-shrink:0">❌</span><span>Khi chuyển tab hoặc thoát trang, màn hình tự động ẩn nội dung bài học.</span></div>
+            <div style="display:flex;align-items:flex-start;gap:.5rem;color:var(--text)"><span style="color:#f59e0b;flex-shrink:0">⚠️</span><span>Hệ thống giám sát toàn bộ hoạt động — mọi vi phạm đều được ghi lại và báo cáo.</span></div>
+            <div style="display:flex;align-items:flex-start;gap:.5rem;color:var(--text)"><span style="color:#f59e0b;flex-shrink:0">⚠️</span><span>Đăng nhập từ thiết bị mới → giáo viên nhận thông báo ngay lập tức.</span></div>
+            <div style="display:flex;align-items:flex-start;gap:.5rem;color:var(--text)"><span style="color:#ef4444;flex-shrink:0">🔒</span><span>Tài khoản vi phạm bị <strong>khóa vĩnh viễn</strong> không cần báo trước.</span></div>
+          </div>
+        </div>
+
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1rem 1.25rem;grid-column:span 2">
+          <div style="font-weight:800;font-size:.92rem;margin-bottom:.85rem;display:flex;align-items:center;gap:.5rem">
+            <span style="font-size:1.1rem">📞</span> Liên hệ hỗ trợ
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+            <div style="display:flex;align-items:flex-start;gap:.85rem;padding:.9rem 1rem;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:12px">
+              <span style="font-size:1.6rem;flex-shrink:0">🛠️</span>
+              <div style="font-size:.87rem;min-width:0">
+                <div style="font-weight:800;margin-bottom:.3rem">Kỹ thuật & Tài khoản</div>
+                <div style="color:var(--muted);font-size:.82rem;line-height:1.55">Nhắn <strong>Trợ Lý - Trần Cường hoặc Quốc Toàn</strong></div>
+                <div style="color:var(--muted);font-size:.79rem;margin-top:.2rem">Cung cấp: tên lớp · Gmail · SĐT · Mã HV</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:.85rem;padding:.9rem 1rem;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:12px">
+              <span style="font-size:1.6rem;flex-shrink:0">📐</span>
+              <div style="font-size:.87rem;min-width:0">
+                <div style="font-weight:800;margin-bottom:.3rem">Thắc mắc chuyên môn</div>
+                <div style="color:var(--muted);font-size:.82rem;line-height:1.55">Liên hệ trực tiếp <strong>Duy Hoàng Giáo viên</strong></div>
+                <div style="color:var(--muted);font-size:.79rem;margin-top:.2rem">Bài học · Bài tập · Kiến thức</div>
+              </div>
+            </div>
+          </div>
+          <p style="text-align:center;font-style:italic;color:var(--muted);font-size:.83rem;margin-top:.85rem">Chúng tôi luôn đồng hành cùng bạn trên hành trình chinh phục đại học. 💪</p>
+        </div>
+
       </div>
     </section>
 

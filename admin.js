@@ -275,7 +275,13 @@ function showConfirm(message, onOk, { title='Xác nhận xóa', icon='🗑', okT
 }
 
 // Auth guard
-const _role = sessionStorage.getItem('dh_role');
+const _role = sessionStorage.getItem('dh_role') || localStorage.getItem('dh_role');
+// Nếu chỉ có trong localStorage thì sync lại vào sessionStorage để các hàm khác dùng
+if(_role && !sessionStorage.getItem('dh_role')){
+  sessionStorage.setItem('dh_role', _role);
+  sessionStorage.setItem('dh_user', localStorage.getItem('dh_user')||'');
+  sessionStorage.setItem('dh_name', localStorage.getItem('dh_name')||'');
+}
 if (_role !== 'teacher' && _role !== 'assistant') location.href = 'login.html';
 const isTeacher = _role === 'teacher';
 
