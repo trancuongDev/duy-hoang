@@ -15,15 +15,11 @@
       --shadow:0 4px 24px rgba(0,0,0,.08);
     }
     body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;line-height:1.6}
-    /* SCROLL */
     ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:transparent}
     ::-webkit-scrollbar-thumb{background:rgba(99,102,241,.3);border-radius:99px}
-    /* LAYOUT */
     .pw{max-width:900px;margin:0 auto;padding:2rem 1.25rem 6rem}
-    /* BACK BTN */
     .back{display:inline-flex;align-items:center;gap:.45rem;text-decoration:none;color:var(--primary);font-weight:700;font-size:.88rem;margin-bottom:1.5rem;padding:.5rem 1rem;border:1.5px solid #c7d2fe;border-radius:12px;background:var(--card);transition:all .2s;box-shadow:0 2px 8px rgba(99,102,241,.1)}
     .back:hover{background:var(--primary-light);transform:translateX(-2px)}
-    /* HERO HEADER */
     .ph{background:linear-gradient(135deg,#050314 0%,#0f0c29 30%,#1e1b4b 60%,#16213e 100%);border-radius:24px;padding:3rem 2.5rem 2.5rem;color:#fff;margin-bottom:2rem;position:relative;overflow:hidden}
     .ph::before{content:'';position:absolute;top:-80px;right:-80px;width:320px;height:320px;background:radial-gradient(circle,rgba(99,102,241,.25) 0%,transparent 70%);border-radius:50%}
     .ph::after{content:'';position:absolute;bottom:-100px;left:-60px;width:280px;height:280px;background:radial-gradient(circle,rgba(139,92,246,.15) 0%,transparent 70%);border-radius:50%}
@@ -33,13 +29,11 @@
     .ph .sub{font-size:.88rem;opacity:.65;margin:0 0 .3rem;position:relative;z-index:1}
     .ph .warn-box{background:rgba(245,158,11,.15);border:1.5px solid rgba(245,158,11,.4);border-radius:12px;padding:.75rem 1.1rem;font-size:.83rem;color:#fde68a;font-weight:600;margin-top:1.1rem;position:relative;z-index:1;line-height:1.7;display:flex;align-items:flex-start;gap:.5rem}
     .ph .ver{font-size:.73rem;opacity:.45;margin-top:.75rem;position:relative;z-index:1}
-    /* STAT BOXES */
     .stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:.6rem;margin-top:1.5rem;position:relative;z-index:1}
     .stat-box{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:.8rem .6rem;text-align:center;backdrop-filter:blur(8px);transition:background .2s}
     .stat-box:hover{background:rgba(255,255,255,.12)}
     .stat-box .sn{font-size:1rem;font-weight:900;color:#fff;letter-spacing:-.3px}
     .stat-box .sl{font-size:.62rem;opacity:.55;margin-top:.2rem;color:#e0e7ff;font-weight:600}
-    /* TOC */
     .toc{background:var(--card);border-radius:20px;padding:1.5rem;margin-bottom:1.75rem;border:1.5px solid var(--border);box-shadow:var(--shadow);position:relative;overflow:hidden}
     .toc::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--primary),var(--purple))}
     .toc h3{font-size:.88rem;font-weight:800;color:var(--primary-dark);margin:0 0 1rem;display:flex;align-items:center;gap:.4rem;padding-top:.15rem}
@@ -47,7 +41,6 @@
     .toc li{font-size:.83rem;line-height:2.1;break-inside:avoid}
     .toc a{color:var(--primary);text-decoration:none;font-weight:600;transition:color .15s}
     .toc a:hover{color:var(--primary-dark);text-decoration:underline}
-    /* SECTIONS */
     .sec{background:var(--card);border-radius:20px;padding:1.75rem;margin-bottom:1.25rem;border:1.5px solid var(--border);box-shadow:var(--shadow);scroll-margin-top:1rem;position:relative;overflow:hidden;transition:box-shadow .2s}
     .sec:hover{box-shadow:0 8px 32px rgba(99,102,241,.1)}
     .sec-accent{position:absolute;top:0;left:0;width:4px;height:100%;border-radius:4px 0 0 4px}
@@ -58,7 +51,6 @@
     .sec li{margin-bottom:.35rem}
     .sec li::marker{color:var(--primary)}
     .sec strong{color:var(--text)}
-    /* NOTES */
     .note{border-radius:12px;padding:.8rem 1.1rem;font-size:.85rem;font-weight:600;margin:.85rem 0;line-height:1.7;display:flex;align-items:flex-start;gap:.6rem}
     .note .ni{font-size:1rem;flex-shrink:0;margin-top:.05rem}
     .note.blue{background:#eef2ff;border:1.5px solid #c7d2fe;color:#3730a3}
@@ -67,19 +59,17 @@
     .note.yellow{background:#fefce8;border:1.5px solid #fde68a;color:#92400e}
     .note.sky{background:#f0f9ff;border:1.5px solid #bae6fd;color:#0369a1}
     .note.purple{background:#faf5ff;border:1.5px solid #e9d5ff;color:#5b21b6}
+    .note.orange{background:#fff7ed;border:1.5px solid #fed7aa;color:#9a3412}
     .note.dark{background:#1e1b4b;border:none;color:#e0e7ff}
-    /* LAW */
     .law{background:linear-gradient(135deg,#0f0c29,#1e1b4b);border-radius:14px;padding:1.1rem 1.35rem;color:#fff;margin:.85rem 0;border:1px solid rgba(99,102,241,.3)}
     .law .lt{font-size:.7rem;font-weight:800;letter-spacing:.6px;opacity:.55;text-transform:uppercase;margin-bottom:.4rem;display:flex;align-items:center;gap:.35rem}
     .law .lb{font-size:.84rem;line-height:1.8;opacity:.88}
-    /* FEATURE GRID */
     .fg{display:grid;grid-template-columns:repeat(auto-fill,minmax(195px,1fr));gap:.75rem;margin:.9rem 0}
     .fc{background:linear-gradient(135deg,var(--primary-light),#f5f3ff);border:1.5px solid #ddd6fe;border-radius:14px;padding:1rem 1.1rem;transition:transform .18s,box-shadow .18s}
     .fc:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(99,102,241,.15)}
     .fc .fi{font-size:1.6rem;margin-bottom:.4rem}
     .fc .ft{font-size:.85rem;font-weight:800;color:var(--primary-dark);margin-bottom:.2rem}
     .fc .fd{font-size:.78rem;color:var(--muted);line-height:1.6}
-    /* TABLE */
     .vtable{width:100%;border-collapse:separate;border-spacing:0;font-size:.85rem;margin:.85rem 0;border-radius:14px;overflow:hidden;border:1.5px solid var(--border)}
     .vtable thead tr{background:linear-gradient(135deg,var(--primary-light),#f5f3ff)}
     .vtable th{padding:.65rem .9rem;text-align:left;font-weight:800;color:var(--primary-dark);border-bottom:2px solid #ddd6fe}
@@ -87,9 +77,7 @@
     .vtable tr:last-child td{border-bottom:none}
     .vtable tr:nth-child(even) td{background:#fafafa}
     .vtable tr:hover td{background:var(--primary-light)}
-    /* TAGS */
     .tag{display:inline-flex;align-items:center;background:var(--primary-light);color:var(--primary-dark);border-radius:8px;padding:.12rem .55rem;font-size:.72rem;font-weight:700;margin:.1rem .15rem;border:1px solid #ddd6fe}
-    /* CONTACT */
     .contact-row{display:flex;gap:.85rem;flex-wrap:wrap;margin:.85rem 0}
     .contact-card{flex:1;min-width:175px;background:linear-gradient(135deg,#eef2ff,#f5f3ff);border:1.5px solid #ddd6fe;border-radius:16px;padding:1.25rem 1rem;text-align:center;transition:transform .18s,box-shadow .18s}
     .contact-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(99,102,241,.18)}
@@ -98,11 +86,15 @@
     .contact-card .cc-role{font-size:.75rem;color:var(--primary);font-weight:600;margin-bottom:.6rem}
     .contact-card a{display:inline-flex;align-items:center;gap:.3rem;background:var(--primary);color:#fff;border-radius:10px;padding:.42rem .9rem;font-size:.8rem;font-weight:700;text-decoration:none;transition:background .15s,transform .1s;box-shadow:0 2px 8px rgba(99,102,241,.35)}
     .contact-card a:hover{background:var(--primary-dark);transform:scale(1.03)}
-    /* FOOTER */
     .footer-note{text-align:center;font-size:.77rem;color:var(--muted);margin-top:2.5rem;padding-top:1.5rem;border-top:1.5px dashed var(--border);line-height:2}
     .footer-home{display:inline-flex;align-items:center;gap:.4rem;text-decoration:none;color:var(--primary);font-weight:700;padding:.5rem 1.1rem;border:1.5px solid #c7d2fe;border-radius:12px;background:var(--card);transition:all .2s;margin-top:.75rem;font-size:.88rem}
     .footer-home:hover{background:var(--primary-light)}
-    /* RESPONSIVE */
+    /* Badge điểm danh */
+    .dd-badge-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.6rem;margin:.9rem 0}
+    .dd-badge{border-radius:12px;padding:.75rem .9rem;font-size:.82rem;font-weight:700;display:flex;align-items:flex-start;gap:.55rem;border:1.5px solid}
+    .dd-badge .dbi{font-size:1.1rem;flex-shrink:0;margin-top:.05rem}
+    .dd-badge .dbt{font-weight:800;font-size:.82rem;margin-bottom:.18rem}
+    .dd-badge .dbd{font-size:.76rem;font-weight:500;line-height:1.5;opacity:.85}
     @media(max-width:640px){
       .pw{padding:1rem .85rem 5rem}
       .ph{padding:2rem 1.4rem 2rem}
@@ -111,8 +103,8 @@
       .toc ol{columns:1}
       .fg{grid-template-columns:1fr 1fr}
       .contact-row{flex-direction:column}
+      .dd-badge-row{grid-template-columns:1fr 1fr}
     }
-    /* DARK MODE */
     @media(prefers-color-scheme:dark){
       :root{--text:#e2e8f0;--muted:#94a3b8;--border:#334155;--bg:#0f172a;--card:#1e293b}
       .toc,.sec,.fc,.contact-card{background:#1e293b;border-color:#334155}
@@ -127,6 +119,7 @@
       .note.yellow{background:#78350f;border-color:#d97706;color:#fde68a}
       .note.sky{background:#0c4a6e;border-color:#0284c7;color:#bae6fd}
       .note.purple{background:#2e1065;border-color:#7c3aed;color:#ddd6fe}
+      .note.orange{background:#431407;border-color:#ea580c;color:#fed7aa}
       .back,.footer-home{background:#1e293b;border-color:#334155;color:#a5b4fc}
       .sec h2,.toc h3{color:#a5b4fc}
       .toc a{color:#a5b4fc}
@@ -147,7 +140,7 @@
       <span>⚠️</span>
       <span>Vui lòng đọc kỹ trước khi sử dụng hệ thống. Việc đăng nhập đồng nghĩa bạn đã đọc, hiểu và <strong>đồng ý toàn bộ</strong> nội dung dưới đây.</span>
     </div>
-    <p class="ver">Cập nhật lần cuối: Tháng 8 năm 2026 &nbsp;•&nbsp; Phiên bản v1.5.1</p>
+    <p class="ver">Cập nhật lần cuối: Tháng 10 năm 2026 &nbsp;•&nbsp; Phiên bản v1.6.0</p>
     <div class="stat-row">
       <div class="stat-box"><div class="sn">100%</div><div class="sl">Nội dung độc quyền</div></div>
       <div class="stat-box"><div class="sn">24/7</div><div class="sl">Giám sát bảo mật</div></div>
@@ -159,25 +152,27 @@
   <!-- TOC -->
   <div class="toc">
     <h3>📑 Mục lục</h3>
-    <ol>
-      <li><a href="#s1">Giới thiệu về DHDT LMS</a></li>
-      <li><a href="#s2">Thông tin thu thập</a></li>
-      <li><a href="#s3">Mục đích sử dụng thông tin</a></li>
-      <li><a href="#s4">Điều khoản sử dụng</a></li>
-      <li><a href="#s5">Bảo mật tài khoản</a></li>
-      <li><a href="#s6">Nội dung & Bản quyền</a></li>
-      <li><a href="#slib">Thư viện số & tài liệu bên ngoài</a></li>
-      <li><a href="#s7">Giám sát & Ghi nhận hoạt động</a></li>
-      <li><a href="#s8">Chính sách thiết bị</a></li>
-      <li><a href="#s9">Hết hạn tài khoản</a></li>
-      <li><a href="#s10">Quy định bài kiểm tra trực tuyến</a></li>
-      <li><a href="#s11">Quy tắc ứng xử</a></li>
-      <li><a href="#s12">Lưu trữ & Xóa dữ liệu</a></li>
-      <li><a href="#s13">Xử lý vi phạm</a></li>
-      <li><a href="#s14">Căn cứ pháp lý</a></li>
-      <li><a href="#s15">Trách nhiệm nhà phát triển</a></li>
-      <li><a href="#s16">Thay đổi chính sách</a></li>
-      <li><a href="#s17">Liên hệ hỗ trợ</a></li>
+    <ol style="list-style:none;padding:0;columns:2;column-gap:1.5rem">
+      <li style="line-height:2.1;font-size:.83rem;break-inside:avoid"><a href="#s1" style="color:var(--primary);text-decoration:none;font-weight:600">1. Giới thiệu về DHDT LMS</a></li>
+      <li style="line-height:2.1;font-size:.83rem;break-inside:avoid"><a href="#s2" style="color:var(--primary);text-decoration:none;font-weight:600">2. Thông tin thu thập</a></li>
+      <li style="line-height:2.1;font-size:.83rem;break-inside:avoid"><a href="#s3" style="color:var(--primary);text-decoration:none;font-weight:600">3. Mục đích sử dụng thông tin</a></li>
+      <li style="line-height:2.1;font-size:.83rem;break-inside:avoid"><a href="#s4" style="color:var(--primary);text-decoration:none;font-weight:600">4. Điều khoản sử dụng</a></li>
+      <li style="line-height:2.1;font-size:.83rem;break-inside:avoid"><a href="#s5" style="color:var(--primary);text-decoration:none;font-weight:600">5. Bảo mật tài khoản</a></li>
+      <li style="line-height:2.1;font-size:.83rem;break-inside:avoid"><a href="#s6" style="color:var(--primary);text-decoration:none;font-weight:600">6. Nội dung &amp; Bản quyền</a></li>
+      <li style="line-height:2.1;font-size:.83rem;break-inside:avoid"><a href="#slib" style="color:var(--primary);text-decoration:none;font-weight:600">6A. Thư viện số &amp; tài liệu bên ngoài</a></li>
+      <li style="line-height:2.1;font-size:.83rem;break-inside:avoid"><a href="#s7" style="color:var(--primary);text-decoration:none;font-weight:600">7. Giám sát &amp; Ghi nhận hoạt động</a></li>
+      <li style="line-height:2.1;font-size:.83rem;break-inside:avoid"><a href="#s8" style="color:var(--primary);text-decoration:none;font-weight:600">8. Chính sách thiết bị</a></li>
+      <li style="line-height:2.1;font-size:.83rem;break-inside:avoid"><a href="#s9" style="color:var(--primary);text-decoration:none;font-weight:600">9. Hết hạn tài khoản</a></li>
+      <li style="line-height:2.1;font-size:.83rem;break-inside:avoid"><a href="#s10" style="color:var(--primary);text-decoration:none;font-weight:600">10. Quy định bài kiểm tra trực tuyến</a></li>
+      <li style="line-height:2.1;font-size:.83rem;break-inside:avoid"><a href="#sdd" style="color:var(--primary);text-decoration:none;font-weight:600">11. Hệ thống điểm danh</a></li>
+      <li style="line-height:2.1;font-size:.83rem;break-inside:avoid"><a href="#s11" style="color:var(--primary);text-decoration:none;font-weight:600">12. Quy tắc ứng xử</a></li>
+      <li style="line-height:2.1;font-size:.83rem;break-inside:avoid"><a href="#s12" style="color:var(--primary);text-decoration:none;font-weight:600">13. Lưu trữ &amp; Xóa dữ liệu</a></li>
+      <li style="line-height:2.1;font-size:.83rem;break-inside:avoid"><a href="#s13" style="color:var(--primary);text-decoration:none;font-weight:600">14. Xử lý vi phạm</a></li>
+      <li style="line-height:2.1;font-size:.83rem;break-inside:avoid"><a href="#s14" style="color:var(--primary);text-decoration:none;font-weight:600">15. Căn cứ pháp lý</a></li>
+      <li style="line-height:2.1;font-size:.83rem;break-inside:avoid"><a href="#s15" style="color:var(--primary);text-decoration:none;font-weight:600">16. Trách nhiệm nhà phát triển</a></li>
+      <li style="line-height:2.1;font-size:.83rem;break-inside:avoid"><a href="#s16" style="color:var(--primary);text-decoration:none;font-weight:600">17. Thay đổi chính sách</a></li>
+      <li style="line-height:2.1;font-size:.83rem;break-inside:avoid"><a href="#s17" style="color:var(--primary);text-decoration:none;font-weight:600">18. Liên hệ hỗ trợ</a></li>
+      <li style="line-height:2.1;font-size:.83rem;break-inside:avoid"><a href="#sqtg" style="color:var(--primary);text-decoration:none;font-weight:600">19. Quyền tác giả &amp; Sở hữu nội dung</a></li>
     </ol>
   </div>
 
@@ -191,8 +186,9 @@
       <div class="fc"><div class="fi">📄</div><div class="ft">Tài liệu chọn lọc</div><div class="fd">Đề thi, bài tập, tóm tắt lý thuyết được biên soạn kỹ lưỡng.</div></div>
       <div class="fc"><div class="fi">📅</div><div class="ft">Lịch học trực tuyến</div><div class="fd">Cập nhật lịch học, buổi live và sự kiện học tập realtime.</div></div>
       <div class="fc"><div class="fi">📢</div><div class="ft">Thông báo từ giáo viên</div><div class="fd">Nhận thông báo, nhắc nhở và hướng dẫn trực tiếp từ Duy Hoàng.</div></div>
+      <div class="fc"><div class="fi">✅</div><div class="ft">Điểm danh trực tuyến</div><div class="fd">Hệ thống điểm danh realtime, theo dõi chuyên cần, xin vắng có phép.</div></div>
       <div class="fc"><div class="fi">📝</div><div class="ft">Kiểm tra online</div><div class="fd">Hệ thống thi trực tuyến có giám sát, xáo đề, chống gian lận.</div></div>
-      <div class="fc"><div class="fi">🏛️</div><div class="ft">Thư viện số</div><div class="fd">Mục lục link tới Bộ GDĐT, NXBGD, đại học — đọc trên website gốc, không lưu file sách.</div></div>
+      <div class="fc"><div class="fi">🏛️</div><div class="ft">Thư viện số</div><div class="fd">Mục lục link tới Bộ GDĐT, NXBGD, đại học — đọc trên website gốc.</div></div>
       <div class="fc"><div class="fi">🔒</div><div class="ft">Bảo mật cao cấp</div><div class="fd">Mã hóa nội dung, giám sát 24/7, chống sao chép và bảo vệ bản quyền.</div></div>
     </div>
     <div class="note green"><span class="ni">✅</span><span>Hệ thống chỉ dành cho học viên đã đăng ký chính thức. Mọi truy cập trái phép đều bị ghi nhận và xử lý.</span></div>
@@ -216,6 +212,8 @@
       <li>Số lần nhập sai mật khẩu; fingerprint thiết bị</li>
       <li>Vi phạm bảo mật, hành vi bất thường được cảnh báo</li>
       <li>Điểm thi đua, chuỗi ngày học; kết quả bài kiểm tra</li>
+      <li><strong>Dữ liệu điểm danh:</strong> thời gian check-in, thiết bị điểm danh, trạng thái (đúng giờ / đi muộn / vắng / có phép)</li>
+      <li><strong>Đơn xin vắng:</strong> lý do, thời gian gửi, trạng thái duyệt và ghi chú của giáo viên</li>
     </ul>
     <div class="note sky"><span class="ni">ℹ️</span><span>Tất cả dữ liệu được lưu trữ an toàn trên <strong>Supabase</strong> với tiêu chuẩn bảo mật quốc tế. <strong>Không</strong> lưu trữ thông tin thanh toán hay tài chính cá nhân.</span></div>
   </div>
@@ -231,6 +229,7 @@
       <li>Gửi thông báo học tập từ giáo viên đến học viên</li>
       <li>Thống kê, cải thiện chất lượng nội dung dạy học</li>
       <li>Xây dựng hệ thống thi đua, khuyến khích học tập</li>
+      <li><strong>Quản lý và theo dõi chuyên cần</strong> — tính tỉ lệ có mặt, ghi nhận đơn xin vắng, thông báo học sinh dưới ngưỡng 80%</li>
       <li>Hỗ trợ xử lý sự cố kỹ thuật và khôi phục tài khoản</li>
     </ul>
     <div class="note blue"><span class="ni">🔵</span><span>Thông tin của bạn <strong>KHÔNG được</strong> chia sẻ, bán hoặc chuyển giao cho bên thứ ba vì bất kỳ mục đích thương mại nào.</span></div>
@@ -252,6 +251,8 @@
       <li>Không sử dụng Thư viện số để tải lậu, đăng lại hoặc phát tán sách / đề thi có bản quyền.</li>
       <li>Không cố tình phá hoại, xâm nhập, khai thác lỗ hổng bảo mật.</li>
       <li>Không mạo danh học viên khác hoặc giả mạo thông tin để chiếm quyền truy cập.</li>
+      <li><strong>Không giả mạo mã học viên</strong> hoặc điểm danh thay người khác.</li>
+      <li><strong>Không gửi đơn xin vắng với lý do không trung thực</strong> nhằm trốn tránh ghi nhận vắng mặt.</li>
     </ul>
     <div class="note red"><span class="ni">⛔</span><span>Vi phạm bất kỳ điều khoản nào có thể dẫn đến tài khoản bị <strong>khóa vĩnh viễn</strong> mà không cần thông báo trước. Bằng chứng vi phạm được lưu trữ và có thể xử lý theo pháp luật.</span></div>
   </div>
@@ -287,14 +288,14 @@
     </ul>
     <div class="note red"><span class="ni">🎥</span><span>Hệ thống có khả năng <strong>phát hiện hành vi quay màn hình và chụp ảnh</strong>. Mọi vi phạm đều được ghi nhận bằng chứng và báo cáo đến giáo viên ngay lập tức.</span></div>
     <div class="law"><div class="lt">⚖️ BLHS 2015 — Điều 225 &amp; Luật SHTT 2005 sửa đổi 2022</div><div class="lb">Người nào vì mục đích thương mại mà xâm phạm quyền tác giả đang được bảo hộ có thể bị phạt tiền từ 50 triệu đến 1 tỷ đồng hoặc phạt cải tạo không giam giữ đến 3 năm.</div></div>
-    <div class="note blue"><span class="ni">🏛️</span><span>Mục này áp dụng cho <strong>nội dung do DHDT LMS / giáo viên biên soạn</strong> (video, đề trên hệ thống). Quy định về <strong>Thư viện số và tài liệu bên ngoài</strong> xem mục <a href="#slib" style="color:#3730a3;font-weight:800">6A</a>.</span></div>
+    <div class="note blue"><span class="ni">🏛️</span><span>Mục này áp dụng cho <strong>nội dung do DHDT LMS / giáo viên biên soạn</strong>. Quy định về <strong>Thư viện số</strong> xem mục <a href="#slib" style="color:#3730a3;font-weight:800">6A</a>.</span></div>
   </div>
 
-  <!-- S6A Thư viện số -->
+  <!-- S6A -->
   <div class="sec" id="slib">
     <div class="sec-accent" style="background:linear-gradient(180deg,#ca8a04,#16a34a)"></div>
     <h2><span class="icon">🏛️</span> 6A. Thư viện số &amp; tài liệu bên ngoài</h2>
-    <p>Trang <a href="library.html"><strong>Thư viện số</strong></a> là <strong>mục lục đường dẫn</strong> (link directory) giúp học viên tra cứu nguồn học liệu Toán từ cơ quan nhà nước, nhà xuất bản, viện nghiên cứu và đại học. DHDT LMS <strong>không phải nhà xuất bản</strong> và <strong>không lưu trữ file sách / đề thi</strong> của bên thứ ba.</p>
+    <p>Trang <a href="library.html"><strong>Thư viện số</strong></a> là <strong>mục lục đường dẫn</strong> giúp học viên tra cứu nguồn học liệu Toán từ cơ quan nhà nước, nhà xuất bản, viện nghiên cứu và đại học. DHDT LMS <strong>không phải nhà xuất bản</strong> và <strong>không lưu trữ file sách / đề thi</strong> của bên thứ ba.</p>
     <div class="fg">
       <div class="fc"><div class="fi">🔗</div><div class="ft">Chỉ dẫn link</div><div class="fd">Mỗi thẻ mở website gốc. Không host PDF, không phát hành lại sách.</div></div>
       <div class="fc"><div class="fi">©️</div><div class="ft">Bản quyền gốc</div><div class="fd">Thuộc Bộ GDĐT, NXBGD, viện, đại học hoặc tổ chức trên trang được dẫn.</div></div>
@@ -304,21 +305,17 @@
     <p><strong>Cam kết của hệ thống:</strong></p>
     <ul>
       <li>Không lưu, không sao chép, không phát hành SGK, giáo trình, đề thi hay tài liệu có bản quyền dưới dạng file trên máy chủ DHDT LMS thông qua Thư viện số.</li>
-      <li>Mô tả trên thẻ chỉ là tóm tắt hướng dẫn học tập, không thay thế nội dung gốc.</li>
-      <li>Việc liệt kê một đường dẫn <strong>không</strong> đồng nghĩa DHDT LMS sở hữu hoặc bảo đảm nội dung trên website đó.</li>
       <li>Giao diện, cách sắp xếp mục lục và mã nguồn trang Thư viện số thuộc bản quyền DHDT LMS.</li>
     </ul>
     <p><strong>Cam kết của học viên khi dùng Thư viện số:</strong></p>
     <ul>
       <li>Chỉ sử dụng nguồn được dẫn cho <strong>mục đích học tập cá nhân</strong>.</li>
-      <li>Tuân thủ điều khoản, giấy phép (kể cả Creative Commons / học liệu mở) của từng website.</li>
-      <li>Nghiêm cấm tải lậu, upload, đăng lại, photocopy phát tán sách / đề thi trái phép — kể cả khi “chỉ để chia sẻ lớp”.</li>
+      <li>Tuân thủ điều khoản, giấy phép của từng website.</li>
+      <li>Nghiêm cấm tải lậu, upload, đăng lại, photocopy phát tán sách / đề thi trái phép.</li>
       <li>Không dùng bot, script để quét, tải hàng loạt tài liệu từ các trang được dẫn.</li>
-      <li>Không gửi đề xuất link dẫn tới kho tải lậu, trang giả mạo Bộ GDĐT hoặc nội dung vi phạm pháp luật.</li>
     </ul>
-    <div class="note yellow"><span class="ni">📩</span><span>Nếu bạn là <strong>chủ sở hữu quyền tác giả</strong> và cho rằng một liên kết trên Thư viện số không phù hợp, hãy liên hệ trợ lý / quản trị (mục 17). Chúng tôi sẽ rà soát và gỡ liên kết khi có căn cứ hợp lệ.</span></div>
-    <div class="note red"><span class="ni">🚫</span><span>Phát tán PDF sách giáo khoa, đề thi có bản quyền lấy từ nguồn được dẫn (hoặc từ bất kỳ đâu) vẫn là vi phạm pháp luật. DHDT LMS không chịu trách nhiệm nếu học viên tự ý sao chép trên website bên thứ ba.</span></div>
-    <div class="law"><div class="lt">⚖️ Luật Sở hữu trí tuệ 2005 sửa đổi 2022 — Điều 28 &amp; Điều 20</div><div class="lb">Quyền tác giả phát sinh từ khi tác phẩm được sáng tạo và được thể hiện dưới hình thức nhất định. Việc sao chép, phân phối, truyền đạt tác phẩm đến công chúng mà không được phép của chủ sở hữu có thể bị xử phạt hành chính hoặc truy cứu trách nhiệm hình sự (BLHS Điều 225).</div></div>
+    <div class="note yellow"><span class="ni">📩</span><span>Nếu bạn là <strong>chủ sở hữu quyền tác giả</strong> và cho rằng một liên kết không phù hợp, hãy liên hệ trợ lý. Chúng tôi sẽ rà soát và gỡ liên kết khi có căn cứ hợp lệ.</span></div>
+    <div class="law"><div class="lt">⚖️ Luật Sở hữu trí tuệ 2005 sửa đổi 2022 — Điều 28 &amp; Điều 20</div><div class="lb">Việc sao chép, phân phối, truyền đạt tác phẩm đến công chúng mà không được phép của chủ sở hữu có thể bị xử phạt hành chính hoặc truy cứu trách nhiệm hình sự (BLHS Điều 225).</div></div>
   </div>
 
   <!-- S7 -->
@@ -334,6 +331,7 @@
       <li>Cảnh báo khi phát hiện hành vi bất thường như mở DevTools, cố tải nội dung trái phép.</li>
       <li>Thống kê điểm thi đua, chuỗi ngày học và thời gian học tập của từng học viên.</li>
       <li>Ghi lại toàn bộ hành vi trong kỳ thi: số câu làm, thời gian, vi phạm chuyển tab.</li>
+      <li><strong>Ghi nhận thời điểm và thiết bị điểm danh</strong> — phát hiện điểm danh bất thường, điểm danh trùng lặp hoặc điểm danh thay người khác.</li>
     </ul>
     <div class="note sky"><span class="ni">📊</span><span>Dữ liệu giám sát chỉ được sử dụng nội bộ để quản lý học tập và bảo vệ bản quyền. Không dùng để theo dõi cá nhân ngoài phạm vi học tập.</span></div>
   </div>
@@ -389,10 +387,96 @@
     <div class="law"><div class="lt">⚖️ Luật SHTT 2005 sửa đổi 2022 — Điều 28</div><div class="lb">Hành vi sao chép, phân phối, truyền đạt tác phẩm đến công chúng mà không được phép của chủ sở hữu quyền tác giả có thể bị xử phạt hành chính hoặc truy cứu trách nhiệm hình sự.</div></div>
   </div>
 
+  <!-- SDD — HỆ THỐNG ĐIỂM DANH -->
+  <div class="sec" id="sdd">
+    <div class="sec-accent" style="background:linear-gradient(180deg,#22c55e,#f59e0b)"></div>
+    <h2><span class="icon">✅</span> 11. Hệ thống điểm danh</h2>
+    <p>Hệ thống điểm danh trực tuyến cho phép giáo viên theo dõi chuyên cần và học viên tự xác nhận tham gia buổi học. Mọi hoạt động điểm danh đều được ghi nhận tự động và minh bạch.</p>
+
+    <p style="font-weight:800;color:var(--text);margin-top:.75rem">Cách thức điểm danh:</p>
+    <ul>
+      <li>Giáo viên <strong>mở buổi học</strong> — học viên thấy thông báo trên trang chủ ứng dụng.</li>
+      <li>Học viên bấm <strong>"Điểm danh ngay"</strong> → nhập <strong>mã học viên cá nhân</strong> để xác nhận.</li>
+      <li>Hệ thống ghi nhận thời điểm check-in và thiết bị sử dụng.</li>
+      <li>Điểm danh trong vòng <strong>30 phút đầu</strong> kể từ giờ bắt đầu → <strong>Đúng giờ</strong>.</li>
+      <li>Điểm danh sau 30 phút → tự động chuyển thành <strong>Đi muộn</strong>.</li>
+      <li>Sau khi giáo viên đóng buổi → <strong>không thể điểm danh</strong>. Học viên chưa điểm danh bị ghi là <strong>Vắng</strong>.</li>
+    </ul>
+
+    <p style="font-weight:800;color:var(--text);margin-top:.75rem">Các ký hiệu trạng thái chuyên cần:</p>
+    <div class="dd-badge-row">
+      <div class="dd-badge" style="background:#f0fdf4;border-color:#bbf7d0;color:#065f46">
+        <span class="dbi">✅</span>
+        <div><div class="dbt">Đúng giờ</div><div class="dbd">Điểm danh trong 30 phút đầu buổi học.</div></div>
+      </div>
+      <div class="dd-badge" style="background:#fefce8;border-color:#fde68a;color:#92400e">
+        <span class="dbi">⏰</span>
+        <div><div class="dbt">Đi muộn</div><div class="dbd">Điểm danh sau 30 phút kể từ giờ bắt đầu.</div></div>
+      </div>
+      <div class="dd-badge" style="background:#faf5ff;border-color:#e9d5ff;color:#5b21b6">
+        <span class="dbi">📋</span>
+        <div><div class="dbt">Có phép</div><div class="dbd">Gửi đơn xin vắng và được giáo viên duyệt.</div></div>
+      </div>
+      <div class="dd-badge" style="background:#fef2f2;border-color:#fecaca;color:#991b1b">
+        <span class="dbi">❌</span>
+        <div><div class="dbt">Vắng</div><div class="dbd">Không điểm danh và không có đơn được duyệt.</div></div>
+      </div>
+    </div>
+
+    <p style="font-weight:800;color:var(--text);margin-top:.75rem">Các loại buổi học — ký hiệu của giáo viên:</p>
+    <div class="dd-badge-row">
+      <div class="dd-badge" style="background:#f0fdf4;border-color:#bbf7d0;color:#065f46">
+        <span class="dbi">📊</span>
+        <div><div class="dbt">Tính chuyên cần</div><div class="dbd">Buổi này tính vào tỉ lệ % của học viên. Vắng sẽ ảnh hưởng kết quả.</div></div>
+      </div>
+      <div class="dd-badge" style="background:#f8fafc;border-color:#e2e8f0;color:#64748b">
+        <span class="dbi">📊</span>
+        <div><div class="dbt">Không tính CC</div><div class="dbd">Không ảnh hưởng tỉ lệ. Vắng cũng không bị trừ điểm chuyên cần.</div></div>
+      </div>
+      <div class="dd-badge" style="background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8">
+        <span class="dbi">✍️</span>
+        <div><div class="dbt">Bắt điểm danh</div><div class="dbd">Học viên phải chủ động điểm danh khi buổi mở.</div></div>
+      </div>
+      <div class="dd-badge" style="background:#f8fafc;border-color:#e2e8f0;color:#64748b">
+        <span class="dbi">✋</span>
+        <div><div class="dbt">Không bắt ĐD</div><div class="dbd">Buổi này không yêu cầu điểm danh.</div></div>
+      </div>
+      <div class="dd-badge" style="background:#fff7ed;border-color:#fed7aa;color:#9a3412">
+        <span class="dbi">📩</span>
+        <div><div class="dbt">Cho phép xin vắng</div><div class="dbd">Học viên có thể gửi đơn xin vắng buổi này dù tính CC hay không.</div></div>
+      </div>
+      <div class="dd-badge" style="background:#f8fafc;border-color:#e2e8f0;color:#64748b">
+        <span class="dbi">🚫</span>
+        <div><div class="dbt">Không cho xin vắng</div><div class="dbd">Giáo viên đã tắt chức năng gửi đơn xin vắng cho buổi này.</div></div>
+      </div>
+    </div>
+
+    <p style="font-weight:800;color:var(--text);margin-top:.75rem">Chính sách xin vắng:</p>
+    <ul>
+      <li>Học viên có thể gửi đơn xin vắng <strong>trước buổi học</strong> nếu giáo viên đã bật <em>Cho phép xin vắng</em> cho buổi đó.</li>
+      <li>Đơn chỉ xuất hiện trong danh sách <strong>tuần hiện tại (Thứ 2 → Chủ Nhật)</strong>. Hết tuần, danh sách tự làm mới.</li>
+      <li>Các buổi <strong>đã điểm danh</strong> hoặc <strong>đã gửi đơn</strong> sẽ không hiển thị trong danh sách xin vắng.</li>
+      <li>Giáo viên xem xét và duyệt đơn. Kết quả cập nhật về <strong>Có phép ✅</strong> hoặc <strong>Từ chối ❌</strong>.</li>
+      <li>Buổi không tính chuyên cần (Không tính CC) vẫn có thể xin vắng nếu giáo viên <strong>bật cho phép</strong> — hai tính năng này hoạt động độc lập.</li>
+    </ul>
+
+    <p style="font-weight:800;color:var(--text);margin-top:.75rem">Nghĩa vụ học viên về điểm danh:</p>
+    <ul>
+      <li>Chỉ điểm danh bằng <strong>mã học viên của chính mình</strong>. Nghiêm cấm nhập mã của người khác.</li>
+      <li>Điểm danh ngay khi buổi học mở, không chờ đến cuối buổi.</li>
+      <li>Chỉ gửi đơn xin vắng khi <strong>thực sự có lý do chính đáng</strong>. Lạm dụng để trốn tránh là vi phạm nội quy.</li>
+      <li>Không nhờ người khác điểm danh hộ dưới bất kỳ hình thức nào.</li>
+    </ul>
+
+    <div class="note orange"><span class="ni">📊</span><span>Tỉ lệ chuyên cần được tính dựa trên <strong>các buổi có tính chuyên cần</strong>. Học viên có tỉ lệ dưới <strong>80%</strong> sẽ được giáo viên nhắc nhở và theo dõi đặc biệt.</span></div>
+    <div class="note red"><span class="ni">🚫</span><span>Điểm danh hộ, giả mạo mã học viên hoặc gửi đơn xin vắng không trung thực là hành vi gian lận — tài khoản có thể bị <strong>khóa</strong> và dữ liệu điểm danh bị hủy.</span></div>
+    <div class="note blue"><span class="ni">🛠️</span><span>Nếu có lỗi điểm danh (không điểm danh được do lỗi kỹ thuật), liên hệ ngay <strong>trợ lý kỹ thuật</strong> trong buổi học để được điều chỉnh thủ công. Không thể điều chỉnh sau khi buổi đã đóng quá 24 giờ.</span></div>
+  </div>
+
   <!-- S11 -->
   <div class="sec" id="s11">
     <div class="sec-accent" style="background:linear-gradient(180deg,#10b981,#6366f1)"></div>
-    <h2><span class="icon">🤝</span> 11. Quy tắc ứng xử</h2>
+    <h2><span class="icon">🤝</span> 12. Quy tắc ứng xử</h2>
     <ul>
       <li>Tôn trọng giáo viên, trợ lý và các học viên khác trong mọi tương tác.</li>
       <li>Không đăng nội dung không phù hợp, phản cảm hoặc ảnh hưởng đến môi trường học tập.</li>
@@ -406,14 +490,14 @@
   <!-- S12 -->
   <div class="sec" id="s12">
     <div class="sec-accent" style="background:linear-gradient(180deg,#0ea5e9,#8b5cf6)"></div>
-    <h2><span class="icon">🗄️</span> 12. Lưu trữ & Xóa dữ liệu</h2>
+    <h2><span class="icon">🗄️</span> 13. Lưu trữ & Xóa dữ liệu</h2>
     <ul>
       <li>Dữ liệu cá nhân được lưu trữ an toàn trên hệ thống Supabase với mã hóa đầu cuối.</li>
       <li>Lịch sử đăng nhập và nhật ký hoạt động được lưu trữ trong tối đa <strong>12 tháng</strong>.</li>
+      <li><strong>Dữ liệu điểm danh</strong> (lịch sử check-in, đơn xin vắng) được lưu trữ trong suốt thời gian tài khoản còn hoạt động.</li>
       <li>Khi tài khoản bị xóa, toàn bộ dữ liệu cá nhân sẽ bị xóa vĩnh viễn khỏi hệ thống.</li>
       <li>Học viên có quyền yêu cầu xem, chỉnh sửa hoặc xóa thông tin cá nhân của mình.</li>
       <li>Yêu cầu xóa dữ liệu cần gửi qua trợ lý chính thức và được xử lý trong vòng <strong>7 ngày</strong>.</li>
-      <li>Một số dữ liệu có thể được giữ lại theo yêu cầu pháp lý hoặc để giải quyết tranh chấp.</li>
     </ul>
     <div class="note blue"><span class="ni">🔵</span><span>Chúng tôi cam kết bảo vệ quyền riêng tư của bạn theo quy định của <strong>Nghị định 13/2023/NĐ-CP</strong> về bảo vệ dữ liệu cá nhân tại Việt Nam.</span></div>
   </div>
@@ -421,7 +505,7 @@
   <!-- S13 -->
   <div class="sec" id="s13">
     <div class="sec-accent" style="background:linear-gradient(180deg,#ef4444,#8b5cf6)"></div>
-    <h2><span class="icon">⚡</span> 13. Xử lý vi phạm</h2>
+    <h2><span class="icon">⚡</span> 14. Xử lý vi phạm</h2>
     <table class="vtable">
       <thead><tr><th>Vi phạm</th><th>Hình thức xử lý</th></tr></thead>
       <tbody>
@@ -431,6 +515,8 @@
         <tr><td>Cho mượn / chia sẻ tài khoản</td><td>Khóa tài khoản, yêu cầu xác minh lại danh tính</td></tr>
         <tr><td>Chia sẻ tài liệu, đề thi ra ngoài</td><td>Khóa vĩnh viễn, xem xét xử lý pháp lý</td></tr>
         <tr><td>Tải lậu / đăng lại sách, đề từ Thư viện số</td><td>Khóa tài khoản; gỡ liên kết nếu cần; xem xét xử lý theo Luật SHTT</td></tr>
+        <tr><td>Điểm danh hộ / giả mạo mã học viên</td><td>Hủy dữ liệu điểm danh, cảnh báo; vi phạm lần 2 → khóa tài khoản</td></tr>
+        <tr><td>Gửi đơn xin vắng không trung thực</td><td>Hủy đơn, ghi nhận vi phạm; tái phạm → tắt quyền xin vắng</td></tr>
         <tr><td>Tấn công, xâm nhập hệ thống</td><td>Báo cáo cơ quan chức năng theo Luật An ninh mạng</td></tr>
       </tbody>
     </table>
@@ -440,7 +526,7 @@
   <!-- S14 -->
   <div class="sec" id="s14">
     <div class="sec-accent" style="background:linear-gradient(180deg,#6366f1,#10b981)"></div>
-    <h2><span class="icon">⚖️</span> 14. Căn cứ pháp lý</h2>
+    <h2><span class="icon">⚖️</span> 15. Căn cứ pháp lý</h2>
     <p>Hệ thống DHDT LMS hoạt động theo các quy định pháp luật Việt Nam hiện hành:</p>
     <ul>
       <li><span class="tag">Giáo dục</span> <strong>Luật Giáo dục 2019</strong> (Luật số 43/2019/QH14) — Điều 69</li>
@@ -457,7 +543,7 @@
   <!-- S15 -->
   <div class="sec" id="s15">
     <div class="sec-accent" style="background:linear-gradient(180deg,#8b5cf6,#6366f1)"></div>
-    <h2><span class="icon">👨‍💻</span> 15. Trách nhiệm nhà phát triển</h2>
+    <h2><span class="icon">👨‍💻</span> 16. Trách nhiệm nhà phát triển</h2>
     <p><em>Mục này dành riêng cho đội ngũ phát triển và bảo trì hệ thống DHDT LMS.</em></p>
     <p><strong>Bắt buộc tuân thủ khi phát triển:</strong></p>
     <ul>
@@ -477,7 +563,7 @@
   <!-- S16 -->
   <div class="sec" id="s16">
     <div class="sec-accent" style="background:linear-gradient(180deg,#f59e0b,#6366f1)"></div>
-    <h2><span class="icon">🔄</span> 16. Thay đổi chính sách</h2>
+    <h2><span class="icon">🔄</span> 17. Thay đổi chính sách</h2>
     <p>Chúng tôi có quyền cập nhật, chỉnh sửa chính sách này bất cứ lúc nào mà không cần thông báo trước. Các thay đổi sẽ có hiệu lực ngay khi được đăng tải trên trang này.</p>
     <p>Việc tiếp tục sử dụng hệ thống sau khi chính sách được cập nhật đồng nghĩa với việc bạn chấp nhận toàn bộ các thay đổi đó.</p>
     <div class="note purple"><span class="ni">💡</span><span>Khuyến nghị kiểm tra trang này định kỳ để cập nhật các thay đổi mới nhất về chính sách và điều khoản.</span></div>
@@ -486,7 +572,7 @@
   <!-- S17 -->
   <div class="sec" id="s17">
     <div class="sec-accent" style="background:linear-gradient(180deg,#10b981,#0ea5e9)"></div>
-    <h2><span class="icon">📞</span> 17. Liên hệ hỗ trợ</h2>
+    <h2><span class="icon">📞</span> 18. Liên hệ hỗ trợ</h2>
     <p>Nếu có thắc mắc về chính sách bảo mật, điều khoản sử dụng, <strong>gỡ liên kết Thư viện số</strong> hoặc cần hỗ trợ kỹ thuật, vui lòng liên hệ:</p>
     <div class="contact-row">
       <div class="contact-card">
@@ -498,7 +584,7 @@
       <div class="contact-card">
         <div class="cc-icon">💻</div>
         <div class="cc-name">Quốc Toàn</div>
-        <div class="cc-role">Hỗ trợ kỹ thuật Video </div>
+        <div class="cc-role">Hỗ trợ kỹ thuật Video</div>
         <a href="#">Z Zalo Quốc Toàn</a>
       </div>
       <div class="contact-card">
@@ -511,13 +597,86 @@
     <div class="note green"><span class="ni">🕐</span><span>Thời gian hỗ trợ: <strong>Thứ 2 – Chủ nhật, 7:00 – 22:00</strong> · Kênh liên hệ: Nhắn tin Zalo theo đúng quy trình hướng dẫn.</span></div>
   </div>
 
+  <!-- SQTG — QUYỀN TÁC GIẢ -->
+  <div class="sec" id="sqtg">
+    <div class="sec-accent" style="background:linear-gradient(180deg,#1e1b4b,#4f46e5)"></div>
+    <h2><span class="icon">©️</span> 19. Quyền tác giả &amp; Quyền sở hữu đối với nội dung DHDT LMS</h2>
+
+    <div style="background:linear-gradient(135deg,#050314,#0f0c29,#1e1b4b);border-radius:16px;padding:1.5rem;margin-bottom:1.25rem;border:1px solid rgba(99,102,241,.3);position:relative;overflow:hidden">
+      <div style="position:absolute;top:-40px;right:-40px;width:160px;height:160px;background:radial-gradient(circle,rgba(99,102,241,.2),transparent 70%);border-radius:50%;pointer-events:none"></div>
+      <div style="font-size:.7rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#a5b4fc;opacity:.7;margin-bottom:.6rem;position:relative;z-index:1">🔔 THÔNG BÁO CHÍNH THỨC</div>
+      <p style="font-size:.9rem;color:#e0e7ff;line-height:1.8;position:relative;z-index:1"><strong style="color:#fff">DHDT LMS</strong> trân trọng thông báo: Toàn bộ nội dung <strong style="color:#a5b4fc">video, hình ảnh, thiết kế, tài liệu, giao diện, đồ họa, nội dung đào tạo</strong> và các sản phẩm sáng tạo được xây dựng, phát triển và công bố thuộc hệ thống DHDT LMS đều được bảo vệ theo quy định của pháp luật Việt Nam về <strong style="color:#a5b4fc">quyền tác giả và quyền sở hữu trí tuệ</strong>.</p>
+    </div>
+
+    <p style="font-weight:800;color:var(--text);font-size:.9rem;margin-bottom:.65rem">📌 Căn cứ pháp lý:</p>
+    <div style="display:flex;flex-direction:column;gap:.5rem;margin-bottom:1.1rem">
+      <div class="law" style="padding:.85rem 1.1rem"><div class="lt">⚖️ Luật Sở hữu trí tuệ</div><div class="lb">Luật số 50/2005/QH11, được sửa đổi, bổ sung qua các Luật số 36/2009/QH12, 42/2019/QH14 và Luật số 07/2022/QH15.</div></div>
+      <div class="law" style="padding:.85rem 1.1rem"><div class="lt">⚖️ Điều 14 — Các loại hình tác phẩm được bảo hộ</div><div class="lb">Bao gồm tác phẩm điện ảnh, tác phẩm nhiếp ảnh, tác phẩm mỹ thuật ứng dụng, chương trình máy tính và các loại hình tác phẩm khác.</div></div>
+      <div class="law" style="padding:.85rem 1.1rem"><div class="lt">⚖️ Điều 19 — Quyền nhân thân</div><div class="lb">Quyền đứng tên, công bố tác phẩm và bảo vệ sự toàn vẹn của tác phẩm.</div></div>
+      <div class="law" style="padding:.85rem 1.1rem"><div class="lt">⚖️ Điều 20 — Quyền tài sản</div><div class="lb">Bao gồm quyền làm tác phẩm phái sinh, sao chép, phân phối, truyền đạt tác phẩm đến công chúng và các quyền tài sản khác.</div></div>
+      <div class="law" style="padding:.85rem 1.1rem"><div class="lt">⚖️ Điều 28 — Hành vi xâm phạm quyền tác giả</div><div class="lb">Các hành vi bị cấm theo Luật Sở hữu trí tuệ về quyền tác giả.</div></div>
+      <div class="law" style="padding:.85rem 1.1rem"><div class="lt">⚖️ Nghị định 17/2023/NĐ-CP ngày 26/04/2023</div><div class="lb">Quy định chi tiết một số điều và biện pháp thi hành Luật Sở hữu trí tuệ về quyền tác giả, quyền liên quan.</div></div>
+    </div>
+
+    <div style="background:linear-gradient(135deg,#450a0a,#7f1d1d);border-radius:16px;padding:1.35rem 1.4rem;margin-bottom:1.1rem;border:1.5px solid rgba(239,68,68,.35)">
+      <div style="font-size:.75rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:#fca5a5;margin-bottom:.9rem">🚫 NGHIÊM CẤM SỬ DỤNG TRÁI PHÉP</div>
+      <p style="font-size:.86rem;color:#fecaca;line-height:1.7;margin-bottom:.7rem">Nghiêm cấm mọi tổ chức, cá nhân tự ý thực hiện các hành vi sau:</p>
+      <ul style="padding-left:1.25rem;display:flex;flex-direction:column;gap:.4rem">
+        <li style="font-size:.85rem;color:#fecaca;line-height:1.7">Sao chép toàn bộ hoặc một phần nội dung video, hình ảnh, tài liệu của DHDT LMS;</li>
+        <li style="font-size:.85rem;color:#fecaca;line-height:1.7">Tải xuống, lưu trữ, đăng tải lại hoặc phát tán nội dung khi chưa được cho phép;</li>
+        <li style="font-size:.85rem;color:#fecaca;line-height:1.7">Cắt ghép, chỉnh sửa, biến đổi hoặc tạo tác phẩm phái sinh khi chưa được chủ thể quyền cho phép;</li>
+        <li style="font-size:.85rem;color:#fecaca;line-height:1.7">Sử dụng nội dung cho mục đích <strong style="color:#fca5a5">thương mại, quảng cáo, đào tạo hoặc kinh doanh</strong> khi chưa được cấp phép;</li>
+        <li style="font-size:.85rem;color:#fecaca;line-height:1.7">Xóa, che, thay đổi logo, watermark, thông tin tác giả hoặc thông tin quản lý quyền;</li>
+        <li style="font-size:.85rem;color:#fecaca;line-height:1.7">Mạo danh tác giả, chủ sở hữu hoặc nguồn gốc của nội dung;</li>
+        <li style="font-size:.85rem;color:#fecaca;line-height:1.7">Đăng tải, truyền đạt hoặc cung cấp nội dung lên website, mạng xã hội, nền tảng trực tuyến hoặc bất kỳ phương tiện nào khác mà không được phép.</li>
+      </ul>
+      <div style="margin-top:.85rem;padding:.75rem 1rem;background:rgba(0,0,0,.25);border-radius:10px;font-size:.8rem;color:#fde68a;line-height:1.7;border-left:3px solid rgba(251,191,36,.5)">⚠️ Theo Điều 66 Nghị định 17/2023/NĐ-CP, các hành vi sao chép không được phép, truyền đạt qua Internet không được phép, xóa thông tin quản lý quyền trái phép có thể được xác định là <strong>yếu tố xâm phạm quyền tác giả</strong> tùy từng trường hợp.</div>
+    </div>
+
+    <p style="font-weight:800;color:var(--text);font-size:.9rem;margin-bottom:.65rem">⚡ Xử lý hành vi xâm phạm:</p>
+    <p style="font-size:.87rem;color:#374151;line-height:1.9;margin-bottom:.5rem">Đối với hành vi có dấu hiệu xâm phạm quyền tác giả, <strong>DHDT LMS</strong> sẽ chủ động lưu giữ và thu thập các tài liệu, dữ liệu điện tử, hình ảnh, video, đường dẫn, lịch sử đăng tải và các chứng cứ liên quan để bảo vệ quyền và lợi ích hợp pháp của mình.</p>
+    <p style="font-size:.87rem;color:#374151;line-height:1.9;margin-bottom:.85rem">Tùy tính chất, mức độ và hậu quả, chủ thể quyền có thể thực hiện: <strong>yêu cầu chấm dứt hành vi vi phạm</strong>, <strong>gỡ bỏ nội dung</strong>, <strong>yêu cầu bồi thường thiệt hại</strong> và/hoặc đề nghị cơ quan nhà nước có thẩm quyền xử lý theo quy định pháp luật.</p>
+
+    <div class="note yellow"><span class="ni">⚠️</span><span>Mọi hành vi sử dụng nội dung DHDT LMS <strong>không đồng nghĩa</strong> với việc được cấp quyền sử dụng. Việc cho phép sử dụng, sao chép, phân phối hoặc khai thác nội dung phải được <strong>chủ thể quyền hoặc người được ủy quyền hợp pháp</strong> chấp thuận bằng văn bản.</span></div>
+
+    <!-- Thông báo đăng ký bản quyền -->
+    <div style="background:linear-gradient(135deg,#0c0a1e,#1a1040,#16213e);border-radius:16px;padding:1.4rem 1.5rem;margin-top:.85rem;border:1.5px solid rgba(99,102,241,.4);position:relative;overflow:hidden">
+      <div style="position:absolute;bottom:-30px;right:-30px;width:120px;height:120px;background:radial-gradient(circle,rgba(99,102,241,.15),transparent 70%);border-radius:50%;pointer-events:none"></div>
+      <div style="font-size:.7rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#a5b4fc;opacity:.8;margin-bottom:.85rem;display:flex;align-items:center;gap:.4rem;position:relative;z-index:1">
+        🏛️ THÔNG BÁO VỀ QUYỀN BẢN QUYỀN
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.65rem;position:relative;z-index:1">
+        <p style="font-size:.87rem;color:#e0e7ff;line-height:1.8">
+          Về phía <strong style="color:#a5b4fc">cơ quan Công an và Cục Bản quyền tác giả</strong>, chúng tôi đã thực hiện đăng ký và xác lập quyền đối với các nội dung video, hình ảnh, tài liệu và các sản phẩm truyền thông thuộc thương hiệu <strong style="color:#fff">DHDT LMS</strong> theo quy định hiện hành.
+        </p>
+        <p style="font-size:.87rem;color:#e0e7ff;line-height:1.8">
+          Toàn bộ nội dung, hình ảnh, video và các sản phẩm liên quan đến DHDT LMS là <strong style="color:#a5b4fc">tài sản thuộc quyền sở hữu của chủ thể quyền đã được đăng ký</strong>.
+        </p>
+        <div style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);border-radius:12px;padding:.85rem 1.1rem">
+          <p style="font-size:.86rem;color:#fecaca;line-height:1.8;margin:0">
+            🚫 <strong style="color:#fca5a5">Nghiêm cấm</strong> mọi hành vi sao chép, tải xuống, chỉnh sửa, cắt ghép, đăng tải lại, phát hành, sử dụng thương mại hoặc sử dụng dưới bất kỳ hình thức nào <strong style="color:#fca5a5">khi chưa được chủ sở hữu cho phép bằng văn bản</strong>.
+          </p>
+        </div>
+        <p style="font-size:.87rem;color:#e0e7ff;line-height:1.8">
+          Mọi hành vi xâm phạm quyền tác giả, quyền liên quan hoặc sử dụng trái phép các nội dung thuộc DHDT LMS sẽ được chúng tôi <strong style="color:#a5b4fc">ghi nhận, lưu trữ bằng chứng</strong> và thực hiện các biện pháp bảo vệ quyền và lợi ích hợp pháp theo quy định của pháp luật.
+        </p>
+      </div>
+    </div>
+
+    <div style="background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:14px;padding:1.25rem 1.35rem;margin-top:.75rem;border:1px solid rgba(99,102,241,.3);text-align:center">
+      <div style="font-size:1.6rem;margin-bottom:.35rem">©️</div>
+      <div style="font-size:.95rem;font-weight:800;color:#e0e7ff;margin-bottom:.4rem">DHDT LMS</div>
+      <div style="font-size:.82rem;color:#a5b4fc;line-height:1.8">Nội dung được bảo hộ theo pháp luật về quyền tác giả và sở hữu trí tuệ.<br/><strong style="color:#fca5a5">Nghiêm cấm sao chép, sử dụng và khai thác trái phép dưới mọi hình thức.</strong></div>
+    </div>
+  </div>
+
   <!-- FOOTER -->
   <div class="footer-note">
     <div style="font-size:2rem;margin-bottom:.5rem">🏠</div>
     <div><strong>DHDT LMS</strong> — Hệ thống học tập & kiểm tra trực tuyến</div>
-    <div>© 2026 Bản quyền thuộc về DHDT LMS</div>
-    <div>Thiết kế & Phát triển bởi <strong>Tr.Cường08</strong> & <strong>Quốc Toàn</strong></div>
-    <div style="margin-top:.35rem;font-size:.7rem;opacity:.6">Phiên bản v1.5.0 · Cập nhật tháng 7/2026 · Áp dụng theo pháp luật Việt Nam</div>
+    <div>© 2026 Bản quyền thuộc về DHDT LMS &amp; Trần Cường — All Rights Reserved.</div>
+    <div>Thiết kế &amp; Phát triển bởi <strong>Tr.Cường08</strong> &amp; <strong>Quốc Toàn</strong></div>
+    <div style="margin-top:.35rem;font-size:.7rem;opacity:.6">Phiên bản v1.6.0 · Cập nhật tháng 8/2026 · Áp dụng theo pháp luật Việt Nam</div>
     <div style="margin-top:1rem">
       <a href="index.html" class="footer-home">🏠 Về trang chủ</a>
     </div>
