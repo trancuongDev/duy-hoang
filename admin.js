@@ -926,7 +926,7 @@ function animateCount(el, target, duration = 1000) {
 
 async function renderOverview() {
   const [{ count: sc }, { count: alertCount }, { data: recentLessons }, { data: recentAlerts }, { count: vidCount }, { count: docCount }] = await Promise.all([
-    db.from('students').select('*', { count:'exact', head:true }),
+    db.from('students').select('*', { count:'exact', head:true }).eq('active', true),
     db.from('alerts').select('*', { count:'exact', head:true }).gte('created_at', new Date().toISOString().split('T')[0]),
     db.from('lessons').select('id,name,class_name').order('created_at', { ascending:false }).limit(4),
     db.from('alerts').select('*').order('created_at', { ascending:false }).limit(4),
@@ -937,7 +937,7 @@ async function renderOverview() {
   // Nếu count trả về null → fetch lại thủ công
   let realSc = sc, realVid = vidCount, realDoc = docCount;
   if (realSc === null || realSc === undefined) {
-    const { data: sd } = await db.from('students').select('id');
+    const { data: sd } = await db.from('students').select('id').eq('active', true);
     realSc = (sd||[]).length;
   }
   if (realVid === null || realVid === undefined) {

@@ -2616,3 +2616,67 @@ div[style*="overflow-x"] {
 @media (max-width: 400px) {
   #schedWeekTable > div { grid-template-columns: 1fr; }
 }
+
+/* ═══════════════════════════════════════════════
+   MOBILE FIX — Admin responsive (max-width: 480px)
+   ═══════════════════════════════════════════════ */
+@media (max-width: 480px) {
+
+  /* ── Topbar ── */
+  .topbar {
+    height: 52px;
+    padding: 0 .75rem;
+    gap: .4rem;
+  }
+  /* Ẩn search bar desktop trên mobile nhỏ */
+  #globalSearchWrap { display: none !important; }
+  /* Hiện nút search mobile */
+  #mobileSearchBtn { display: flex !important; }
+
+  /* ── Stat cards 2×2 gọn hơn ── */
+  .stat-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: .5rem;
+    margin-bottom: 1rem;
+  }
+  .stat-card {
+    padding: .8rem .75rem;
+    gap: .55rem;
+    border-radius: 12px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .stat-icon { font-size: 1.35rem; }
+  .stat-num  { font-size: 1.25rem; letter-spacing: -.3px; }
+  .stat-label { font-size: .7rem; margin-top: .15rem; }
+
+  /* ── Overview grid 1 cột ── */
+  .overview-grid {
+    grid-template-columns: 1fr !important;
+    gap: .75rem;
+  }
+
+  /* ── Recent lists compact ── */
+  .list-row {
+    padding: .55rem .65rem;
+    gap: .5rem;
+  }
+  .list-icon { font-size: .9rem; width: 28px; height: 28px; }
+  .list-title { font-size: .82rem; }
+  .list-meta  { font-size: .72rem; }
+
+  /* ── Page padding ── */
+  .page { padding: .75rem .75rem 1.5rem; }
+  .page-title { font-size: 1.1rem; }
+
+  /* ── Topbar-right: ẩn bớt trên mobile nhỏ ── */
+  .av-name  { display: none; }
+  .av-role  { display: none; }
+  .topbar-right { gap: .5rem; }
+}
+
+/* ── Fix search bar ẩn/hiện ── */
+@media (min-width: 481px) {
+  #mobileSearchBtn { display: none !important; }
+  #globalSearchWrap { display: block !important; }
+}

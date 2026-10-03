@@ -631,6 +631,8 @@ body::before{
 }
 
 @keyframes spin{to{transform:rotate(360deg)}}
+
+@keyframes moreIn{from{opacity:0;transform:scale(.9) translateY(8px)}to{opacity:1;transform:none}}
 @keyframes barGrow { from { height: 0; opacity: 0; } to { opacity: 1; } }
 </style>
 </head>
@@ -931,6 +933,96 @@ body::before{
     </div>
   </div>
 
+  <!-- Ý nghĩa điểm danh -->
+  <div class="guide-step">
+    <div class="guide-step-hd" style="background:linear-gradient(135deg,rgba(56,189,248,.2),rgba(56,189,248,.06))">
+      <div class="guide-num" style="background:linear-gradient(135deg,#38bdf8,#0ea5e9)">💡</div>
+      <div><div style="font-weight:800;font-size:.96rem">Ý nghĩa của việc điểm danh</div><div style="font-size:.78rem;color:var(--text2)">Tại sao điểm danh quan trọng với bạn</div></div>
+    </div>
+    <div class="guide-step-body">
+      <div style="display:flex;flex-direction:column;gap:.6rem">
+        <div style="display:flex;align-items:flex-start;gap:.75rem;padding:.75rem;background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.15);border-radius:13px">
+          <span style="font-size:1.3rem;flex-shrink:0;margin-top:.05rem">📈</span>
+          <div>
+            <div style="font-size:.86rem;font-weight:700;color:#86efac;margin-bottom:.2rem">Theo dõi tiến độ học tập</div>
+            <p style="font-size:.82rem;color:var(--text2);line-height:1.55">Điểm danh giúp hệ thống ghi lại số buổi bạn đã tham dự, từ đó bạn — và giáo viên — nắm được bức tranh toàn cảnh về quá trình học của bạn.</p>
+          </div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:.75rem;padding:.75rem;background:rgba(167,139,250,.07);border:1px solid rgba(167,139,250,.15);border-radius:13px">
+          <span style="font-size:1.3rem;flex-shrink:0;margin-top:.05rem">🤝</span>
+          <div>
+            <div style="font-size:.86rem;font-weight:700;color:#c4b5fd;margin-bottom:.2rem">Thể hiện tinh thần trách nhiệm</div>
+            <p style="font-size:.82rem;color:var(--text2);line-height:1.55">Tham dự đầy đủ và đúng giờ là cách bạn cho thấy sự nghiêm túc với khóa học, đồng thời tôn trọng công sức của giáo viên và các bạn cùng lớp.</p>
+          </div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:.75rem;padding:.75rem;background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.15);border-radius:13px">
+          <span style="font-size:1.3rem;flex-shrink:0;margin-top:.05rem">🔔</span>
+          <div>
+            <div style="font-size:.86rem;font-weight:700;color:#fde68a;margin-bottom:.2rem">Hỗ trợ kịp thời khi cần</div>
+            <p style="font-size:.82rem;color:var(--text2);line-height:1.55">Khi tỉ lệ của bạn xuống thấp, giáo viên có thể chủ động liên hệ để hỏi thăm và hỗ trợ — điểm danh là tín hiệu sớm giúp phát hiện vấn đề trước khi quá muộn.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Nghĩa vụ học viên -->
+  <div class="guide-step">
+    <div class="guide-step-hd" style="background:linear-gradient(135deg,rgba(249,115,22,.2),rgba(249,115,22,.06))">
+      <div class="guide-num" style="background:linear-gradient(135deg,#f97316,#ea580c)">📋</div>
+      <div><div style="font-weight:800;font-size:.96rem">Nghĩa vụ của học viên</div><div style="font-size:.78rem;color:var(--text2)">Những điều bạn cần thực hiện khi tham gia lớp</div></div>
+    </div>
+    <div class="guide-step-body">
+      <div style="display:flex;flex-direction:column;gap:.5rem">
+
+        <div style="display:flex;align-items:flex-start;gap:.65rem">
+          <div style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:900;flex-shrink:0;margin-top:.08rem">1</div>
+          <div>
+            <p style="font-size:.86rem;font-weight:700;color:var(--text);margin-bottom:.15rem">Điểm danh đúng giờ mỗi buổi học</p>
+            <p style="font-size:.8rem;color:var(--text2);line-height:1.55">Điểm danh trong vòng <strong style="color:var(--text)">30 phút</strong> kể từ giờ bắt đầu để không bị tính là đi muộn. Không điểm danh = vắng mặt.</p>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:flex-start;gap:.65rem">
+          <div style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:900;flex-shrink:0;margin-top:.08rem">2</div>
+          <div>
+            <p style="font-size:.86rem;font-weight:700;color:var(--text);margin-bottom:.15rem">Tự điểm danh bằng mã của chính mình</p>
+            <p style="font-size:.8rem;color:var(--text2);line-height:1.55">Mã học viên là định danh cá nhân — <strong style="color:#fca5a5">không chia sẻ hoặc dùng mã của người khác</strong>. Hệ thống ghi nhận thiết bị; gian lận điểm danh sẽ bị phát hiện.</p>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:flex-start;gap:.65rem">
+          <div style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:900;flex-shrink:0;margin-top:.08rem">3</div>
+          <div>
+            <p style="font-size:.86rem;font-weight:700;color:var(--text);margin-bottom:.15rem">Báo vắng trước khi nghỉ (nếu có thể)</p>
+            <p style="font-size:.8rem;color:var(--text2);line-height:1.55">Nếu biết trước sẽ không tham dự, hãy gửi đơn xin vắng qua tab <strong style="color:var(--text)">🔴 Báo vắng</strong> để giáo viên biết và ghi nhận có phép. <strong style="color:var(--text)">Không báo = vắng không phép.</strong></p>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:flex-start;gap:.65rem">
+          <div style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:900;flex-shrink:0;margin-top:.08rem">4</div>
+          <div>
+            <p style="font-size:.86rem;font-weight:700;color:var(--text);margin-bottom:.15rem">Duy trì tỉ lệ chuyên cần tối thiểu 80%</p>
+            <p style="font-size:.8rem;color:var(--text2);line-height:1.55">Đây là ngưỡng cơ bản để được đánh giá hoàn thành khóa học. Theo dõi tỉ lệ của bạn thường xuyên trong tab <strong style="color:var(--text)">📊 Chuyên cần</strong>.</p>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:flex-start;gap:.65rem">
+          <div style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:900;flex-shrink:0;margin-top:.08rem">5</div>
+          <div>
+            <p style="font-size:.86rem;font-weight:700;color:var(--text);margin-bottom:.15rem">Liên hệ giáo viên nếu có sai sót</p>
+            <p style="font-size:.8rem;color:var(--text2);line-height:1.55">Nếu điểm danh sai hoặc bị ghi vắng nhầm, hãy chủ động báo giáo viên hoặc trợ lý để điều chỉnh kịp thời. Hệ thống hỗ trợ điều chỉnh thủ công.</p>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="guide-note" style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#fca5a5;margin-top:.5rem">
+        ⚠️ Vắng quá 20% tổng số buổi (tính chuyên cần) có thể ảnh hưởng đến kết quả đánh giá cuối khóa. Hãy chủ động và có trách nhiệm với việc học của bản thân.
+      </div>
+    </div>
+  </div>
+
   <!-- FAQ -->
   <div style="background:var(--bg3);border:1px solid var(--border);border-radius:18px;padding:1.15rem;margin-bottom:.85rem">
     <div style="font-weight:800;font-size:.9rem;margin-bottom:.9rem;display:flex;align-items:center;gap:.45rem">❓ Câu hỏi thường gặp</div>
@@ -996,7 +1088,26 @@ body::before{
   <button class="bnav-btn" onclick="showTab('stats')"    id="bnav-stats">
     <span class="ico">📊</span><span class="lbl">Chuyên cần</span>
   </button>
+  <button class="bnav-btn" onclick="toggleMoreMenu()" id="bnav-more">
+    <span class="ico">···</span><span class="lbl">Thêm</span>
+  </button>
 </nav>
+
+<!-- More Menu popup -->
+<div id="moreMenuOverlay" onclick="toggleMoreMenu()" style="display:none;position:fixed;inset:0;z-index:199"></div>
+<div id="moreMenu" style="
+  display:none;position:fixed;bottom:calc(var(--nav-h) + .5rem + var(--safe-b));right:.75rem;
+  z-index:210;background:rgba(13,21,38,.97);border:1px solid rgba(255,255,255,.1);
+  border-radius:16px;padding:.5rem;min-width:160px;
+  box-shadow:0 8px 32px rgba(0,0,0,.5);backdrop-filter:blur(16px);
+  animation:moreIn .2s cubic-bezier(.22,1,.36,1) both">
+  <button onclick="showTab('guide');toggleMoreMenu()" style="display:flex;align-items:center;gap:.65rem;width:100%;padding:.65rem .85rem;border-radius:10px;background:none;border:none;color:var(--text);font-size:.88rem;font-weight:600;cursor:pointer;transition:background .15s" onmouseover="this.style.background='rgba(255,255,255,.07)'" onmouseout="this.style.background='none'">
+    <span style="font-size:1.1rem">📖</span> Hướng dẫn
+  </button>
+  <button onclick="location.href='student.html'" style="display:flex;align-items:center;gap:.65rem;width:100%;padding:.65rem .85rem;border-radius:10px;background:none;border:none;color:var(--text);font-size:.88rem;font-weight:600;cursor:pointer;transition:background .15s" onmouseover="this.style.background='rgba(255,255,255,.07)'" onmouseout="this.style.background='none'">
+    <span style="font-size:1.1rem">🏠</span> Trang chủ HS
+  </button>
+</div>
 
 <!-- ══ ATTENDANCE LOG MODAL ══ -->
 <div class="sheet-overlay" id="absenceDetailModal">
@@ -1185,6 +1296,14 @@ function _checkDateChange(){
 }
 
 function showTab(name){
+  // Đóng more menu nếu đang mở
+  const moreMenu = document.getElementById('moreMenu');
+  const moreOverlay = document.getElementById('moreMenuOverlay');
+  if(moreMenu) moreMenu.style.display='none';
+  if(moreOverlay) moreOverlay.style.display='none';
+  const moreBtn = document.getElementById('bnav-more');
+  if(moreBtn) moreBtn.classList.remove('active');
+
   // Kiểm tra ngày thay đổi mỗi khi user chuyển tab
   _checkDateChange();
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -2091,6 +2210,8 @@ async function submitCheckin(){
       updated_at:new Date().toISOString(),
     },{onConflict:'session_id,username'});
     if(error) throw error;
+    // Reset counter nhập sai sau khi điểm danh thành công
+    delete _wrongCodeCount[_curSess.id];
     closeCheckin();
     document.getElementById('sucSess').textContent='📚 '+_curSess.title;
     document.getElementById('sucTime').textContent=(attendStatus==='late'?'⏰ Đi muộn — ':'✅ Đúng giờ — ')+new Date().toLocaleTimeString('vi-VN');
@@ -2216,6 +2337,16 @@ function _updateLiveBadge(hasOpen){
 
 // ── Init ────────────────────────────────────────────────────────
 loadHome();
+
+// ── MORE MENU ───────────────────────────────────────────────────
+function toggleMoreMenu(){
+  const menu = document.getElementById('moreMenu');
+  const overlay = document.getElementById('moreMenuOverlay');
+  const isOpen = menu.style.display === 'block';
+  menu.style.display = isOpen ? 'none' : 'block';
+  overlay.style.display = isOpen ? 'none' : 'block';
+  document.getElementById('bnav-more').classList.toggle('active', !isOpen);
+}
 
 // ── COUNTDOWN ENGINE ────────────────────────────────────────────
 (function startCountdownEngine(){

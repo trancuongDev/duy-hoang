@@ -824,11 +824,17 @@ let _liveCountdown = null;
 let _liveLastRefresh = null;
 
 async function loadOpenSessions(){
-  const {data} = await db.from('dd_sessions').select('*').eq('status','open').order('session_date').order('start_time');
+  const todayStr = today();
+  const {data} = await db.from('dd_sessions').select('*')
+    .eq('session_date', todayStr)
+    .order('start_time');
   const sel = document.getElementById('liveSessionSelect');
   const cur = sel.value;
-  sel.innerHTML = '<option value="">-- Chọn buổi đang mở --</option>'
-    + (data||[]).map(s=>`<option value="${s.id}">${esc(s.title)} — ${esc(s.class_name)}</option>`).join('');
+  sel.innerHTML = '<option value="">-- Chọn buổi hôm nay --</option>'
+    + (data||[]).map(s=>{
+      const statusLabel = s.status==='open' ? '🟢' : s.status==='closed' ? '🔴' : '⏳';
+      return `<option value="${s.id}" data-status="${s.status}">${statusLabel} ${esc(s.title)} — ${esc(s.class_name)}</option>`;
+    }).join('');
   if(cur) sel.value = cur;
   const allClasses=[...new Set((data||[]).map(s=>s.class_name))];
   const cf=document.getElementById('liveClassFilter');
@@ -841,10 +847,82 @@ async function loadOpenSessions(){
 
 let _liveCurrentId=null, _liveStudents=[], _liveRecs=[], _liveSession=null;
 
+// ── HELPER: Lấy danh sách học sinh của một lớp, gộp cả student_classes ──
+async function getStudentsForClass(className) {
+  const targetClass = (className||'').trim();
+  const [{data:allSt}, {data:scRows}] = await Promise.all([
+    db.from('students').select('id,username,full_name,class_name').eq('active',true),
+    db.from('student_classes').select('student_id,class_name'),
+  ]);
+  // Build map: student_id → [extra classes]
+  const scMap = {};
+  (scRows||[]).forEach(sc => {
+    if(!scMap[sc.student_id]) scMap[sc.student_id] = [];
+    if(!scMap[sc.student_id].includes(sc.class_name)) scMap[sc.student_id].push(sc.class_name);
+  });
+  // Merge và filter — gắn _allClasses lên mỗi student để dùng lại sau
+  return (allSt||[])
+    .map(st => {
+      const base  = (st.class_name||'').split(',').map(c=>c.trim()).filter(Boolean);
+      const extra = scMap[st.id] || [];
+      st._allClasses = [...new Set([...base, ...extra])];
+      return st;
+    })
+    .filter(st => st._allClasses.includes(targetClass));
+}
+
+// ── HELPER: Lấy tất cả học sinh active, gộp cả student_classes ──
+async function getAllStudentsWithClasses() {
+  const [{data:allSt}, {data:scRows}] = await Promise.all([
+    db.from('students').select('id,username,full_name,class_name').eq('active',true),
+    db.from('student_classes').select('student_id,class_name'),
+  ]);
+  const scMap = {};
+  (scRows||[]).forEach(sc => {
+    if(!scMap[sc.student_id]) scMap[sc.student_id] = [];
+    if(!scMap[sc.student_id].includes(sc.class_name)) scMap[sc.student_id].push(sc.class_name);
+  });
+  return (allSt||[]).map(st => {
+    const base = (st.class_name||'').split(',').map(c=>c.trim()).filter(Boolean);
+    const extra = scMap[st.id] || [];
+    st._allClasses = [...new Set([...base, ...extra])];
+    return st;
+  });
+}
+
 async function loadLive(){
-  const id = parseInt(document.getElementById('liveSessionSelect').value);
+  const sel = document.getElementById('liveSessionSelect');
+  const id = parseInt(sel.value);
   const el = document.getElementById('liveContent');
   if(!id){el.innerHTML='<div class="empty"><span>📡</span>Chọn buổi học để xem trực tiếp</div>';_liveCurrentId=null;return;}
+
+  // Kiểm tra status của buổi được chọn
+  const selectedOpt = sel.options[sel.selectedIndex];
+  const status = selectedOpt?.dataset?.status || '';
+  if(status === 'scheduled'){
+    el.innerHTML=`
+      <div style="text-align:center;padding:2.5rem 1rem">
+        <div style="font-size:3rem;margin-bottom:.75rem">⏳</div>
+        <div style="font-size:1.05rem;font-weight:800;margin-bottom:.4rem">Buổi học chưa bắt đầu</div>
+        <div style="font-size:.88rem;color:var(--text2);margin-bottom:1.25rem">Vui lòng quay lại khi đến giờ học hoặc mở điểm danh trước.</div>
+        <button onclick="openSessionModal(${id})" style="padding:.6rem 1.25rem;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;font-size:.88rem;font-weight:700;cursor:pointer">
+          ▶️ Mở điểm danh ngay
+        </button>
+      </div>`;
+    _liveCurrentId=null;
+    return;
+  }
+  if(status === 'closed'){
+    el.innerHTML=`
+      <div style="text-align:center;padding:2.5rem 1rem">
+        <div style="font-size:3rem;margin-bottom:.75rem">🔒</div>
+        <div style="font-size:1.05rem;font-weight:800;margin-bottom:.4rem">Buổi học đã kết thúc</div>
+        <div style="font-size:.88rem;color:var(--text2)">Điểm danh đã đóng. Bạn có thể xem chi tiết trong tab Buổi học.</div>
+      </div>`;
+    _liveCurrentId=null;
+    return;
+  }
+
   if(_liveTimer) clearInterval(_liveTimer);
   if(_liveCountdown) clearInterval(_liveCountdown);
   if(window._liveChannel){ try{ db.removeChannel(window._liveChannel); }catch(e){} window._liveChannel=null; }
@@ -872,15 +950,13 @@ function renderCurrentLive(){
 
 async function renderLive(id, el){
   _liveLastRefresh = Date.now();
-  const [{data:session},{data:students},{data:recs}] = await Promise.all([
+  const [{data:session},{data:recs}] = await Promise.all([
     db.from('dd_sessions').select('*').eq('id',id).single(),
-    db.from('students').select('username,full_name,class_name').eq('active',true),
     db.from('dd_records').select('*').eq('session_id',id),
   ]);
   if(!session){el.innerHTML='<div class="empty"><span>❓</span>Không tìm thấy buổi học</div>';return;}
   _liveSession = session;
-  const targetClass = session.class_name.trim();
-  const classStudents = (students||[]).filter(s=>(s.class_name||'').split(',').map(c=>c.trim()).some(c=>c===targetClass));
+  const classStudents = await getStudentsForClass(session.class_name);
   _liveStudents=classStudents; _liveRecs=recs||[];
   // Session info panel
   const infoEl = document.getElementById('liveSessionInfo');
@@ -926,8 +1002,18 @@ let _classes = [];
 async function populateClassSelects(forceRefresh = false){
   // forceRefresh=true để cập nhật khi admin thêm lớp mới trong cùng phiên
   if(_classes.length && !forceRefresh) return;
-  const {data} = await db.from('classes').select('name').order('name');
-  _classes = (data||[]).map(c=>c.name);
+  // Gộp lớp từ 3 nguồn giống admin.js: bảng classes + students.class_name + student_classes
+  const [{data:cls}, {data:sts}, {data:sc}] = await Promise.all([
+    db.from('classes').select('name').order('name'),
+    db.from('students').select('class_name').eq('active', true),
+    db.from('student_classes').select('class_name'),
+  ]);
+  const fromClasses  = (cls||[]).map(c => c.name);
+  const fromStudents = (sts||[])
+    .flatMap(s => (s.class_name||'').split(',').map(c => c.trim()))
+    .filter(Boolean);
+  const fromSC = (sc||[]).map(s => s.class_name).filter(Boolean);
+  _classes = [...new Set([...fromClasses, ...fromStudents, ...fromSC])].sort();
   // Thêm 'bClass' (batch modal) vào danh sách cần populate
   ['sessFilterClass','sClass','bClass','rptClass'].forEach(id=>{
     const el = document.getElementById(id);
@@ -1003,10 +1089,11 @@ async function loadDashboard(){
     });
     // Tính số vắng = tổng học sinh (đúng lớp) * số buổi - số record có mặt/phép
     let totalExpected = 0;
-    // Lấy toàn bộ học sinh active 1 lần, filter client-side để tránh ilike match nhầm lớp
-    const {data:allStudents} = await db.from('students').select('class_name').eq('active',true);
+    // Lấy toàn bộ học sinh active + student_classes để không bỏ sót học sinh đa lớp
+    const allStudentsWithClasses = await getAllStudentsWithClasses();
     for(const s of (todaySess||[])){
-      const cnt = (allStudents||[]).filter(st=>(st.class_name||'').split(',').map(c=>c.trim()).includes(s.class_name.trim())).length;
+      const targetClass = s.class_name.trim();
+      const cnt = allStudentsWithClasses.filter(st => st._allClasses.includes(targetClass)).length;
       totalExpected += cnt;
     }
     absent = Math.max(0, totalExpected - present - late - excused);
@@ -1448,12 +1535,10 @@ async function showSessionSummary(id){
   const s = _allSessions.find(x=>x.id===id);
   if(!s) return;
 
-  const [{data:allStudents},{data:recs}] = await Promise.all([
-    db.from('students').select('username,full_name,class_name').eq('active',true),
+  const [{data:recs}, students] = await Promise.all([
     db.from('dd_records').select('*').eq('session_id',id),
+    getStudentsForClass(s.class_name),
   ]);
-  // Filter chính xác theo class_name, tránh ilike match nhầm lớp
-  const students = (allStudents||[]).filter(st=>(st.class_name||'').split(',').map(c=>c.trim()).includes(s.class_name.trim()));
 
   const total      = students.length;
   const presentList= (recs||[]).filter(r=>r.status==='present');
@@ -1595,7 +1680,8 @@ function renderLiveFiltered(classStudents,recs,el,session){
   const classFilter=document.getElementById('liveClassFilter')?.value||'';
   const searchQ=(document.getElementById('liveSearchInput')?.value||'').toLowerCase().trim();
   let filtered=classStudents;
-  if(classFilter) filtered=classStudents.filter(s=>(s.class_name||'').split(',').map(c=>c.trim()).some(c=>c===classFilter));
+  // Phải dùng _allClasses (gộp cả student_classes) để không bỏ sót học sinh đa lớp
+  if(classFilter) filtered=classStudents.filter(s=>(s._allClasses||((s.class_name||'').split(',').map(c=>c.trim()).filter(Boolean))).includes(classFilter));
   if(searchQ) filtered=filtered.filter(s=>(s.full_name||s.username||'').toLowerCase().includes(searchQ));
   const recMap = Object.fromEntries(recs.map(r=>[r.username,r]));
   const onTime  = filtered.filter(s=>recMap[s.username]?.status==='present');
@@ -1781,12 +1867,10 @@ async function viewDetail(sessionId){
   document.getElementById('detailList').innerHTML = '';
   document.getElementById('detailModal').classList.add('open');
 
-  const [{data:allSt},{data:recs}] = await Promise.all([
-    db.from('students').select('username,full_name,class_name').eq('active',true),
+  const [{data:recs}, students] = await Promise.all([
     db.from('dd_records').select('*').eq('session_id',sessionId),
+    getStudentsForClass(s.class_name),
   ]);
-  // Filter chính xác: tránh ilike match nhầm lớp (VD: "A" khớp cả "12A")
-  const students = (allSt||[]).filter(st=>(st.class_name||'').split(',').map(c=>c.trim()).includes(s.class_name.trim()));
 
   const total   = students.length;
   const recMap  = Object.fromEntries((recs||[]).map(r=>[r.username,r]));
@@ -1850,12 +1934,11 @@ async function exportCSV(){
   if(!_detailSessionId){ toast('Chưa có dữ liệu','error'); return; }
   const s = _allSessions.find(x=>x.id===_detailSessionId);
   if(!s) return;
-  const [{data:allSt},{data:recs}] = await Promise.all([
-    db.from('students').select('username,full_name,class_name').eq('active',true),
+  // Dùng getStudentsForClass để gộp cả student_classes — nhất quán với viewDetail
+  const [students, {data:recs}] = await Promise.all([
+    getStudentsForClass(s.class_name),
     db.from('dd_records').select('*').eq('session_id',_detailSessionId),
   ]);
-  // Filter chính xác: tránh ilike match nhầm lớp
-  const students = (allSt||[]).filter(st=>(st.class_name||'').split(',').map(c=>c.trim()).includes(s.class_name.trim()));
   const recMap = Object.fromEntries((recs||[]).map(r=>[r.username,r]));
   const rows = [['Họ tên','Username','Trạng thái','Giờ điểm danh']];
   students.forEach(st=>{
@@ -1927,16 +2010,32 @@ async function loadReport(){
   const countedSessions = (sessions||[]).filter(s=>s.count_attendance!==false);
 
   const ids = (sessions||[]).map(s=>s.id);
-  const {data:students} = await db.from('students').select('username,full_name,class_name').eq('active',true);
-  const {data:recs}     = await db.from('dd_records').select('*').in('session_id',ids);
+  const [{data:students}, {data:scRows}] = await Promise.all([
+    db.from('students').select('id,username,full_name,class_name').eq('active',true),
+    db.from('student_classes').select('student_id,class_name'),
+  ]);
+  const {data:recs} = await db.from('dd_records').select('*').in('session_id',ids);
+
+  // Build _allClasses cho từng học sinh (gộp students.class_name + student_classes)
+  const scMap = {};
+  (scRows||[]).forEach(sc => {
+    if(!scMap[sc.student_id]) scMap[sc.student_id] = [];
+    if(!scMap[sc.student_id].includes(sc.class_name)) scMap[sc.student_id].push(sc.class_name);
+  });
+  const studentsWithClasses = (students||[]).map(st => {
+    const base  = (st.class_name||'').split(',').map(c=>c.trim()).filter(Boolean);
+    const extra = scMap[st.id] || [];
+    st._allClasses = [...new Set([...base, ...extra])];
+    return st;
+  });
 
   const studentList = cls
-    ? (students||[]).filter(s=>(s.class_name||'').split(',').map(c=>c.trim()).includes(cls))
-    : (students||[]);
+    ? studentsWithClasses.filter(s => s._allClasses.includes(cls))
+    : studentsWithClasses;
 
   _reportRows = studentList.map(st=>{
-    // Chỉ tính buổi count_attendance=true
-    const mySess = countedSessions.filter(s=>(st.class_name||'').split(',').map(c=>c.trim()).includes(s.class_name));
+    // Tính buổi thuộc lớp của học sinh — dùng _allClasses để không bỏ sót
+    const mySess = countedSessions.filter(s => st._allClasses.includes((s.class_name||'').trim()));
     const myRecs = (recs||[]).filter(r=>r.username===st.username&&mySess.map(s=>s.id).includes(r.session_id));
     const total   = mySess.length;
     const present = myRecs.filter(r=>r.status==='present'||r.status==='late').length;

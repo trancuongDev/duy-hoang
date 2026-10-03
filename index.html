@@ -55,17 +55,28 @@
     img { display: block; max-width: 100%; }
     button { font: inherit; cursor: pointer; border: none; background: none; }
 
-    /* ─── GRID BACKGROUND ─── */
+    /* ─── HERO BACKGROUND IMAGE ─── */
     body::before {
       content: '';
       position: fixed;
       inset: 0;
       z-index: 0;
       pointer-events: none;
-      background-image:
-        linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
-      background-size: 40px 40px;
+      background-image: url('nen.png');
+      background-size: cover;
+      background-position: center center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      filter: brightness(0.5) contrast(1.05);
+    }
+    /* Overlay nhẹ để text vẫn đọc được */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background: rgba(15, 23, 42, 0.25);
     }
 
     /* ─── GLOW ORBS ─── */
@@ -75,7 +86,7 @@
       filter: blur(80px);
       pointer-events: none;
       z-index: 0;
-      opacity: .35;
+      opacity: .2;
     }
     .orb-1 { width: 500px; height: 500px; background: #3b82f6; top: -150px; right: -100px; }
     .orb-2 { width: 400px; height: 400px; background: #f97316; bottom: 10%; left: -120px; }
@@ -90,10 +101,10 @@
       align-items: center;
       justify-content: space-between;
       gap: 1rem;
-      background: rgba(15,23,42,.82);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border-bottom: 1px solid var(--border);
+      background: rgba(15,23,42,.0);
+      backdrop-filter: blur(0px);
+      -webkit-backdrop-filter: blur(0px);
+      border-bottom: 1px solid rgba(255,255,255,.08);
       transition: background .3s;
     }
     .nav-brand {
@@ -110,23 +121,8 @@
       border-radius: 8px;
       border: 1px solid rgba(59,130,246,.5);
     }
-    .nav-links-desktop {
-      display: flex;
-      align-items: center;
-      gap: .25rem;
-    }
-    .nav-links-desktop a {
-      padding: .45rem .85rem;
-      border-radius: 8px;
-      font-size: .85rem;
-      font-weight: 600;
-      color: var(--text-2);
-      transition: color .2s, background .2s;
-    }
-    .nav-links-desktop a:hover {
-      color: var(--text);
-      background: var(--surface-hover);
-    }
+    /* Ẩn links ngang trên mọi màn hình — chỉ dùng hamburger */
+    .nav-links-desktop { display: none; }
     .nav-right { display: flex; align-items: center; gap: .65rem; }
     .btn-nav {
       padding: .5rem 1.1rem;
@@ -140,43 +136,71 @@
     }
     .btn-nav:hover { background: var(--accent-2); transform: translateY(-1px); }
 
-    /* Mobile nav toggle */
+    /* Hamburger — luôn hiện */
     .nav-toggle-btn {
-      display: none;
+      display: flex;
       width: 38px; height: 38px;
       border-radius: 8px;
-      border: 1px solid var(--border);
-      background: var(--surface);
+      border: 1px solid rgba(255,255,255,.15);
+      background: rgba(255,255,255,.08);
       color: var(--text);
       align-items: center;
       justify-content: center;
+      transition: background .2s;
     }
+    .nav-toggle-btn:hover { background: rgba(255,255,255,.15); }
+
+    /* Dropdown menu — nhỏ gọn, float phải */
     .nav-mobile-menu {
       display: none;
       position: fixed;
-      top: 57px; left: 0; right: 0;
-      background: var(--bg2);
-      border-bottom: 1px solid var(--border);
-      padding: .75rem 1rem;
+      top: 62px;
+      right: 1.25rem;
+      left: auto;
+      width: 200px;
+      background: rgba(15,23,42,.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,.15);
+      border-radius: 14px;
+      padding: .5rem;
       flex-direction: column;
-      gap: .25rem;
+      gap: .1rem;
       z-index: 199;
+      box-shadow: 0 16px 40px rgba(0,0,0,.5);
+      animation: dropIn .2s cubic-bezier(.22,1,.36,1) both;
     }
-    .nav-mobile-menu.open { display: flex; }
-    .nav-mobile-menu a {
-      padding: .75rem 1rem;
-      border-radius: 8px;
-      font-size: .9rem;
+    @keyframes dropIn {
+      from { opacity:0; transform:translateY(-6px) scale(.98); }
+      to   { opacity:1; transform:none; }
+    }
+    .nav-mobile-menu.open {
+      display: flex;
+      animation: dropIn .18s ease both;
+    }
+    .nav-mobile-menu.closing {
+      animation: none;
+    }    .nav-mobile-menu a {
+      padding: .65rem .9rem;
+      border-radius: 9px;
+      font-size: .88rem;
       font-weight: 600;
       color: var(--text-2);
-      transition: color .2s, background .2s;
+      transition: color .15s, background .15s;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
     }
-    .nav-mobile-menu a:hover { color: var(--text); background: var(--surface-hover); }
+    .nav-mobile-menu a:hover { color: var(--text); background: rgba(255,255,255,.08); }
+    /* Divider trước Đăng nhập trong mobile menu */
+    .nav-mobile-menu .menu-divider {
+      height: 1px;
+      background: rgba(255,255,255,.08);
+      margin: .35rem .5rem;
+    }
 
     @media (max-width: 768px) {
       nav { padding: .75rem 1rem; }
-      .nav-links-desktop { display: none; }
-      .nav-toggle-btn { display: flex; }
       .btn-nav { font-size: .8rem; padding: .45rem .85rem; }
     }
 
@@ -293,8 +317,31 @@
     @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
 
     @media (max-width: 640px) {
-      .hero-btns { flex-direction: column; align-items: stretch; }
-      .btn-primary, .btn-secondary { justify-content: center; }
+      .hero {
+        padding: 6rem 1.25rem 3rem;
+        min-height: 100svh;
+      }
+      .hero-title {
+        font-size: clamp(2rem, 8vw, 2.8rem);
+        line-height: 1.12;
+      }
+      .hero-sub {
+        font-size: .92rem;
+        margin-bottom: 1.75rem;
+      }
+      .hero-btns {
+        flex-direction: column;
+        align-items: center;
+        gap: .65rem;
+      }
+      .btn-primary, .btn-secondary {
+        justify-content: center;
+        width: 100%;
+        max-width: 280px;
+        padding: .82rem 1.5rem;
+        font-size: .9rem;
+      }
+      .scroll-hint { margin-top: 2.5rem; }
     }
 
     /* ─── STATS ─── */
@@ -720,7 +767,7 @@
     .footer {
       position: relative;
       z-index: 1;
-      background: var(--bg2);
+      background: rgba(15,23,42,.95);
       border-top: 1px solid var(--border);
       padding: 3rem 2rem 0;
     }
@@ -802,6 +849,41 @@
       .footer-grid { grid-template-columns: 1fr; }
     }
 
+    /* ─── SECTION BACKDROP ─── */
+    .stats,
+    .section-wrap,
+    section > .section-wrap {
+      position: relative;
+      z-index: 1;
+    }
+    /* Cards trong suốt hoàn toàn — thấy ảnh nền xuyên qua */
+    .teacher-card {
+      background: transparent;
+      border-color: rgba(255,255,255,.12);
+    }
+    .feat-card {
+      background: transparent;
+      border-color: rgba(255,255,255,.1);
+    }
+    .feat-card:hover {
+      background: rgba(255,255,255,.05);
+    }
+    .city-card {
+      background: transparent;
+      border-color: rgba(255,255,255,.1);
+    }
+    .city-card:hover {
+      background: rgba(255,255,255,.05);
+    }
+    .honor-card {
+      background: transparent;
+      border-color: rgba(255,255,255,.12);
+    }
+    .cta-box {
+      background: linear-gradient(135deg, rgba(59,130,246,.15) 0%, rgba(249,115,22,.1) 100%);
+      border-color: rgba(59,130,246,.2);
+    }
+
     section + section,
     section + div { margin-top: 6rem; }
   </style>
@@ -834,11 +916,13 @@
   </div>
 </nav>
 <div class="nav-mobile-menu" id="mobileMenu" role="navigation" aria-label="Mobile menu">
-  <a href="index.html">Trang chủ</a>
-  <a href="#features">Tính năng</a>
-  <a href="library.html">Thư viện</a>
-  <a href="honor.html">Vinh danh</a>
-  <a href="policy.html">Chính sách</a>
+  <a href="index.html">🏠 Trang chủ</a>
+  <a href="#features">✨ Tính năng</a>
+  <a href="library.html">📚 Thư viện</a>
+  <a href="honor.html">🏆 Vinh danh</a>
+  <a href="policy.html">📋 Chính sách</a>
+  <div class="menu-divider"></div>
+  <a href="login.html" style="color:#60a5fa;font-weight:700">→ Đăng nhập</a>
 </div>
 <script>
 (function(){
@@ -1163,10 +1247,14 @@ const CITY_DATA = [
 const maxC = CITY_DATA[0].count;
 const grid = document.getElementById('cityGrid');
 if (grid) {
-  CITY_DATA.forEach(function(d) {
+  var isMobile = window.innerWidth <= 640;
+  var SHOW_INIT = isMobile ? 6 : CITY_DATA.length; // mobile: chỉ hiện 6 tỉnh đầu
+
+  CITY_DATA.forEach(function(d, i) {
     var pct = Math.round(d.count / maxC * 100);
     var el = document.createElement('div');
     el.className = 'city-card';
+    if (isMobile && i >= SHOW_INIT) el.style.display = 'none'; // ẩn phần còn lại
     el.innerHTML =
       '<div class="city-header">' +
         '<span class="city-name">' + d.city + '</span>' +
@@ -1176,22 +1264,45 @@ if (grid) {
       '<div class="city-pct">' + Math.round(d.count / 2950 * 100) + '% tổng học viên</div>';
     grid.appendChild(el);
   });
-  /* Animate bars on scroll */
-  var barObserver = new IntersectionObserver(function(entries) {
-    entries.forEach(function(e) {
-      if (e.isIntersecting) {
-        e.target.querySelectorAll('.city-bar').forEach(function(b) {
-          var w = b.style.width;
-          b.style.width = b.dataset.w || b.style.width;
+
+  // Nút "Xem thêm" trên mobile
+  if (isMobile && CITY_DATA.length > SHOW_INIT) {
+    var showMoreWrap = document.createElement('div');
+    showMoreWrap.style.cssText = 'grid-column:1/-1;text-align:center;margin-top:.25rem';
+    var showMoreBtn = document.createElement('button');
+    showMoreBtn.style.cssText = 'padding:.55rem 1.5rem;border-radius:999px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#93c5fd;font-size:.82rem;font-weight:700;cursor:pointer;transition:background .2s';
+    showMoreBtn.textContent = '▾ Xem thêm ' + (CITY_DATA.length - SHOW_INIT) + ' tỉnh';
+    var expanded = false;
+    showMoreBtn.addEventListener('click', function() {
+      expanded = !expanded;
+      var cards = grid.querySelectorAll('.city-card');
+      cards.forEach(function(c, i) {
+        if (i >= SHOW_INIT) c.style.display = expanded ? '' : 'none';
+      });
+      showMoreBtn.textContent = expanded
+        ? '▴ Thu gọn'
+        : '▾ Xem thêm ' + (CITY_DATA.length - SHOW_INIT) + ' tỉnh';
+      // Animate bars của card vừa hiện
+      if (expanded) {
+        cards.forEach(function(c, i) {
+          if (i >= SHOW_INIT) {
+            var b = c.querySelector('.city-bar');
+            if (b && b.dataset.w) setTimeout(function(){ b.style.width = b.dataset.w; }, 50);
+          }
         });
       }
     });
-  }, { threshold: .1 });
+    showMoreWrap.appendChild(showMoreBtn);
+    grid.parentNode.insertBefore(showMoreWrap, grid.nextSibling);
+  }
+
   /* Pre-set data-w then animate */
   grid.querySelectorAll('.city-bar').forEach(function(b, i) {
     var pct = Math.round(CITY_DATA[i].count / maxC * 100);
     b.dataset.w = pct + '%';
-    setTimeout(function(){ b.style.width = pct + '%'; }, 300 + i * 30);
+    if (!isMobile || i < SHOW_INIT) {
+      setTimeout(function(){ b.style.width = pct + '%'; }, 300 + i * 30);
+    }
   });
 }
 
@@ -1201,5 +1312,4 @@ var revealObserver = new IntersectionObserver(function(entries) {
 }, { threshold: .1 });
 document.querySelectorAll('.reveal').forEach(function(el){ revealObserver.observe(el); });
 </script>
-</body>
-</html>
+</body></html>
