@@ -264,6 +264,10 @@ tr:hover td{background:rgba(255,255,255,.03)}
   .form-row{grid-template-columns:1fr}
   .form-control{font-size:1rem;padding:.72rem .9rem}
 
+  /* ── Checkbox 2-col grid → 1-col on mobile ── */
+  .toggle-grid-2col{grid-template-columns:1fr!important}
+  .toggle-grid-2col .span-full{grid-column:span 1!important}
+
   /* ── Toast vị trí trên nav bar ── */
   .toast-wrap{bottom:calc(70px + .75rem + env(safe-area-inset-bottom,0px));right:.75rem}
 
@@ -560,37 +564,37 @@ tr:hover td{background:rgba(255,255,255,.03)}
         <label class="form-label">📝 Ghi chú <span style="color:var(--text3);font-weight:400;text-transform:none;font-size:.72rem">(tuỳ chọn — học sinh sẽ thấy)</span></label>
         <textarea class="form-control" id="sNote" rows="2" placeholder="VD: Ôn tập chương 3, mang sách giáo khoa, chuẩn bị bài tập..."></textarea>
       </div>
-      <label style="display:flex;align-items:center;gap:.55rem;cursor:pointer;font-size:.88rem;color:var(--text2);background:rgba(59,130,246,.08);padding:.65rem .85rem;border-radius:9px">
+      <label style="display:flex;align-items:center;gap:.55rem;cursor:pointer;font-size:.88rem;color:var(--text2);background:rgba(59,130,246,.08);padding:.65rem .85rem;border-radius:9px;margin-top:.25rem">
         <input type="checkbox" id="sOpenNow" style="accent-color:var(--accent);width:15px;height:15px"/>
         Mở điểm danh ngay sau khi lưu
       </label>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
-        <label style="display:flex;align-items:center;gap:.55rem;cursor:pointer;font-size:.87rem;color:var(--text2);background:rgba(16,185,129,.07);padding:.65rem .85rem;border-radius:9px;border:1px solid rgba(16,185,129,.15)">
-          <input type="checkbox" id="sCountAttendance" checked style="accent-color:var(--green);width:15px;height:15px"/>
-          <div><div style="font-weight:700;color:var(--text)">📊 Tính chuyên cần</div><div style="font-size:.74rem">Tính vào % chuyên cần</div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.55rem;margin-top:.65rem">
+        <label style="display:flex;align-items:flex-start;gap:.55rem;cursor:pointer;font-size:.82rem;color:var(--text2);background:rgba(16,185,129,.07);padding:.65rem .8rem;border-radius:10px;border:1px solid rgba(16,185,129,.15);line-height:1.35">
+          <input type="checkbox" id="sCountAttendance" checked style="accent-color:var(--green);width:15px;height:15px;flex-shrink:0;margin-top:1px"/>
+          <div><div style="font-weight:700;color:var(--text);font-size:.83rem">📊 Tính chuyên cần</div><div style="font-size:.71rem;margin-top:.15rem;line-height:1.3">Tính vào % chuyên cần</div></div>
         </label>
-        <label style="display:flex;align-items:center;gap:.55rem;cursor:pointer;font-size:.87rem;color:var(--text2);background:rgba(59,130,246,.07);padding:.65rem .85rem;border-radius:9px;border:1px solid rgba(59,130,246,.15)">
-          <input type="checkbox" id="sRequireCheckin" checked style="accent-color:var(--accent);width:15px;height:15px"/>
-          <div><div style="font-weight:700;color:var(--text)">✅ Bắt điểm danh</div><div style="font-size:.74rem">Học sinh phải điểm danh</div></div>
+        <label style="display:flex;align-items:flex-start;gap:.55rem;cursor:pointer;font-size:.82rem;color:var(--text2);background:rgba(59,130,246,.07);padding:.65rem .8rem;border-radius:10px;border:1px solid rgba(59,130,246,.15);line-height:1.35">
+          <input type="checkbox" id="sRequireCheckin" checked style="accent-color:var(--accent);width:15px;height:15px;flex-shrink:0;margin-top:1px"/>
+          <div><div style="font-weight:700;color:var(--text);font-size:.83rem">✅ Bắt điểm danh</div><div style="font-size:.71rem;margin-top:.15rem;line-height:1.3">Học sinh phải điểm danh</div></div>
         </label>
-        <label style="display:flex;align-items:center;gap:.55rem;cursor:pointer;font-size:.87rem;color:var(--text2);background:rgba(249,115,22,.07);padding:.65rem .85rem;border-radius:9px;border:1px solid rgba(249,115,22,.15);grid-column:span 2">
-          <input type="checkbox" id="sAllowAbsence" checked style="accent-color:#f97316;width:15px;height:15px"/>
-          <div><div style="font-weight:700;color:var(--text)">📩 Cho phép xin vắng</div><div style="font-size:.74rem">Học sinh được gửi đơn xin vắng buổi này</div></div>
+        <label style="display:flex;align-items:flex-start;gap:.55rem;cursor:pointer;font-size:.82rem;color:var(--text2);background:rgba(249,115,22,.07);padding:.65rem .8rem;border-radius:10px;border:1px solid rgba(249,115,22,.15);grid-column:span 2;line-height:1.35">
+          <input type="checkbox" id="sAllowAbsence" checked style="accent-color:#f97316;width:15px;height:15px;flex-shrink:0;margin-top:1px"/>
+          <div><div style="font-weight:700;color:var(--text);font-size:.83rem">📩 Cho phép xin vắng</div><div style="font-size:.71rem;margin-top:.15rem;line-height:1.3">Học sinh được gửi đơn xin vắng buổi này</div></div>
         </label>
       </div>
-      <div style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:9px;padding:.75rem .85rem">
-        <div style="font-size:.75rem;font-weight:700;color:var(--yellow);letter-spacing:.04em;text-transform:uppercase;margin-bottom:.55rem">⏰ Tự động theo giờ</div>
-        <div class="form-row" style="margin-bottom:0">
-          <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;font-size:.85rem;color:var(--text2)">
-            <input type="checkbox" id="sAutoOpen" style="accent-color:var(--yellow);width:14px;height:14px"/>
-            Tự mở lúc <strong style="color:var(--text)">&nbsp;giờ bắt đầu</strong>
+      <div style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:.85rem .95rem;margin-top:.65rem">
+        <div style="font-size:.75rem;font-weight:700;color:var(--yellow);letter-spacing:.04em;text-transform:uppercase;margin-bottom:.65rem">⏰ Tự động theo giờ</div>
+        <div style="display:flex;flex-direction:column;gap:.5rem;margin-bottom:.5rem">
+          <label style="display:flex;align-items:center;gap:.55rem;cursor:pointer;font-size:.85rem;color:var(--text2)">
+            <input type="checkbox" id="sAutoOpen" style="accent-color:var(--yellow);width:15px;height:15px;flex-shrink:0"/>
+            <span>Tự mở lúc <strong style="color:var(--text)">giờ bắt đầu</strong></span>
           </label>
-          <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;font-size:.85rem;color:var(--text2)">
-            <input type="checkbox" id="sAutoClose" style="accent-color:var(--yellow);width:14px;height:14px"/>
-            Tự đóng lúc <strong style="color:var(--text)">&nbsp;giờ kết thúc</strong>
+          <label style="display:flex;align-items:center;gap:.55rem;cursor:pointer;font-size:.85rem;color:var(--text2)">
+            <input type="checkbox" id="sAutoClose" style="accent-color:var(--yellow);width:15px;height:15px;flex-shrink:0"/>
+            <span>Tự đóng lúc <strong style="color:var(--text)">giờ kết thúc</strong></span>
           </label>
         </div>
-        <div style="font-size:.75rem;color:var(--text3);margin-top:.5rem">Khi trang điểm danh đang mở, hệ thống kiểm tra mỗi phút và tự động mở/đóng đúng giờ.</div>
+        <div style="font-size:.75rem;color:var(--text3);line-height:1.5">Khi trang điểm danh đang mở, hệ thống kiểm tra mỗi phút và tự động mở/đóng đúng giờ.</div>
       </div>
       <div id="sessionModalError" style="display:none;margin-top:.75rem;padding:.6rem .85rem;border-radius:8px;background:#fef2f2;border:1px solid #fecaca;font-size:.82rem;color:#b91c1c"></div>
     </div>
@@ -685,18 +689,18 @@ tr:hover td{background:rgba(255,255,255,.03)}
           <option value="zoom">Zoom</option>
         </select>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-top:.25rem">
-        <label style="display:flex;align-items:center;gap:.55rem;cursor:pointer;font-size:.87rem;color:var(--text2);background:rgba(34,197,94,.07);padding:.65rem .85rem;border-radius:9px;border:1px solid rgba(34,197,94,.15)">
-          <input type="checkbox" id="bCountAttendance" checked style="accent-color:var(--green);width:15px;height:15px"/>
-          <div><div style="font-weight:700;color:var(--text)">📊 Tính chuyên cần</div><div style="font-size:.74rem">Tính vào % chuyên cần</div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.55rem;margin-top:.65rem">
+        <label style="display:flex;align-items:flex-start;gap:.55rem;cursor:pointer;font-size:.82rem;color:var(--text2);background:rgba(34,197,94,.07);padding:.65rem .8rem;border-radius:10px;border:1px solid rgba(34,197,94,.15);line-height:1.35">
+          <input type="checkbox" id="bCountAttendance" checked style="accent-color:var(--green);width:15px;height:15px;flex-shrink:0;margin-top:1px"/>
+          <div><div style="font-weight:700;color:var(--text);font-size:.83rem">📊 Tính chuyên cần</div><div style="font-size:.71rem;margin-top:.15rem;line-height:1.3">Tính vào % chuyên cần</div></div>
         </label>
-        <label style="display:flex;align-items:center;gap:.55rem;cursor:pointer;font-size:.87rem;color:var(--text2);background:rgba(59,130,246,.07);padding:.65rem .85rem;border-radius:9px;border:1px solid rgba(59,130,246,.15)">
-          <input type="checkbox" id="bRequireCheckin" checked style="accent-color:var(--accent);width:15px;height:15px"/>
-          <div><div style="font-weight:700;color:var(--text)">✅ Bắt điểm danh</div><div style="font-size:.74rem">Học sinh phải điểm danh</div></div>
+        <label style="display:flex;align-items:flex-start;gap:.55rem;cursor:pointer;font-size:.82rem;color:var(--text2);background:rgba(59,130,246,.07);padding:.65rem .8rem;border-radius:10px;border:1px solid rgba(59,130,246,.15);line-height:1.35">
+          <input type="checkbox" id="bRequireCheckin" checked style="accent-color:var(--accent);width:15px;height:15px;flex-shrink:0;margin-top:1px"/>
+          <div><div style="font-weight:700;color:var(--text);font-size:.83rem">✅ Bắt điểm danh</div><div style="font-size:.71rem;margin-top:.15rem;line-height:1.3">Học sinh phải điểm danh</div></div>
         </label>
-        <label style="display:flex;align-items:center;gap:.55rem;cursor:pointer;font-size:.87rem;color:var(--text2);background:rgba(249,115,22,.07);padding:.65rem .85rem;border-radius:9px;border:1px solid rgba(249,115,22,.15);grid-column:span 2">
-          <input type="checkbox" id="bAllowAbsence" checked style="accent-color:#f97316;width:15px;height:15px"/>
-          <div><div style="font-weight:700;color:var(--text)">📩 Cho phép xin vắng</div><div style="font-size:.74rem">Học sinh được gửi đơn xin vắng buổi này</div></div>
+        <label style="display:flex;align-items:flex-start;gap:.55rem;cursor:pointer;font-size:.82rem;color:var(--text2);background:rgba(249,115,22,.07);padding:.65rem .8rem;border-radius:10px;border:1px solid rgba(249,115,22,.15);grid-column:span 2;line-height:1.35">
+          <input type="checkbox" id="bAllowAbsence" checked style="accent-color:#f97316;width:15px;height:15px;flex-shrink:0;margin-top:1px"/>
+          <div><div style="font-weight:700;color:var(--text);font-size:.83rem">📩 Cho phép xin vắng</div><div style="font-size:.71rem;margin-top:.15rem;line-height:1.3">Học sinh được gửi đơn xin vắng buổi này</div></div>
         </label>
       </div>
       <div id="bPreview" style="background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.15);border-radius:9px;padding:.75rem .9rem;font-size:.82rem;color:var(--text2);display:none"></div>
