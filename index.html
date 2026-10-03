@@ -67,7 +67,7 @@
       background-position: center center;
       background-repeat: no-repeat;
       background-attachment: fixed;
-      filter: brightness(0.5) contrast(1.05);
+      filter: brightness(0.85) contrast(1.05);
     }
     /* Overlay nhẹ để text vẫn đọc được */
     body::after {
@@ -76,7 +76,7 @@
       inset: 0;
       z-index: 0;
       pointer-events: none;
-      background: rgba(15, 23, 42, 0.25);
+      background: rgba(15, 23, 42, 0.15);
     }
 
     /* ─── GLOW ORBS ─── */
@@ -245,6 +245,7 @@
       letter-spacing: -.03em;
       margin-bottom: 1.25rem;
       animation: fadeUp .55s .05s ease both;
+      text-shadow: 0 2px 20px rgba(0,0,0,.5), 0 4px 40px rgba(0,0,0,.3);
     }
     .hero-title .accent-blue { color: #60a5fa; }
     .hero-title .accent-orange { color: #fb923c; }
@@ -255,6 +256,7 @@
       line-height: 1.75;
       margin-bottom: 2.25rem;
       animation: fadeUp .6s .1s ease both;
+      text-shadow: 0 1px 12px rgba(0,0,0,.6);
     }
     .hero-btns {
       display: flex;
@@ -328,20 +330,22 @@
       .hero-sub {
         font-size: .92rem;
         margin-bottom: 1.75rem;
+        max-width: 340px;
       }
       .hero-btns {
-        flex-direction: column;
-        align-items: center;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
         gap: .65rem;
       }
       .btn-primary, .btn-secondary {
         justify-content: center;
-        width: 100%;
-        max-width: 280px;
-        padding: .82rem 1.5rem;
-        font-size: .9rem;
+        padding: .72rem 1.25rem;
+        font-size: .88rem;
+        white-space: nowrap;
       }
-      .scroll-hint { margin-top: 2.5rem; }
+      .btn-primary svg, .btn-secondary svg { width: 15px; height: 15px; }
+      .scroll-hint { margin-top: 2rem; }
     }
 
     /* ─── STATS ─── */
@@ -948,8 +952,8 @@
 <section class="hero" aria-label="Hero">
   <div class="hero-badge">Hệ thống học tập trực tuyến</div>
   <h1 class="hero-title">
-    Chinh phục <span class="accent-blue">Toán</span><br/>
-    học mọi lúc, <span class="accent-orange">mọi nơi</span>
+    Chinh phục <span class="accent-blue">Toán</span> Cùng<br/>
+    Đường Tăng, <span class="accent-orange">Trên Đường Đi Thỉnh Kinh</span>
   </h1>
   <p class="hero-sub">
     Video bài giảng HD, tài liệu chọn lọc và bài tập thông minh —
