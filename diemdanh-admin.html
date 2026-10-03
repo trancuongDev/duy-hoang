@@ -247,15 +247,14 @@ tr:hover td{background:rgba(255,255,255,.03)}
   .table-wrap .btn-icon{width:38px;height:38px}
   .table-wrap .btn-sm{padding:.45rem .85rem;font-size:.8rem}
 
-  /* ── Modal → bottom sheet ── */
-  .modal-overlay{align-items:flex-end;padding:0}
+  /* ── Modal → centered popup ── */
+  .modal-overlay{align-items:center;padding:1rem}
   .modal{
-    border-radius:22px 22px 0 0;
-    max-height:92dvh;width:100%!important;max-width:100%!important;
-    animation:sheetUp .28s cubic-bezier(.22,1,.36,1) both;
+    border-radius:22px;
+    max-height:88dvh;width:100%!important;max-width:520px!important;
+    animation:modalIn .28s cubic-bezier(.22,1,.36,1) both;
   }
-  @keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-  .modal::before{content:'';display:block;width:36px;height:4px;border-radius:999px;background:rgba(255,255,255,.2);margin:.65rem auto .25rem;flex-shrink:0}
+  @keyframes modalIn{from{transform:scale(.94) translateY(10px);opacity:.5}to{transform:none;opacity:1}}
   .modal-header{padding:.9rem 1.15rem .85rem}
   .modal-body{padding:1rem 1.15rem}
   .modal-footer{padding:.75rem 1.15rem;padding-bottom:calc(.75rem + env(safe-area-inset-bottom,0px))}

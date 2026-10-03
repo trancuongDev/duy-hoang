@@ -440,20 +440,20 @@ body::before{
 .sheet-overlay{
   position:fixed;inset:0;background:rgba(0,0,0,.8);
   backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
-  z-index:999;display:none;align-items:flex-end;justify-content:center;
+  z-index:999;display:none;align-items:center;justify-content:center;
+  padding:1rem;
 }
 .sheet-overlay.open{display:flex}
 .sheet{
   background:var(--bg2);border:1px solid rgba(255,255,255,.1);
-  border-radius:28px 28px 0 0;
+  border-radius:22px;
   width:100%;max-width:520px;
-  box-shadow:0 -32px 80px rgba(0,0,0,.6);
-  animation:sheetUp .3s cubic-bezier(.22,1,.36,1) both;
-  overflow:hidden;max-height:92dvh;
+  box-shadow:0 24px 60px rgba(0,0,0,.6);
+  animation:sheetIn .3s cubic-bezier(.22,1,.36,1) both;
+  overflow:hidden;max-height:88dvh;
   display:flex;flex-direction:column;
-  padding-bottom:calc(1.5rem + var(--safe-b));
 }
-@keyframes sheetUp{from{transform:translateY(100%);opacity:.6}to{transform:translateY(0);opacity:1}}
+@keyframes sheetIn{from{transform:scale(.94) translateY(10px);opacity:.5}to{transform:none;opacity:1}}
 
 .sheet-pill{
   width:36px;height:4px;border-radius:999px;
@@ -592,8 +592,7 @@ body::before{
   .bottom-nav{display:none!important}
   .page{padding:1.5rem 1.5rem 3rem}
   .toast-wrap{bottom:1.5rem}
-  .sheet{border-radius:20px;margin:auto;max-height:90dvh}
-  .sheet-overlay{align-items:center;padding:1.5rem}
+  .sheet{max-width:480px;max-height:90dvh}
 }
 @media(max-width:599px){
   .topbar{display:none}
@@ -2044,6 +2043,10 @@ function openCheckin(idOrObj){
   inp.onkeydown=e=>{ if(e.key==='Enter') submitCheckin(); };
 }
 function closeCheckin(){ document.getElementById('checkinSheet').classList.remove('open'); }
+
+// Generic close cho sheet-overlay / modal
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+
 function closeSuccess(){
   document.getElementById('successSheet').classList.remove('open');
   loadHome(); loadHistory();
