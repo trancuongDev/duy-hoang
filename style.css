@@ -1084,6 +1084,34 @@ body.sidebar-collapsed .dash-main { margin-left: 0; }
 /* Class tag */
 .class-tag { background: var(--primary-light); color: var(--primary); font-weight: 700; padding: .15rem .55rem; border-radius: 8px; font-size: .76rem; }
 
+.s-class-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+  margin-bottom: 1rem;
+}
+.s-class-filter-btn {
+  padding: .38rem .85rem;
+  border-radius: 20px;
+  border: 1.5px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: .78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s, box-shadow .15s;
+}
+.s-class-filter-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.s-class-filter-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(99,102,241,.28);
+}
+
 /* ===================== SECURITY OVERLAY ===================== */
 #securityOverlay {
   display: none;

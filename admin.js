@@ -1366,6 +1366,15 @@ document.getElementById('csSaveBtn').addEventListener('click', async () => {
     if (ok) showToast(`📧 Đã gửi thông tin tài khoản về ${username}`);
   });
 
+  // Ghi vào Google Sheet (không chặn UI, không báo lỗi nếu chưa cấu hình)
+  appendToGoogleSheet({
+    student_code:  document.getElementById('naCode').textContent,
+    full_name:     name,
+    class_name:    cls || '',
+    username,
+    registered_at: new Date().toLocaleString('vi-VN'),
+  }).catch(() => {});
+
   await renderMiniStudents();
   await populateClassFilters();
 });
@@ -6398,6 +6407,56 @@ async function doGmailSync() {
 
 
 // ============================================================
+// LIÊN KẾT GOOGLE SHEETS — Ghi thông tin học viên tự động
+// ============================================================
+// URL lấy từ Google Apps Script đã deploy (Web App).
+// Lưu vào Supabase app_settings key = 'google_sheet_url'
+// để admin có thể thay đổi mà không cần sửa code.
+let _sheetUrl = null; // cache URL sau lần fetch đầu tiên
+
+/** Lấy URL Google Apps Script từ Supabase app_settings */
+async function _getSheetUrl() {
+  if (_sheetUrl !== undefined && _sheetUrl !== null) return _sheetUrl;
+  try {
+    const { data } = await db.from('app_settings').select('value').eq('key', 'google_sheet_url').maybeSingle();
+    _sheetUrl = data?.value || '';
+  } catch (e) {
+    _sheetUrl = '';
+  }
+  return _sheetUrl;
+}
+
+/**
+ * Ghi 1 học viên vào Google Sheet qua Apps Script Web App.
+ * @param {object} student - { student_code, full_name, class_name, username, registered_at }
+ */
+async function appendToGoogleSheet(student) {
+  const url = await _getSheetUrl();
+  if (!url) return; // Chưa cấu hình → bỏ qua, không báo lỗi
+
+  const payload = {
+    student_code:   student.student_code  || '—',
+    full_name:      student.full_name     || '',
+    class_name:     student.class_name   || '',
+    username:       student.username      || '',
+    registered_at:  student.registered_at || new Date().toLocaleString('vi-VN'),
+  };
+
+  try {
+    // no-cors vì Apps Script không trả CORS header cho fetch thông thường
+    await fetch(url, {
+      method:  'POST',
+      mode:    'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(payload),
+    });
+    console.info('[Sheet] ✅ Đã ghi học viên:', payload.full_name);
+  } catch (e) {
+    console.warn('[Sheet] ❌ Lỗi ghi Google Sheet:', e.message);
+  }
+}
+
+// ============================================================
 // GỬI EMAIL TỰ ĐỘNG QUA EMAILJS
 // ============================================================
 // Cấu hình EmailJS — Thay bằng thông tin từ emailjs.com
@@ -6788,6 +6847,15 @@ async function doBulkCreate() {
         password_raw: password,
         class_name:   cls || '',
         student_code: code
+      }).catch(() => {});
+
+      // Ghi vào Google Sheet
+      appendToGoogleSheet({
+        student_code:  code,
+        full_name:     name,
+        class_name:    cls || '',
+        username:      gmail,
+        registered_at: new Date().toLocaleString('vi-VN'),
       }).catch(() => {});
 
       logAccountActivity('Tạo tài khoản', { full_name: name, username: gmail, class_name: cls||'' }).catch(() => {});

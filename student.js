@@ -125,6 +125,76 @@ function lessonMatchesStudentClasses(lesson, classes) {
   return classesIntersect(lesson?.class_name, classes);
 }
 
+function belongsToSelectedClass(rawClassName, selectedClass) {
+  if (!selectedClass) return true;
+  const wanted = normalizeClassName(selectedClass);
+  return parseClassList(rawClassName).some(c => normalizeClassName(c) === wanted);
+}
+
+function classTagsHtml(rawClassName) {
+  const tags = parseClassList(rawClassName);
+  if (!tags.length) return '';
+  return tags.map(c => `<span class="class-tag" style="font-size:.68rem">${escHtml(c)}</span>`).join(' ');
+}
+
+let _lessonSelectedClass = '';
+
+function _updateLessonClassPicker() {
+  const picker = document.getElementById('sLessonClassFilter');
+  if (!picker) return;
+  picker.querySelectorAll('button').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.cls === _lessonSelectedClass);
+  });
+}
+
+function _buildLessonClassPicker() {
+  const picker = document.getElementById('sLessonClassFilter');
+  if (!picker) return;
+  if (!myClasses.length) {
+    picker.style.display = 'none';
+    picker.innerHTML = '';
+    picker.dataset.key = '';
+    _lessonSelectedClass = '';
+    return;
+  }
+  picker.style.display = 'flex';
+  const key = myClasses.join('|');
+  if (picker.dataset.key === key) {
+    if (_lessonSelectedClass && !myClasses.includes(_lessonSelectedClass)) _lessonSelectedClass = '';
+    _updateLessonClassPicker();
+    return;
+  }
+  picker.dataset.key = key;
+  picker.innerHTML = '';
+  if (_lessonSelectedClass && !myClasses.includes(_lessonSelectedClass)) _lessonSelectedClass = '';
+
+  const allBtn = document.createElement('button');
+  allBtn.type = 'button';
+  allBtn.className = 's-class-filter-btn' + (_lessonSelectedClass === '' ? ' active' : '');
+  allBtn.textContent = '📋 Tất cả lớp';
+  allBtn.dataset.cls = '';
+  allBtn.addEventListener('click', () => {
+    _lessonSelectedClass = '';
+    _updateLessonClassPicker();
+    renderLessonListFromCache();
+  });
+  picker.appendChild(allBtn);
+
+  myClasses.forEach(cls => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 's-class-filter-btn' + (_lessonSelectedClass === cls ? ' active' : '');
+    btn.textContent = '🏫 ' + cls;
+    btn.dataset.cls = cls;
+    btn.addEventListener('click', () => {
+      _lessonSelectedClass = cls;
+      _updateLessonClassPicker();
+      renderLessonListFromCache();
+    });
+    picker.appendChild(btn);
+  });
+}
+
 // Kiểm tra nhóm bài học có visible với học sinh hiện tại không
 function groupMatchesStudent(g) {
   if (g?.allowed_usernames) {
@@ -507,7 +577,21 @@ async function renderLessonList(forceRefresh = false) {
 
 function renderLessonListFromCache() {
   const { list, allVids, allDocs, allGroups } = _lessonCache;
-  paintContinueBanner('sLessonContinue', list, true);
+  const groupById = Object.fromEntries((allGroups || []).map(g => [g.id, g]));
+  _buildLessonClassPicker();
+
+  function lessonClassLabel(l) {
+    return l?.class_name || (l?.group_id != null ? groupById[l.group_id]?.class_name : '') || '';
+  }
+  function lessonMatchesClassFilter(l) {
+    if (!_lessonSelectedClass) return true;
+    if (belongsToSelectedClass(l.class_name, _lessonSelectedClass)) return true;
+    const g = l.group_id != null ? groupById[l.group_id] : null;
+    return !!(g && belongsToSelectedClass(g.class_name, _lessonSelectedClass));
+  }
+
+  const classFilteredList = list.filter(lessonMatchesClassFilter);
+  paintContinueBanner('sLessonContinue', classFilteredList, true);
   const el = document.getElementById('sLessonList');
   el.innerHTML = '';
   const normalizedGroups = [];
@@ -522,11 +606,17 @@ function renderLessonListFromCache() {
     normalizedGroups.push(g);
   });
 
-  // Lọc theo search
+  // Lọc theo search + lớp
   const q = (document.getElementById('sLessonSearch')?.value||'').toLowerCase().trim();
-  const filtered = q ? list.filter(l => l.name.toLowerCase().includes(q) || (l.description||'').toLowerCase().includes(q)) : list;
+  const filtered = classFilteredList.filter(l =>
+    !q || l.name.toLowerCase().includes(q) || (l.description||'').toLowerCase().includes(q)
+  );
 
-  document.getElementById('sEmptyLessons').style.display = filtered.length?'none':'block';
+  const emptyEl = document.getElementById('sEmptyLessons');
+  emptyEl.style.display = filtered.length ? 'none' : 'block';
+  emptyEl.textContent = _lessonSelectedClass
+    ? `Chưa có bài học nào cho lớp ${_lessonSelectedClass}.`
+    : 'Chưa có bài học nào.';
   if (!filtered.length) return;
   const vcMap = {}, dcMap = {};
   (allVids||[]).forEach(v => { vcMap[v.lesson_id] = (vcMap[v.lesson_id]||0)+1; });
@@ -572,7 +662,7 @@ function renderLessonListFromCache() {
     const num = document.createElement('div'); num.className = 'group-lesson-num'; num.textContent = idx + 1;
     const info = document.createElement('div'); info.className = 'group-lesson-info';
     info.innerHTML = `<div class="group-lesson-title"><span style="margin-right:.35rem">📚</span>${escHtml(l.name)}</div>
-      <div class="group-lesson-stats"><span>🎬 ${vc}</span><span>📄 ${dc}</span>${lessonProgressBadgeHtml(l.id, false)}</div>`;
+      <div class="group-lesson-stats"><span>🎬 ${vc}</span><span>📄 ${dc}</span>${classTagsHtml(lessonClassLabel(l))}${lessonProgressBadgeHtml(l.id, false)}</div>`;
     const favBtn = document.createElement('button');
     favBtn.style.cssText = 'background:none;border:none;cursor:pointer;font-size:1.1rem;padding:.2rem .3rem;flex-shrink:0;line-height:1;transition:transform .15s';
     favBtn.textContent = favSet.has(l.id) ? '❤️' : '🤍';
@@ -602,8 +692,12 @@ function renderLessonListFromCache() {
     // Nhóm con: hiện nếu khớp lớp/HS, HOẶC có bài đã lọc thuộc nhóm đó
     const children = (normalizedGroups||[]).filter(x => {
       if (x.parent_id !== g.id) return false;
+      const hasLessons = getLessonsForGroup(x.id, x.name).length > 0;
+      if (_lessonSelectedClass) {
+        return hasLessons || (groupMatchesStudent(x) && belongsToSelectedClass(x.class_name, _lessonSelectedClass));
+      }
       if (groupMatchesStudent(x)) return true;
-      return getLessonsForGroup(x.id, x.name).length > 0;
+      return hasLessons;
     });
     const directLessons = getLessonsForGroup(g.id, g.name);
     // Bỏ qua nhóm không có nội dung gì
@@ -627,8 +721,8 @@ function renderLessonListFromCache() {
       : depth === 2
       ? '<span style="font-size:.62rem;background:rgba(16,185,129,.12);color:#059669;padding:.1rem .4rem;border-radius:4px;margin-left:.4rem;font-weight:700">Nhóm cháu</span>'
       : '';
-    bodyEl.innerHTML = `<div class="group-card-name">${g.name}${depthBadge}</div>
-      <div class="group-card-meta"><span class="group-card-count">${children.length ? children.length + ' nhóm con • ' : ''}${directLessons.length} bài học</span></div>`;
+    bodyEl.innerHTML = `<div class="group-card-name">${escHtml(g.name)}${depthBadge}</div>
+      <div class="group-card-meta"><span class="group-card-count">${children.length ? children.length + ' nhóm con • ' : ''}${directLessons.length} bài học</span>${classTagsHtml(g.class_name)}</div>`;
     const chevron = document.createElement('div');
     chevron.className = 'group-card-chevron'; chevron.textContent = '▼';
     const header = document.createElement('div');
@@ -695,7 +789,8 @@ function renderLessonListFromCache() {
   const roots = (normalizedGroups||[]).filter(g => {
     if (g.parent_id) return false; // chỉ lấy root
     const treeIds = collectTreeIds(g.id);
-    if ((normalizedGroups || []).some(x => treeIds.has(x.id) && groupMatchesStudent(x))) return true;
+    const groupInFilter = (x) => !_lessonSelectedClass || belongsToSelectedClass(x.class_name, _lessonSelectedClass);
+    if ((normalizedGroups || []).some(x => treeIds.has(x.id) && groupMatchesStudent(x) && groupInFilter(x))) return true;
     return filtered.some(l => l.group_id != null && treeIds.has(l.group_id));
   });
   const seenRootIds = new Set();
@@ -1032,6 +1127,13 @@ async function openLessonDetail(id) {
 
   if (!l) return;
   document.getElementById('sLessonDetailTitle').textContent = l.name;
+  const clsEl = document.getElementById('sLessonDetailClass');
+  if (clsEl) {
+    const clsTags = parseClassList(l.class_name);
+    clsEl.innerHTML = clsTags.length
+      ? clsTags.map(c => `<span style="background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.22);color:#fff;font-size:.72rem;font-weight:700;padding:.18rem .55rem;border-radius:8px">🏫 ${escHtml(c)}</span>`).join('')
+      : '';
+  }
   document.getElementById('sLessonDetailDesc').textContent  = l.description||'';
   paintLessonDoneBtn(id);
   markLessonOpened(id).then(() => paintLessonDoneBtn(id));

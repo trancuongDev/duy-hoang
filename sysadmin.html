@@ -717,6 +717,30 @@
             <button class="sa-btn sa-btn-primary sa-btn-sm" onclick="changeAdminPw()">🔑 Đổi mật khẩu</button>
           </div>
 
+          <!-- Google Sheets liên kết -->
+          <div class="sa-card" style="grid-column:1/-1">
+            <div class="sa-card-title">📊 Liên kết Google Sheets</div>
+            <div style="background:#f0fdf4;border-radius:10px;padding:.85rem 1rem;margin-bottom:.9rem;font-size:.8rem;line-height:1.75;color:#166534;border:1px solid #bbf7d0">
+              <b>📋 Cách cài đặt:</b><br/>
+              1. Mở Google Sheets → <b>Extensions → Apps Script</b> → dán nội dung file <code>google-apps-script.js</code> kèm theo.<br/>
+              2. Bấm <b>Deploy → New deployment → Web App</b> → Execute as: <i>Me</i> → Who has access: <i>Anyone</i>.<br/>
+              3. Copy <b>Web App URL</b> (dạng <code>https://script.google.com/macros/s/…/exec</code>) rồi dán vào ô bên dưới → Lưu.<br/>
+              4. Mỗi khi tạo tài khoản mới, hệ thống sẽ tự động ghi 1 hàng: <b>Mã HV · Họ tên · Khóa học · Gmail · Ngày đăng ký</b>.
+            </div>
+            <div class="sa-fg">
+              <label>URL Google Apps Script (Web App)</label>
+              <input type="url" id="sheetUrlInput"
+                placeholder="https://script.google.com/macros/s/…/exec"
+                style="font-size:.82rem"/>
+            </div>
+            <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-top:.2rem">
+              <button class="sa-btn sa-btn-primary sa-btn-sm" onclick="saveSheetUrl()">💾 Lưu URL</button>
+              <button class="sa-btn sa-btn-outline sa-btn-sm" onclick="testSheetUrl()">🔍 Kiểm tra kết nối</button>
+              <button class="sa-btn sa-btn-outline sa-btn-sm" style="color:#ef4444;border-color:#fca5a5" onclick="clearSheetUrl()">🗑 Xóa URL</button>
+            </div>
+            <div id="sheetUrlStatus" style="font-size:.78rem;margin-top:.5rem;min-height:1.2em"></div>
+          </div>
+
           <!-- Thống kê app_settings -->
           <div class="sa-card">
             <div class="sa-card-title">📊 Cài đặt hiện tại (app_settings)</div>
@@ -1207,6 +1231,7 @@ function showPage(name) {
   if (name === 'assistant-logs') renderAssistantLogs();
   if (name === 'maintenance')  renderMaintenance();
   if (name === 'guide')        renderGuide();
+  if (name === 'settings')     loadSheetUrl(); // nạp URL Google Sheet khi mở trang cài đặt
 }
 
 document.querySelectorAll('.sa-link[data-page]').forEach(l => {
@@ -1653,6 +1678,48 @@ async function saveMaintMsg() {
 }
 async function saveBannerMsg() {
   await setSetting('banner_message', document.getElementById('bannerMsg').value.trim());
+}
+
+// ---- Google Sheets URL ----
+async function loadSheetUrl() {
+  const { data } = await db.from('app_settings').select('value').eq('key','google_sheet_url').maybeSingle();
+  const url = data?.value || '';
+  const inp = document.getElementById('sheetUrlInput');
+  if (inp) inp.value = url;
+  const st = document.getElementById('sheetUrlStatus');
+  if (st) st.innerHTML = url
+    ? `<span style="color:#059669">✅ Đã cấu hình — <a href="${url.split('?')[0]}" target="_blank" style="color:#059669">xem script</a></span>`
+    : `<span style="color:#94a3b8">Chưa cấu hình. Nhập URL rồi bấm Lưu.</span>`;
+}
+async function saveSheetUrl() {
+  const url = (document.getElementById('sheetUrlInput')?.value || '').trim();
+  const st = document.getElementById('sheetUrlStatus');
+  if (url && !url.startsWith('https://script.google.com/')) {
+    st.innerHTML = '<span style="color:#ef4444">⚠️ URL phải bắt đầu bằng https://script.google.com/</span>';
+    return;
+  }
+  await setSetting('google_sheet_url', url);
+  // Xóa cache trong admin.js nếu cùng trang (window)
+  if (typeof window._sheetUrl !== 'undefined') window._sheetUrl = null;
+  st.innerHTML = url
+    ? `<span style="color:#059669">✅ Đã lưu URL.</span>`
+    : `<span style="color:#94a3b8">Đã xóa URL.</span>`;
+}
+async function testSheetUrl() {
+  const url = (document.getElementById('sheetUrlInput')?.value || '').trim();
+  const st = document.getElementById('sheetUrlStatus');
+  if (!url) { st.innerHTML = '<span style="color:#ef4444">Chưa nhập URL.</span>'; return; }
+  st.innerHTML = '<span style="color:#6366f1">⏳ Đang kiểm tra...</span>';
+  try {
+    await fetch(url + '?test=1', { method:'GET', mode:'no-cors' });
+    st.innerHTML = '<span style="color:#059669">✅ Kết nối thành công (no-cors). Hãy thử tạo 1 tài khoản test để xác nhận dữ liệu ghi vào sheet.</span>';
+  } catch(e) {
+    st.innerHTML = `<span style="color:#ef4444">❌ Lỗi kết nối: ${e.message}</span>`;
+  }
+}
+async function clearSheetUrl() {
+  document.getElementById('sheetUrlInput').value = '';
+  await saveSheetUrl();
 }
 
 async function changeAdminPw() {
