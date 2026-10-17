@@ -407,6 +407,50 @@ document.querySelectorAll('[data-goto]').forEach(l => {
 
 
 // ---- Class filters ----
+function parseClassList(raw) {
+  return String(raw || '')
+    .split(',')
+    .map(c => c.trim())
+    .filter(Boolean);
+}
+function studentIdKey(id) {
+  const n = Number(id);
+  return Number.isFinite(n) ? n : id;
+}
+
+// Supabase mặc định cắt ~1000 dòng dù gọi .limit(10000) — phải phân trang bằng range
+async function fetchAllRows(makeQuery, pageSize = 1000) {
+  const all = [];
+  let from = 0;
+  while (true) {
+    const { data, error } = await makeQuery().range(from, from + pageSize - 1);
+    if (error) throw error;
+    const chunk = data || [];
+    all.push(...chunk);
+    if (chunk.length < pageSize) break;
+    from += pageSize;
+    if (from > 200000) break;
+  }
+  return all;
+}
+
+function mergeStudentClassNames(students, scRows) {
+  const scMap = {};
+  (scRows || []).forEach(sc => {
+    const sid = studentIdKey(sc.student_id);
+    if (!scMap[sid]) scMap[sid] = [];
+    parseClassList(sc.class_name).forEach(name => {
+      if (!scMap[sid].includes(name)) scMap[sid].push(name);
+    });
+  });
+  (students || []).forEach(s => {
+    const extras = scMap[studentIdKey(s.id)] || [];
+    const base = parseClassList(s.class_name);
+    s.class_name = [...new Set([...base, ...extras])].join(', ');
+  });
+  return students || [];
+}
+
 // Cache danh sách lớp — invalidate khi thêm/xóa lớp
 let _classesCache = null;
 let _classesCacheTime = 0;
@@ -417,16 +461,14 @@ async function getClasses() {
   if (_classesCache && (now - _classesCacheTime) < _CLASSES_CACHE_TTL) {
     return _classesCache;
   }
-  const [{ data: cls }, { data: sts }, { data: sc }] = await Promise.all([
-    db.from('classes').select('name').order('name'),
-    db.from('students').select('class_name'),
-    db.from('student_classes').select('class_name'),
+  const [cls, sts, sc] = await Promise.all([
+    fetchAllRows(() => db.from('classes').select('name').order('id')),
+    fetchAllRows(() => db.from('students').select('class_name').order('id')),
+    fetchAllRows(() => db.from('student_classes').select('class_name').order('id')),
   ]);
-  const fromClasses  = (cls||[]).map(c => c.name);
-  const fromStudents = (sts||[])
-    .flatMap(s => (s.class_name||'').split(',').map(c => c.trim()))
-    .filter(Boolean);
-  const fromSC = (sc||[]).map(s => s.class_name).filter(Boolean);
+  const fromClasses  = (cls||[]).map(c => (c.name||'').trim()).filter(Boolean);
+  const fromStudents = (sts||[]).flatMap(s => parseClassList(s.class_name));
+  const fromSC = (sc||[]).flatMap(s => parseClassList(s.class_name));
   _classesCache = [...new Set([...fromClasses, ...fromStudents, ...fromSC])].sort();
   _classesCacheTime = now;
   return _classesCache;
@@ -1515,7 +1557,7 @@ function renderStudentRow(s, today, expiredClasses) {
     studyStatus = '<span class="status-pill gray">⚫ Offline</span>';
   }
 
-  tr.innerHTML = `<td>${s.student_code||'—'}</td><td>${s.full_name}${s.notes?` <span class="muted" title="${s.notes}" style="cursor:help">📝</span>`:''}${loginAttempts>0?' '+attemptsBadge:''}</td><td>${s.phone||'—'}</td><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.username}</td><td>${(s.class_name||'').split(',').map(c=>c.trim()).filter(Boolean).map(c=>`<span class="class-tag">${c}</span>`).join(' ')||'—'}</td><td>${s.created_at ? fmtDate(s.created_at.split('T')[0]) : '—'}</td><td>${(() => {
+  tr.innerHTML = `<td>${s.student_code||'—'}</td><td>${s.full_name}${s.notes?` <span class="muted" title="${s.notes}" style="cursor:help">📝</span>`:''}${loginAttempts>0?' '+attemptsBadge:''}</td><td>${s.phone||'—'}</td><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.username}</td><td style="white-space:normal;max-width:240px">${parseClassList(s.class_name).map(c=>`<span class="class-tag">${c}</span>`).join(' ')||'—'}</td><td>${s.created_at ? fmtDate(s.created_at.split('T')[0]) : '—'}</td><td>${(() => {
     if (!s.expiry_date) return '<span style="color:var(--muted);font-size:.8rem">—</span>';
     const exp = new Date(s.expiry_date); exp.setHours(0,0,0,0);
     const daysLeft = Math.round((exp - today) / 86400000);
@@ -1585,25 +1627,13 @@ async function renderStudents() {
   const q      = (document.getElementById('studentSearch').value||'').toLowerCase();
   const cls    = document.getElementById('studentFilterClass').value;
   const expiry = document.getElementById('studentFilterExpiry')?.value || '';
-  let query = db.from('students').select('*').order('full_name').limit(10000);
-  // Gộp 3 query vào Promise.all thay vì tuần tự
-  const [{ data: list }, { data: scAll }, { data: allClasses }] = await Promise.all([
-    query,
-    db.from('student_classes').select('student_id,class_name'),
-    db.from('classes').select('name,end_date'),
+  const [list, scAll, allClasses] = await Promise.all([
+    fetchAllRows(() => db.from('students').select('*').order('id')),
+    fetchAllRows(() => db.from('student_classes').select('student_id,class_name').order('id')),
+    fetchAllRows(() => db.from('classes').select('name,end_date').order('id')),
   ]);
-
-  // Merge lớp phụ từ student_classes vào class_name
-  const scMap = {}; // student_id → [class_name]
-  (scAll||[]).forEach(sc => {
-    if (!scMap[sc.student_id]) scMap[sc.student_id] = [];
-    if (!scMap[sc.student_id].includes(sc.class_name)) scMap[sc.student_id].push(sc.class_name);
-  });
-  (list||[]).forEach(s => {
-    const extras = scMap[s.id] || [];
-    const base = (s.class_name||'').split(',').map(c=>c.trim()).filter(Boolean);
-    s.class_name = [...new Set([...base, ...extras])].join(', ');
-  });
+  list.sort((a, b) => (a.full_name || '').localeCompare(b.full_name || '', 'vi'));
+  mergeStudentClassNames(list, scAll);
 
   const today = new Date(); today.setHours(0,0,0,0);
   const expiredClasses = new Set((allClasses||[]).filter(c => c.end_date && new Date(c.end_date) < today).map(c => c.name));
@@ -1618,7 +1648,7 @@ async function renderStudents() {
 
   let filtered = (list||[]).filter(s => {
     // Filter theo lớp — hỗ trợ nhiều lớp
-    if (cls && !s.class_name?.split(',').map(c=>c.trim()).includes(cls)) return false;
+    if (cls && !parseClassList(s.class_name).includes(cls)) return false;
     if (!q) return true;
     return s.full_name.toLowerCase().includes(q) || s.username.toLowerCase().includes(q) || (s.student_code||'').toLowerCase().includes(q) || (s.phone||'').includes(q);
   });
@@ -2015,7 +2045,7 @@ function openEditStudent(s) {
   document.getElementById('esNotes').value = s.notes||'';
   document.getElementById('esError').textContent = '';
   populateClassFilters().then(async () => {
-    document.getElementById('esClass').value = s.class_name||'';
+    document.getElementById('esClass').value = parseClassList(s.class_name)[0] || '';
     const esAdd = document.getElementById('esAddClassSelect');
     if (esAdd) { esAdd.innerHTML = document.getElementById('esClass').innerHTML; esAdd.value = ''; }
     await renderEsClassList(s.id);
@@ -2086,7 +2116,8 @@ document.getElementById('esSaveBtn').addEventListener('click', async () => {
   const dupWE = await checkDuplicate(username, phone, editingStudentId);
   if (dupWE.length) { err.innerHTML = '⚠️ ' + dupWE.join('<br/>⚠️ '); return; }
   // Trợ lý không được thay đổi ngày hết hạn — giữ nguyên giá trị cũ
-  const updates={ student_code:code, full_name:name, username, class_name:cls||null, notes, phone: phone||null };
+  const updates={ student_code:code, full_name:name, username, notes, phone: phone||null };
+  if (cls) updates.class_name = cls;
   if (isTeacher) updates.expiry_date = expiry;
   const { data: orig } = await db.from('students').select('student_code').eq('id', editingStudentId).single();
   if (code && code !== (orig?.student_code || '')) updates.password = await hashPw(code);
@@ -3103,30 +3134,27 @@ async function renderClasses() {
   grid.innerHTML='';
   document.getElementById('emptyClasses').style.display=allNames.length?'none':'block';
   const today = new Date(); today.setHours(0,0,0,0);
-  const { data: allStudentsFull } = await db.from('students').select('id, class_name, active, is_online, last_seen');
-  // Lấy tất cả student_classes để đếm đúng học viên nhiều lớp
-  const { data: allSC } = await db.from('student_classes').select('student_id, class_name');
+  const [allStudentsFull, allSC] = await Promise.all([
+    fetchAllRows(() => db.from('students').select('id, class_name, active, is_online, last_seen').order('id')),
+    fetchAllRows(() => db.from('student_classes').select('student_id, class_name').order('id')),
+  ]);
+  mergeStudentClassNames(allStudentsFull, allSC);
   const scMap = {}; // class_name → Set of student_id
-  (allSC||[]).forEach(sc => {
-    if (!scMap[sc.class_name]) scMap[sc.class_name] = new Set();
-    scMap[sc.class_name].add(sc.student_id);
+  (allStudentsFull||[]).forEach(s => {
+    const sid = studentIdKey(s.id);
+    parseClassList(s.class_name).forEach(name => {
+      if (!scMap[name]) scMap[name] = new Set();
+      scMap[name].add(sid);
+    });
   });
-  const studentMap = Object.fromEntries((allStudentsFull||[]).map(s=>[s.id, s]));
+  const studentMap = Object.fromEntries((allStudentsFull||[]).map(s=>[studentIdKey(s.id), s]));
 
   const colors = ['#6366f1','#0ea5e9','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899'];
   allNames.forEach((cls, idx)=>{
-    // Lấy học viên từ student_classes — chỉ đếm học sinh active
-    const studentIds = scMap[cls] ? [...scMap[cls]] : [];
-    const students = studentIds.map(id => studentMap[id]).filter(Boolean).filter(s => s.active !== false);
-    // Fallback: học viên có class_name chứa cls nhưng chưa có trong student_classes
-    const fallback = (allStudentsFull||[]).filter(s => {
-      if (scMap[cls]?.has(s.id)) return false; // đã đếm rồi
-      const sc = (s.class_name||'').split(',').map(c=>c.trim()).filter(Boolean);
-      return sc.includes(cls) && s.active !== false;
-    });
-    const allInClass = [...students, ...fallback];
+    const idSet = new Set(scMap[cls] || []);
+    const allInClass = [...idSet].map(id => studentMap[id]).filter(Boolean);
     const count = allInClass.length;
-    const activeCount = allInClass.filter(s=>s.active).length;
+    const activeCount = allInClass.filter(s => s.active !== false).length;
     const onlineCount = allInClass.filter(s=>s.is_online && s.last_seen && (Date.now()-new Date(s.last_seen).getTime())<90000).length;
     const info = clsMap[cls]||{};
     const isExpired = info.end_date && new Date(info.end_date) < today;
@@ -3172,7 +3200,7 @@ async function renderClasses() {
             <div style="font-size:.7rem;color:var(--muted)">Online</div>
           </div>
           <div style="flex:1;background:var(--bg);border-radius:10px;padding:.55rem .75rem;text-align:center">
-            <div style="font-size:1.1rem;font-weight:800;color:var(--text)">${count-activeCount}</div>
+            <div style="font-size:1.1rem;font-weight:800;color:var(--text)">${Math.max(0, count-activeCount)}</div>
             <div style="font-size:.7rem;color:var(--muted)">Đã khóa</div>
           </div>
         </div>
@@ -3224,21 +3252,12 @@ async function openClassDetail(cls) {
   document.getElementById('classDetailTitle').textContent=cls;
   const today = new Date(); today.setHours(0,0,0,0);
   // Lấy học viên từ student_classes (bao gồm lớp phụ)
-  const { data: scList } = await db.from('student_classes').select('student_id').eq('class_name', cls);
-  const scIds = (scList||[]).map(sc => sc.student_id);
-  // Fallback: học viên có class_name chứa cls nhưng chưa có trong student_classes
-  const { data: allStudents } = await db.from('students').select('*').limit(10000);
-  const fallbackList = (allStudents||[]).filter(s => {
-    if (scIds.includes(s.id)) return false;
-    const sc = (s.class_name||'').split(',').map(c=>c.trim()).filter(Boolean);
-    return sc.includes(cls);
-  });
-  const fallbackIds = fallbackList.map(s => s.id);
-  const allIds = [...new Set([...scIds, ...fallbackIds])];
-  let list = [];
-  if (allIds.length) {
-    list = (allStudents||[]).filter(s => allIds.includes(s.id));
-  }
+  const [allStudents, scList] = await Promise.all([
+    fetchAllRows(() => db.from('students').select('*').order('id')),
+    fetchAllRows(() => db.from('student_classes').select('student_id,class_name').order('id')),
+  ]);
+  mergeStudentClassNames(allStudents, scList);
+  const list = allStudents.filter(s => parseClassList(s.class_name).includes(cls));
   const tbody=document.getElementById('classStudentBody');
   tbody.innerHTML='';
   document.getElementById('emptyClassStudents').style.display=(list||[]).length?'none':'block';
