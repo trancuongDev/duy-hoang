@@ -210,8 +210,18 @@ function debounce(fn, ms) {
   let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
 }
 
+let _studentJoinDate = '';
+function _dateFromTs(ts){
+  if (!ts) return '';
+  const d = new Date(ts);
+  if (Number.isNaN(d.getTime())) return String(ts).slice(0, 10);
+  const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), dd = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${dd}`;
+}
+
 async function loadMe() {
   const { data } = await db.from('students').select('id, class_name, student_code, expiry_date, created_at, username, active').eq('username', currentUser).single();
+  _studentJoinDate = _dateFromTs(data?.created_at);
   myClass = data?.class_name || '';
   // Load tất cả lớp: gộp students.class_name + student_classes (không bỏ sót)
   if (data?.id) {
@@ -2683,10 +2693,11 @@ async function renderHomeDDBanner() {
       .eq('session_date', today)
       .in('class_name', myClasses);
 
-    if (!openSessions || !openSessions.length) return;
+    const visibleSessions = (openSessions || []).filter(s => !_studentJoinDate || (s.session_date || '') >= _studentJoinDate);
+    if (!visibleSessions.length) return;
 
     // Kiểm tra học sinh đã điểm danh chưa
-    const ids = openSessions.map(s => s.id);
+    const ids = visibleSessions.map(s => s.id);
     const { data: myRecs } = await db
       .from('dd_records')
       .select('session_id, status')
@@ -2694,7 +2705,7 @@ async function renderHomeDDBanner() {
       .in('session_id', ids);
 
     const doneIds = new Set((myRecs || []).map(r => r.session_id));
-    const notDone = openSessions.filter(s => !doneIds.has(s.id));
+    const notDone = visibleSessions.filter(s => !doneIds.has(s.id));
     if (!notDone.length) return;
 
     // Hiện banner cho buổi đầu tiên chưa điểm danh

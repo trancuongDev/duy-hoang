@@ -2011,7 +2011,7 @@ async function loadReport(){
 
   const ids = (sessions||[]).map(s=>s.id);
   const [{data:students}, {data:scRows}] = await Promise.all([
-    db.from('students').select('id,username,full_name,class_name').eq('active',true),
+    db.from('students').select('id,username,full_name,class_name,created_at').eq('active',true),
     db.from('student_classes').select('student_id,class_name'),
   ]);
   const {data:recs} = await db.from('dd_records').select('*').in('session_id',ids);
@@ -2035,7 +2035,13 @@ async function loadReport(){
 
   _reportRows = studentList.map(st=>{
     // Tính buổi thuộc lớp của học sinh — dùng _allClasses để không bỏ sót
-    const mySess = countedSessions.filter(s => st._allClasses.includes((s.class_name||'').trim()));
+    const joinDate = st.created_at ? _toLocalDate(new Date(st.created_at)) : '';
+    const mySess = countedSessions.filter(s => {
+      if(!st._allClasses.includes((s.class_name||'').trim())) return false;
+      // Học sinh mới: không tính buổi điểm danh trước ngày tạo tài khoản
+      if(joinDate && (s.session_date||'') < joinDate) return false;
+      return true;
+    });
     const myRecs = (recs||[]).filter(r=>r.username===st.username&&mySess.map(s=>s.id).includes(r.session_id));
     const total   = mySess.length;
     const present = myRecs.filter(r=>r.status==='present'||r.status==='late').length;
@@ -2227,15 +2233,20 @@ async function viewStudentReport(username, name){
   if(cls) q=q.eq('class_name',cls);
   if(from) q=q.gte('session_date',from);
   if(to) q=q.lte('session_date',to);
-  const {data:sessions}=await q;
-  const ids=(sessions||[]).map(s=>s.id);
+  const [{data:sessionsRaw},{data:stRow}]=await Promise.all([
+    q,
+    db.from('students').select('created_at').eq('username',username).single(),
+  ]);
+  const joinDate = stRow?.created_at ? _toLocalDate(new Date(stRow.created_at)) : '';
+  const sessions=(sessionsRaw||[]).filter(s=>!joinDate || (s.session_date||'')>=joinDate);
+  const ids=sessions.map(s=>s.id);
   const {data:recs}=ids.length?await db.from('dd_records').select('*').eq('username',username).in('session_id',ids):{data:[]};
   const recMap=Object.fromEntries((recs||[]).map(r=>[r.session_id,r]));
   const body=document.getElementById('studentReportBody');
-  if(!(sessions||[]).length){body.innerHTML='<div class="empty"><span>📭</span>Không có dữ liệu</div>';return;}
+  if(!sessions.length){body.innerHTML='<div class="empty"><span>📭</span>Không có dữ liệu</div>';return;}
   body.innerHTML=`<div class="table-wrap"><table>
     <thead><tr><th>Buổi học</th><th>Lớp</th><th>Ngày</th><th>Chuyên cần</th><th>Trạng thái</th><th>Giờ vào</th></tr></thead>
-    <tbody>${(sessions||[]).map(s=>{
+    <tbody>${sessions.map(s=>{
       const r=recMap[s.id];
       const sm=r?(STATUS_MAP[r.status]||STATUS_MAP.absent):STATUS_MAP.absent;
       const notCount=s.count_attendance===false;
