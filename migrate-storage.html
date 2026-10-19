@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Di chuyển file: Supabase → Viettel Storage</title>
+  <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="config.js"></script>
+  <script src="viettel-storage.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; padding: 24px; }
+    h1 { font-size: 1.5rem; color: #818cf8; margin-bottom: 6px; }
+    .subtitle { color: #94a3b8; font-size: .9rem; margin-bottom: 24px; }
+    .card { background: #1e293b; border-radius: 12px; padding: 20px; margin-bottom: 16px; border: 1px solid #334155; }
+    .card h2 { font-size: 1rem; color: #c7d2fe; margin-bottom: 14px; }
+    .stats { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+    .stat { background: #0f172a; border-radius: 8px; padding: 12px 18px; text-align: center; min-width: 120px; }
+    .stat-num { font-size: 1.8rem; font-weight: 700; color: #818cf8; }
+    .stat-lbl { font-size: .75rem; color: #64748b; margin-top: 2px; }
+    .btn { padding: 10px 22px; border-radius: 8px; border: none; cursor: pointer; font-size: .95rem; font-weight: 600; transition: .15s; }
+    .btn-primary { background: #6366f1; color: #fff; }
+    .btn-primary:hover { background: #4f46e5; }
+    .btn-primary:disabled { background: #334155; color: #64748b; cursor: not-allowed; }
+    .btn-danger { background: #dc2626; color: #fff; }
+    .btn-danger:hover { background: #b91c1c; }
+    .btn-sm { padding: 5px 12px; font-size: .82rem; border-radius: 6px; }
+    .progress-wrap { background: #0f172a; border-radius: 8px; height: 18px; overflow: hidden; margin: 10px 0; }
+    .progress-bar { height: 100%; background: linear-gradient(90deg,#6366f1,#818cf8); transition: width .3s; border-radius: 8px; }
+    .log-box { background: #020617; border-radius: 8px; padding: 12px; max-height: 320px; overflow-y: auto; font-family: monospace; font-size: .8rem; line-height: 1.7; border: 1px solid #1e293b; }
+    .log-ok   { color: #4ade80; }
+    .log-err  { color: #f87171; }
+    .log-info { color: #60a5fa; }
+    .log-warn { color: #fbbf24; }
+    .log-skip { color: #94a3b8; }
+    table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+    th { text-align: left; padding: 7px 10px; background: #0f172a; color: #94a3b8; font-weight: 600; }
+    td { padding: 7px 10px; border-top: 1px solid #1e293b; vertical-align: top; word-break: break-all; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: .72rem; font-weight: 600; }
+    .badge-ok   { background: #14532d; color: #4ade80; }
+    .badge-err  { background: #7f1d1d; color: #fca5a5; }
+    .badge-wait { background: #1e3a5f; color: #93c5fd; }
+    .badge-skip { background: #1e293b; color: #94a3b8; }
+    .row-gap { margin-bottom: 10px; }
+    select, input[type=text] { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; padding: 7px 12px; border-radius: 7px; font-size: .9rem; }
+    label { font-size: .85rem; color: #94a3b8; display: block; margin-bottom: 5px; }
+    .flex { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    hr { border: none; border-top: 1px solid #1e293b; margin: 16px 0; }
+    .warn-box { background: #422006; border: 1px solid #92400e; border-radius: 8px; padding: 12px 16px; color: #fcd34d; font-size: .85rem; margin-bottom: 14px; }
+  </style>
+</head>
+<body>
+
+<h1>🚚 Di chuyển file: Supabase Storage → Viettel Cloud Storage</h1>
+<p class="subtitle">Tải toàn bộ file từ Supabase, upload lên Viettel S3, cập nhật URL trong database.</p>
+
+<div class="warn-box">
+  ⚠️ <strong>Trước khi chạy:</strong> Đảm bảo đã cấu hình <strong>CORS</strong> và <strong>Public Read</strong> cho bucket <code>dhdt</code> trên Viettel Console.
+  Không thể hoàn tác sau khi cập nhật database. Nên backup dữ liệu trước.
+</div>
+
+<!-- BƯỚC 1: Quét -->
+<div class="card">
+  <h2>📋 Bước 1: Quét file từ Supabase Storage</h2>
+  <div class="flex row-gap">
+    <div>
+      <label>Bucket cần quét</label>
+      <select id="bucketSelect">
+        <option value="lessons">lessons (video + tài liệu bài học)</option>
+        <option value="files">files (file manager)</option>
+        <option value="homework-images">homework-images (ảnh bài tập)</option>
+        <option value="all">Tất cả bucket</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" id="scanBtn" onclick="scanBucket()">🔍 Quét file</button>
+  </div>
+  <div class="stats" id="statsWrap" style="display:none">
+    <div class="stat"><div class="stat-num" id="statTotal">0</div><div class="stat-lbl">Tổng file</div></div>
+    <div class="stat"><div class="stat-num" id="statSize">0</div><div class="stat-lbl">Dung lượng (MB)</div></div>
+    <div class="stat"><div class="stat-num" id="statDone" style="color:#4ade80">0</div><div class="stat-lbl">Đã xong</div></div>
+    <div class="stat"><div class="stat-num" id="statErr" style="color:#f87171">0</div><div class="stat-lbl">Lỗi</div></div>
+  </div>
+</div>
+
+<!-- BƯỚC 2: Di chuyển -->
+<div class="card">
+  <h2>🚀 Bước 2: Di chuyển sang Viettel Storage</h2>
+  <div class="flex row-gap">
+    <button class="btn btn-primary" id="migrateBtn" onclick="startMigrate()" disabled>▶ Bắt đầu di chuyển</button>
+    <button class="btn btn-sm" style="background:#334155;color:#94a3b8" onclick="pauseMigrate()" id="pauseBtn" disabled>⏸ Tạm dừng</button>
+  </div>
+  <div class="progress-wrap" id="progWrap" style="display:none">
+    <div class="progress-bar" id="progBar" style="width:0%"></div>
+  </div>
+  <div id="progText" style="font-size:.82rem;color:#94a3b8;margin-top:4px"></div>
+</div>
+
+<!-- BƯỚC 3: Cập nhật DB -->
+<div class="card">
+  <h2>💾 Bước 3: Cập nhật URL trong database</h2>
+  <p style="font-size:.85rem;color:#94a3b8;margin-bottom:12px">
+    Sau khi di chuyển xong, cập nhật các bản ghi trong Supabase để trỏ sang URL Viettel mới.
+  </p>
+  <div class="flex">
+    <button class="btn btn-primary" id="updateDbBtn" onclick="updateDatabase()" disabled>💾 Cập nhật database</button>
+    <span id="dbStatus" style="font-size:.85rem;color:#94a3b8"></span>
+  </div>
+</div>
+
+<!-- LOG -->
+<div class="card">
+  <h2>📜 Log</h2>
+  <div class="flex" style="margin-bottom:8px">
+    <button class="btn btn-sm" style="background:#334155;color:#e2e8f0" onclick="clearLog()">🗑 Xóa log</button>
+    <button class="btn btn-sm" style="background:#334155;color:#e2e8f0" onclick="downloadLog()">⬇ Tải log</button>
+  </div>
+  <div class="log-box" id="logBox"></div>
+</div>
+
+<!-- KẾT QUẢ -->
+<div class="card" id="resultCard" style="display:none">
+  <h2>📊 Kết quả chi tiết</h2>
+  <div style="overflow-x:auto">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Bucket</th>
+          <th>File gốc (Supabase)</th>
+          <th>URL Viettel mới</th>
+          <th>Trạng thái</th>
+        </tr>
+      </thead>
+      <tbody id="resultTable"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+/* ─────────────────────────────────────────
+   STATE
+───────────────────────────────────────── */
+const db = DH_CFG.createDb();
+let _files   = [];   // { bucket, path, size, supabaseUrl }
+let _results = [];   // { ...file, viettelUrl, status:'ok'|'error'|'skip', error }
+let _paused  = false;
+let _running = false;
+let _logLines = [];
+
+/* ─────────────────────────────────────────
+   LOG
+───────────────────────────────────────── */
+function log(msg, cls = 'log-info') {
+  const ts = new Date().toLocaleTimeString('vi-VN');
+  const line = `[${ts}] ${msg}`;
+  _logLines.push(line);
+  const box = document.getElementById('logBox');
+  const el = document.createElement('div');
+  el.className = cls;
+  el.textContent = line;
+  box.appendChild(el);
+  box.scrollTop = box.scrollHeight;
+}
+function clearLog() { document.getElementById('logBox').innerHTML = ''; _logLines = []; }
+function downloadLog() {
+  const blob = new Blob([_logLines.join('\n')], { type: 'text/plain' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `migrate-log-${Date.now()}.txt`; a.click();
+}
+
+/* ─────────────────────────────────────────
+   STATS
+───────────────────────────────────────── */
+function updateStats() {
+  const done = _results.filter(r => r.status === 'ok' || r.status === 'skip').length;
+  const err  = _results.filter(r => r.status === 'error').length;
+  document.getElementById('statDone').textContent = done;
+  document.getElementById('statErr').textContent  = err;
+  const pct = _files.length ? Math.round(_results.length / _files.length * 100) : 0;
+  document.getElementById('progBar').style.width = pct + '%';
+  document.getElementById('progText').textContent =
+    `${_results.length} / ${_files.length} file — ${pct}%`;
+}
+
+/* ─────────────────────────────────────────
+   BƯỚC 1: QUÉT
+───────────────────────────────────────── */
+async function scanBucket() {
+  const bucket = document.getElementById('bucketSelect').value;
+  const buckets = bucket === 'all' ? ['lessons', 'files', 'homework-images'] : [bucket];
+  _files = []; _results = [];
+  document.getElementById('scanBtn').disabled = true;
+  document.getElementById('statsWrap').style.display = 'flex';
+  document.getElementById('migrateBtn').disabled = true;
+  log(`Bắt đầu quét ${buckets.join(', ')}...`);
+
+  for (const b of buckets) {
+    log(`Quét bucket: ${b}`, 'log-info');
+    await scanBucketFolder(b, '');
+  }
+
+  const totalMB = (_files.reduce((s, f) => s + (f.size || 0), 0) / 1024 / 1024).toFixed(2);
+  document.getElementById('statTotal').textContent = _files.length;
+  document.getElementById('statSize').textContent  = totalMB;
+  log(`✅ Tìm thấy ${_files.length} file (${totalMB} MB)`, 'log-ok');
+  document.getElementById('scanBtn').disabled  = false;
+  document.getElementById('migrateBtn').disabled = _files.length === 0;
+}
+
+async function scanBucketFolder(bucket, prefix) {
+  let offset = 0;
+  const pageSize = 100;
+  while (true) {
+    const { data, error } = await db.storage.from(bucket).list(prefix || undefined, {
+      limit: pageSize, offset, sortBy: { column: 'name', order: 'asc' }
+    });
+    if (error) { log(`Lỗi quét ${bucket}/${prefix}: ${error.message}`, 'log-err'); break; }
+    if (!data || data.length === 0) break;
+    for (const item of data) {
+      const fullPath = prefix ? `${prefix}/${item.name}` : item.name;
+      if (item.id === null) {
+        // Là folder, đệ quy
+        await scanBucketFolder(bucket, fullPath);
+      } else {
+        const { data: urlData } = db.storage.from(bucket).getPublicUrl(fullPath);
+        _files.push({
+          bucket,
+          path: fullPath,
+          size: item.metadata?.size || 0,
+          contentType: item.metadata?.mimetype || 'application/octet-stream',
+          supabaseUrl: urlData.publicUrl
+        });
+        document.getElementById('statTotal').textContent = _files.length;
+      }
+    }
+    if (data.length < pageSize) break;
+    offset += pageSize;
+  }
+}
+
+/* ─────────────────────────────────────────
+   BƯỚC 2: DI CHUYỂN
+───────────────────────────────────────── */
+function pauseMigrate() {
+  _paused = !_paused;
+  document.getElementById('pauseBtn').textContent = _paused ? '▶ Tiếp tục' : '⏸ Tạm dừng';
+  if (!_paused && _running) log('▶ Tiếp tục...', 'log-info');
+}
+
+async function startMigrate() {
+  if (_running) return;
+  _running = true;
+  _paused  = false;
+  _results = [];
+  document.getElementById('migrateBtn').disabled  = true;
+  document.getElementById('pauseBtn').disabled    = false;
+  document.getElementById('progWrap').style.display = 'block';
+  document.getElementById('resultCard').style.display = 'block';
+  document.getElementById('resultTable').innerHTML = '';
+  log(`🚀 Bắt đầu di chuyển ${_files.length} file...`, 'log-info');
+
+  for (let i = 0; i < _files.length; i++) {
+    // Chờ nếu tạm dừng
+    while (_paused) await new Promise(r => setTimeout(r, 300));
+
+    const file = _files[i];
+    await migrateFile(file, i);
+    updateStats();
+  }
+
+  _running = false;
+  document.getElementById('pauseBtn').disabled = true;
+  document.getElementById('migrateBtn').disabled = false;
+  document.getElementById('updateDbBtn').disabled = false;
+  const ok  = _results.filter(r => r.status === 'ok').length;
+  const err = _results.filter(r => r.status === 'error').length;
+  log(`✅ Hoàn tất! OK: ${ok} | Lỗi: ${err}`, err > 0 ? 'log-warn' : 'log-ok');
+  renderResultTable();
+}
+
+async function migrateFile(file, idx) {
+  log(`[${idx+1}/${_files.length}] ${file.bucket}/${file.path}`, 'log-info');
+  try {
+    // 1. Tải file từ Supabase
+    const { data: blob, error: dlErr } = await db.storage.from(file.bucket).download(file.path);
+    if (dlErr || !blob) throw new Error('Tải thất bại: ' + (dlErr?.message || 'no data'));
+
+    // 2. Upload lên Viettel (giữ nguyên path)
+    const vPath = `${file.bucket}/${file.path}`;
+    const fileObj = new File([blob], file.path.split('/').pop(), { type: file.contentType });
+    const { error: upErr } = await ViettelStorage.from('dhdt').upload(vPath, fileObj, {
+      contentType: file.contentType, upsert: true
+    });
+    if (upErr) throw new Error('Upload thất bại: ' + upErr.message);
+
+    // 3. Lấy URL mới
+    const { data: { publicUrl } } = ViettelStorage.from('dhdt').getPublicUrl(vPath);
+
+    _results.push({ ...file, viettelUrl: publicUrl, status: 'ok' });
+    log(`  ✅ OK → ${publicUrl}`, 'log-ok');
+    addResultRow(idx, file, publicUrl, 'ok');
+  } catch (e) {
+    _results.push({ ...file, viettelUrl: null, status: 'error', error: e.message });
+    log(`  ❌ Lỗi: ${e.message}`, 'log-err');
+    addResultRow(idx, file, null, 'error', e.message);
+  }
+}
+
+/* ─────────────────────────────────────────
+   BƯỚC 3: CẬP NHẬT DATABASE
+───────────────────────────────────────── */
+async function updateDatabase() {
+  const ok = _results.filter(r => r.status === 'ok');
+  if (ok.length === 0) { log('Không có file nào để cập nhật.', 'log-warn'); return; }
+
+  document.getElementById('updateDbBtn').disabled = true;
+  document.getElementById('dbStatus').textContent = 'Đang cập nhật...';
+  log(`💾 Cập nhật database cho ${ok.length} file...`, 'log-info');
+
+  let updated = 0;
+  for (const r of ok) {
+    const oldUrl = r.supabaseUrl;
+    const newUrl = r.viettelUrl;
+
+    // Cập nhật lesson_videos
+    if (r.bucket === 'lessons' && r.path.startsWith('videos/')) {
+      const { error } = await db.from('lesson_videos')
+        .update({ storage_path: `${r.bucket}/${r.path}` })
+        .like('storage_path', `%${r.path}%`);
+      if (!error) { updated++; log(`  ✅ lesson_videos: ${r.path}`, 'log-ok'); }
+      else log(`  ❌ lesson_videos lỗi: ${error.message}`, 'log-err');
+    }
+    // Cập nhật lesson_docs
+    else if (r.bucket === 'lessons' && r.path.startsWith('docs/')) {
+      const { error } = await db.from('lesson_docs')
+        .update({ storage_path: `${r.bucket}/${r.path}` })
+        .like('storage_path', `%${r.path}%`);
+      if (!error) { updated++; log(`  ✅ lesson_docs: ${r.path}`, 'log-ok'); }
+      else log(`  ❌ lesson_docs lỗi: ${error.message}`, 'log-err');
+    }
+    // Cập nhật file_items
+    else if (r.bucket === 'files') {
+      const { error } = await db.from('file_items')
+        .update({ file_url: newUrl })
+        .eq('file_url', oldUrl);
+      if (!error) { updated++; log(`  ✅ file_items: ${r.path}`, 'log-ok'); }
+      else log(`  ❌ file_items lỗi: ${error.message}`, 'log-err');
+    }
+  }
+
+  document.getElementById('dbStatus').textContent = `✅ Đã cập nhật ${updated} bản ghi`;
+  log(`✅ Cập nhật database xong! ${updated}/${ok.length} bản ghi`, 'log-ok');
+  document.getElementById('updateDbBtn').disabled = false;
+}
+
+/* ─────────────────────────────────────────
+   RENDER TABLE
+───────────────────────────────────────── */
+function addResultRow(idx, file, viettelUrl, status, errMsg) {
+  const tb = document.getElementById('resultTable');
+  const tr = document.createElement('tr');
+  const badge =
+    status === 'ok'    ? `<span class="badge badge-ok">✅ OK</span>` :
+    status === 'error' ? `<span class="badge badge-err">❌ Lỗi</span>` :
+    status === 'skip'  ? `<span class="badge badge-skip">⏭ Bỏ qua</span>` :
+                         `<span class="badge badge-wait">⏳</span>`;
+  tr.innerHTML = `
+    <td>${idx+1}</td>
+    <td>${file.bucket}</td>
+    <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis">${file.path}</td>
+    <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis">${viettelUrl ? `<a href="${viettelUrl}" target="_blank" style="color:#818cf8">${viettelUrl}</a>` : (errMsg || '-')}</td>
+    <td>${badge}</td>
+  `;
+  tb.appendChild(tr);
+}
+
+function renderResultTable() {
+  const tb = document.getElementById('resultTable');
+  tb.innerHTML = '';
+  _results.forEach((r, i) => addResultRow(i, r, r.viettelUrl, r.status, r.error));
+}
+</script>
+</body>
+</html>

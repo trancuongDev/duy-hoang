@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>Gen Config</title></head>
+<body>
+<script>
+var _K = [68, 72, 68, 84, 64, 99, 102, 103, 35, 118, 49, 53];
+
+function encode(str) {
+  var encoded = unescape(encodeURIComponent(str));
+  var out = '';
+  for (var i = 0; i < encoded.length; i++) {
+    out += String.fromCharCode(encoded.charCodeAt(i) ^ _K[i % _K.length]);
+  }
+  return btoa(out);
+}
+
+var url  = 'https://xqazucpiuvxkuafpqjgb.supabase.co';
+var key  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhxYXp1Y3BpdXZ4a3VhZnBxamdiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIzODgxMDksImV4cCI6MjEwNzk2NDEwOX0.PtYDGxQZEuifMrfDUBNqg-3VW8zUgpKQeYK_ou1wpDE';
+
+document.write('<pre>');
+document.write('u: \'' + encode(url) + '\',\n');
+document.write('a: \'' + encode(key) + '\',\n');
+document.write('</pre>');
+</script>
+</body>
+</html>

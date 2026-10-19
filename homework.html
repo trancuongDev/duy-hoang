@@ -10,6 +10,8 @@
   <!-- Supabase -->
   <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="config.js"></script>
+  <!-- Viettel Cloud Storage (thay thế Supabase Storage) -->
+  <script src="viettel-storage.js"></script>
   <!-- jsPDF + html2canvas để xuất PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -4208,9 +4210,9 @@ async function mcUploadOptImg(_id, i, input) {
   try {
     const ext = file.name.split('.').pop().toLowerCase();
     const path = `opt_${Date.now()}.${ext}`;
-    const { error } = await sb.storage.from('homework-images').upload(path, file, { upsert:true });
+    const { error } = await ViettelStorage.from('homework-images').upload(path, file, { upsert:true });
     if (!error) {
-      const { data:{publicUrl} } = sb.storage.from('homework-images').getPublicUrl(path);
+      const { data:{publicUrl} } = ViettelStorage.from('homework-images').getPublicUrl(path);
       mcUpdateOpt(_id, i, 'img', publicUrl);
       _reRenderMCEditor(_id);
       showToast('✅ Tải ảnh thành công');
@@ -4313,9 +4315,9 @@ async function tfUploadImg(_id,i,input) {
   try {
     const ext=file.name.split('.').pop().toLowerCase();
     const path=`tf_${Date.now()}.${ext}`;
-    const {error}=await sb.storage.from('homework-images').upload(path,file,{upsert:true});
+    const {error}=await ViettelStorage.from('homework-images').upload(path,file,{upsert:true});
     if(!error){
-      const {data:{publicUrl}}=sb.storage.from('homework-images').getPublicUrl(path);
+      const {data:{publicUrl}}=ViettelStorage.from('homework-images').getPublicUrl(path);
       _tfApplyImg(_id,i,publicUrl); showToast('✅ Tải ảnh thành công'); return;
     }
   } catch(e){}
@@ -4722,14 +4724,14 @@ async function uploadQImage(_id, input) {
 
   showToast('Đang xử lý ảnh...', true);
 
-  // Thử upload lên Supabase Storage trước
+  // Thử upload lên Viettel Cloud Storage trước
   try {
     const ext = file.name.split('.').pop().toLowerCase();
     const path = `q_${Date.now()}.${ext}`;
-    const { error } = await sb.storage.from('homework-images').upload(path, file, { upsert:true });
+    const { error } = await ViettelStorage.from('homework-images').upload(path, file, { upsert:true });
 
     if (!error) {
-      const { data:{ publicUrl } } = sb.storage.from('homework-images').getPublicUrl(path);
+      const { data:{ publicUrl } } = ViettelStorage.from('homework-images').getPublicUrl(path);
       _applyQImageUrl(_id, publicUrl);
       showToast('✅ Tải ảnh thành công');
       return;

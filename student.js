@@ -1153,7 +1153,7 @@ async function openLessonDetail(id) {
   vGrid.innerHTML = '';
   document.getElementById('sEmptyLessonVideos').style.display = (vids||[]).length?'none':'block';
   const vidUrls = await Promise.all((vids||[]).map(v =>
-    v.video_url ? decryptUrl(v.video_url) : Promise.resolve(db.storage.from('lessons').getPublicUrl(v.storage_path).data.publicUrl)
+    v.video_url ? decryptUrl(v.video_url) : Promise.resolve(ViettelStorage.from('lessons').getPublicUrl(v.storage_path).data.publicUrl)
   ));
   (vids||[]).forEach((v, idx) => {
     const isLink = !!v.video_url;
@@ -1198,7 +1198,7 @@ async function openLessonDetail(id) {
   dList.innerHTML = '';
   document.getElementById('sEmptyLessonDocs').style.display = (docs||[]).length?'none':'block';
   const docUrls = await Promise.all((docs||[]).map(d =>
-    (d.file_type==='link'||d.file_type==='handwritten') ? decryptUrl(d.doc_url) : Promise.resolve(db.storage.from('lessons').getPublicUrl(d.storage_path).data.publicUrl)
+    (d.file_type==='link'||d.file_type==='handwritten') ? decryptUrl(d.doc_url) : Promise.resolve(ViettelStorage.from('lessons').getPublicUrl(d.storage_path).data.publicUrl)
   ));
   (docs||[]).forEach((d, di) => {
     const isLink = d.file_type==='link';

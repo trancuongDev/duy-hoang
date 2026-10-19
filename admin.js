@@ -2782,7 +2782,7 @@ async function renderLessonVideos(lessonId) {
   grid.innerHTML='';
   document.getElementById('emptyLessonVideos').style.display=(vids||[]).length?'none':'block';
   const urls = await Promise.all((vids||[]).map(v =>
-    v.video_url ? decryptUrl(v.video_url) : Promise.resolve(db.storage.from('lessons').getPublicUrl(v.storage_path).data.publicUrl)
+    v.video_url ? decryptUrl(v.video_url) : Promise.resolve(ViettelStorage.from('lessons').getPublicUrl(v.storage_path).data.publicUrl)
   ));
   (vids||[]).forEach((v, i)=>{
     const isLink = !!v.video_url;
@@ -2808,7 +2808,7 @@ async function renderLessonVideos(lessonId) {
       toggleMediaDownload('video', v.id, !allowed, lessonId);
     });
     card.querySelector('.del-btn').addEventListener('click', async ()=>{
-      if (!isLink && v.storage_path) await db.storage.from('lessons').remove([v.storage_path]);
+      if (!isLink && v.storage_path) await ViettelStorage.from('lessons').remove([v.storage_path]);
       await db.from('lesson_videos').delete().eq('id',v.id);
       logActivity('Video', 'Xóa video', v.title||'', `lesson:${lessonId}`);
       renderLessonVideos(lessonId);
@@ -2823,7 +2823,7 @@ async function renderLessonDocs(lessonId) {
   el.innerHTML='';
   document.getElementById('emptyLessonDocs').style.display=(docs||[]).length?'none':'block';
   const urls = await Promise.all((docs||[]).map(d =>
-    (d.file_type==='link'||d.file_type==='handwritten') ? decryptUrl(d.doc_url) : Promise.resolve(db.storage.from('lessons').getPublicUrl(d.storage_path).data.publicUrl)
+    (d.file_type==='link'||d.file_type==='handwritten') ? decryptUrl(d.doc_url) : Promise.resolve(ViettelStorage.from('lessons').getPublicUrl(d.storage_path).data.publicUrl)
   ));
   (docs||[]).forEach((d, i)=>{
     const isLink = d.file_type==='link';
@@ -2847,7 +2847,7 @@ async function renderLessonDocs(lessonId) {
     });
     row.querySelector('.btn-danger').addEventListener('click', async e=>{
       e.stopPropagation();
-      if (!isLink && !isHandwritten && d.storage_path) await db.storage.from('lessons').remove([d.storage_path]);
+      if (!isLink && !isHandwritten && d.storage_path) await ViettelStorage.from('lessons').remove([d.storage_path]);
       await db.from('lesson_docs').delete().eq('id',d.id);
       logActivity('Tài liệu', 'Xóa tài liệu', d.title||'', `lesson:${lessonId}`);
       renderLessonDocs(lessonId);
@@ -2922,7 +2922,7 @@ document.getElementById('lvSaveBtn').addEventListener('click', async () => {
       patch.is_embed = true;
       patch.storage_path = null;
       patch.file_name = null;
-      if (editingLessonVideo?.storage_path) await db.storage.from('lessons').remove([editingLessonVideo.storage_path]);
+      if (editingLessonVideo?.storage_path) await ViettelStorage.from('lessons').remove([editingLessonVideo.storage_path]);
     } else if (isLinkTab) {
       const url = document.getElementById('lvLinkInput').value.trim().split('\n').map(l=>l.trim()).filter(Boolean)[0];
       if (!url) { restoreBtn(); return; }
@@ -2930,13 +2930,13 @@ document.getElementById('lvSaveBtn').addEventListener('click', async () => {
       patch.is_embed = false;
       patch.storage_path = null;
       patch.file_name = null;
-      if (editingLessonVideo?.storage_path) await db.storage.from('lessons').remove([editingLessonVideo.storage_path]);
+      if (editingLessonVideo?.storage_path) await ViettelStorage.from('lessons').remove([editingLessonVideo.storage_path]);
     } else if (pendingLessonVideoFile) {
       const safeName = `${Date.now()}_${pendingLessonVideoFile.name.replace(/[^a-zA-Z0-9.\-_]/g, '_')}`;
       const path = `videos/${currentLessonId}/${safeName}`;
-      const { error: upErr } = await db.storage.from('lessons').upload(path, pendingLessonVideoFile, { cacheControl: '3600', upsert: false });
+      const { error: upErr } = await ViettelStorage.from('lessons').upload(path, pendingLessonVideoFile, { cacheControl: '3600', upsert: false });
       if (upErr) { alert('Lỗi upload: ' + upErr.message); restoreBtn(); return; }
-      if (editingLessonVideo?.storage_path) await db.storage.from('lessons').remove([editingLessonVideo.storage_path]);
+      if (editingLessonVideo?.storage_path) await ViettelStorage.from('lessons').remove([editingLessonVideo.storage_path]);
       patch.file_name = pendingLessonVideoFile.name;
       patch.storage_path = path;
       patch.video_url = null;
@@ -2970,7 +2970,7 @@ document.getElementById('lvSaveBtn').addEventListener('click', async () => {
     if (!pendingLessonVideoFile) { restoreBtn(); return; }
     const safeName = `${Date.now()}_${pendingLessonVideoFile.name.replace(/[^a-zA-Z0-9.\-_]/g, '_')}`;
     const path = `videos/${currentLessonId}/${safeName}`;
-    const { error: upErr } = await db.storage.from('lessons').upload(path, pendingLessonVideoFile, { cacheControl: '3600', upsert: false });
+    const { error: upErr } = await ViettelStorage.from('lessons').upload(path, pendingLessonVideoFile, { cacheControl: '3600', upsert: false });
     if (upErr) { alert('Lỗi upload: ' + upErr.message); restoreBtn(); return; }
     await db.from('lesson_videos').insert({ lesson_id: currentLessonId, title, file_name: pendingLessonVideoFile.name, storage_path: path, video_url: null, allow_download: allow });
   }
@@ -3057,13 +3057,13 @@ document.getElementById('ldSaveBtn').addEventListener('click', async ()=>{
       patch.file_type = asHw ? 'handwritten' : 'link';
       patch.storage_path = null;
       patch.file_name = null;
-      if (editingLessonDoc?.storage_path) await db.storage.from('lessons').remove([editingLessonDoc.storage_path]);
+      if (editingLessonDoc?.storage_path) await ViettelStorage.from('lessons').remove([editingLessonDoc.storage_path]);
     } else if (pendingLessonDocFile) {
       const safeName=`${Date.now()}_${pendingLessonDocFile.name.replace(/[^a-zA-Z0-9.\-_]/g,'_')}`;
       const path=`docs/${currentLessonId}/${safeName}`;
-      const { error:upErr }=await db.storage.from('lessons').upload(path,pendingLessonDocFile);
+      const { error:upErr }=await ViettelStorage.from('lessons').upload(path,pendingLessonDocFile);
       if (upErr) { alert('Lỗi upload: '+upErr.message); restoreBtn(); return; }
-      if (editingLessonDoc?.storage_path) await db.storage.from('lessons').remove([editingLessonDoc.storage_path]);
+      if (editingLessonDoc?.storage_path) await ViettelStorage.from('lessons').remove([editingLessonDoc.storage_path]);
       patch.file_name = pendingLessonDocFile.name;
       patch.file_type = pendingLessonDocFile.type;
       patch.storage_path = path;
@@ -3109,7 +3109,7 @@ document.getElementById('ldSaveBtn').addEventListener('click', async ()=>{
     if (!pendingLessonDocFile) { restoreBtn(); return; }
     const safeName=`${Date.now()}_${pendingLessonDocFile.name.replace(/[^a-zA-Z0-9.\-_]/g,'_')}`;
     const path=`docs/${currentLessonId}/${safeName}`;
-    const { error:upErr }=await db.storage.from('lessons').upload(path,pendingLessonDocFile);
+    const { error:upErr }=await ViettelStorage.from('lessons').upload(path,pendingLessonDocFile);
     if (upErr) { alert('Lỗi upload: '+upErr.message); restoreBtn(); return; }
     await db.from('lesson_docs').insert({lesson_id:currentLessonId,title,file_name:pendingLessonDocFile.name,file_type:pendingLessonDocFile.type,storage_path:path,doc_url:null, allow_download: allow});
   }
@@ -5914,16 +5914,16 @@ async function doUpload() {
 
   if (!_fmUploadFiles.length) { errEl.textContent = 'Vui lòng chọn file hoặc nhập link.'; return; }
 
-  // Upload files lên Supabase Storage
+  // Upload files lên Viettel Cloud Storage
   progWrap.style.display = 'block';
   const total = _fmUploadFiles.length;
   let done = 0;
 
   for (const file of _fmUploadFiles) {
     const safeName = `${Date.now()}_${file.name.replace(/\s+/g,'_')}`;
-    const { data: upData, error: upErr } = await db.storage.from('files').upload(safeName, file, { upsert: false });
+    const { data: upData, error: upErr } = await ViettelStorage.from('files').upload(safeName, file, { upsert: false });
     if (upErr) { errEl.textContent = `Lỗi tải ${file.name}: ${upErr.message}`; continue; }
-    const { data: urlData } = db.storage.from('files').getPublicUrl(safeName);
+    const { data: urlData } = ViettelStorage.from('files').getPublicUrl(safeName);
     const name = total === 1 && displayName ? displayName : file.name.replace(/\.[^/.]+$/, '');
     await db.from('file_items').insert({
       display_name: name, file_name: file.name,
@@ -6015,10 +6015,16 @@ async function restoreFile(fileId) {
 async function permanentDeleteFile(fileId, name) {
   showConfirm(`Xóa vĩnh viễn "${name}"?\nHành động này không thể hoàn tác.`, async () => {
     const f = _fmFiles.find(x => x.id == fileId);
-    // Xóa file trên Storage nếu có
-    if (f && f.file_url && f.file_url.includes('supabase') && f.file_type !== 'link') {
-      const path = f.file_url.split('/files/')[1];
-      if (path) await db.storage.from('files').remove([path]);
+    // Xóa file trên Viettel Storage nếu có
+    if (f && f.file_url && f.file_type !== 'link') {
+      // Lấy object key từ URL (phần sau /chdt/)
+      const urlObj = f.file_url;
+      const bucket = ViettelStorage.getConfig().bucket;
+      const markerIdx = urlObj.indexOf('/' + bucket + '/');
+      if (markerIdx !== -1) {
+        const path = urlObj.slice(markerIdx + bucket.length + 2);
+        if (path) await ViettelStorage.from('files').remove([path]);
+      }
     }
     await db.from('file_items').delete().eq('id', fileId);
     await loadFileManagerData();
@@ -6032,9 +6038,13 @@ async function emptyFileTrash() {
   showConfirm('Xóa toàn bộ file trong thùng rác?\nHành động này không thể hoàn tác.', async () => {
     const trashed = _fmFiles.filter(f => f.deleted_at);
     for (const f of trashed) {
-      if (f.file_url && f.file_url.includes('supabase') && f.file_type !== 'link') {
-        const path = f.file_url.split('/files/')[1];
-        if (path) await db.storage.from('files').remove([path]);
+      if (f.file_url && f.file_type !== 'link') {
+        const bucket = ViettelStorage.getConfig().bucket;
+        const markerIdx = (f.file_url || '').indexOf('/' + bucket + '/');
+        if (markerIdx !== -1) {
+          const path = f.file_url.slice(markerIdx + bucket.length + 2);
+          if (path) await ViettelStorage.from('files').remove([path]);
+        }
       }
     }
     const ids = trashed.map(f => f.id);
