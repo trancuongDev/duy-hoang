@@ -13,6 +13,8 @@ ALTER TABLE homework ADD COLUMN IF NOT EXISTS anti_paste        BOOLEAN     DEFA
 ALTER TABLE homework ADD COLUMN IF NOT EXISTS is_locked         BOOLEAN     DEFAULT FALSE;
 ALTER TABLE homework ADD COLUMN IF NOT EXISTS grading_notes     TEXT        DEFAULT NULL;
 ALTER TABLE homework ADD COLUMN IF NOT EXISTS deleted_at        TIMESTAMPTZ DEFAULT NULL;
+-- Cho phép GV bật "Cho xem lời giải" — HS xem lời giải chi tiết sau khi nộp bài
+ALTER TABLE homework ADD COLUMN IF NOT EXISTS show_solution     BOOLEAN     DEFAULT FALSE;
 
 -- ────────────────────────────────────────────────────────────────
 -- PHẦN 2: Bảng exam_progress — live monitor
@@ -122,6 +124,14 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
   ALTER PUBLICATION supabase_realtime ADD TABLE homework_submissions;
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+-- REPLICA IDENTITY FULL: để Realtime gửi đầy đủ giá trị CŨ (payload.old)
+-- Nếu thiếu, các sự kiện UPDATE sẽ không có payload.old.is_draft / is_locked
+-- → thông báo "Bài tập mới" / "Bài bị khóa" không hoạt động.
+ALTER TABLE homework            REPLICA IDENTITY FULL;
+ALTER TABLE homework_submissions REPLICA IDENTITY FULL;
+ALTER TABLE homework_questions  REPLICA IDENTITY FULL;
+ALTER TABLE exam_progress        REPLICA IDENTITY FULL;
 
 DO $$ BEGIN
   ALTER PUBLICATION supabase_realtime ADD TABLE alerts;

@@ -487,6 +487,11 @@
   word-break:break-word;border-left:2px solid #c7d2fe;margin-top:.15rem;display:none; }
 .lip.show { display:block; }
 
+/* ═══ 📘 Lời giải chi tiết — accordion trong màn hình kết quả ═══ */
+.hw-sol-body { display:none; }
+.hw-sol-body.open { display:block; }
+.hw-sol-arrow { transition:transform .2s; }
+
 @media(max-width:640px) {
   .pair-row { grid-template-columns:1fr auto;grid-template-rows:1fr 1fr; }
   .hw-modal { padding:1.25rem; }
@@ -594,7 +599,6 @@
         <button class="active" onclick="switchAdminTab('list',this)">📋 Danh sách</button>
         <button onclick="switchAdminTab('notdone',this)">⏳ Chưa làm</button>
         <button onclick="switchAdminTab('submissions',this)">📬 Bài nộp</button>
-        <button onclick="switchAdminTab('ranking',this)">📊 Xếp hạng</button>
       </div>
     </div>
 
@@ -604,7 +608,6 @@
         <button class="active" onclick="switchStudentTab('pending',this)">📌 Chưa nộp</button>
         <button onclick="switchStudentTab('submitted',this)">✅ Đã nộp</button>
         <button onclick="switchStudentTab('all',this)">📋 Tất cả</button>
-        <button onclick="switchStudentTab('ranking',this)">🏆 Xếp hạng</button>
       </div>
 
       <!-- HƯỚNG DẪN HỌC VIÊN — đã chuyển lên topbar (nút 📖) -->
@@ -746,6 +749,10 @@
         <label style="display:flex;align-items:center;gap:.6rem;cursor:pointer;user-select:none;padding:.6rem .85rem;border:1.5px solid var(--border);border-radius:10px;background:var(--bg);transition:all .18s;flex:1;min-width:200px" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
           <input type="checkbox" id="hwAntiPaste" style="width:16px;height:16px;accent-color:var(--primary);cursor:pointer"/>
           <span>🚫 <b>Chống copy-paste</b> <span style="color:var(--muted);font-weight:400">— trong ô nhập đáp án</span></span>
+        </label>
+        <label style="display:flex;align-items:center;gap:.6rem;cursor:pointer;user-select:none;padding:.6rem .85rem;border:1.5px solid #a5b4fc;border-radius:10px;background:#eef2ff;transition:all .18s;flex:1;min-width:200px" onmouseover="this.style.borderColor='#6366f1'" onmouseout="this.style.borderColor='#a5b4fc'">
+          <input type="checkbox" id="hwShowSolution" style="width:16px;height:16px;accent-color:#6366f1;cursor:pointer"/>
+          <span>📘 <b>Cho xem lời giải</b> <span style="color:#6366f1;font-weight:600">— sau khi học sinh nộp bài</span></span>
         </label>
       </div>
       <div>
@@ -1135,7 +1142,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         await loadAdminData();
         if      (adminTab === 'list')        renderAdminList();
         else if (adminTab === 'submissions') renderAdminSubmissions();
-        else if (adminTab === 'ranking')     renderAdminRanking();
         else if (adminTab === 'notdone')     renderAdminNotDone();
       } catch(e) {}
     }, 30000);
@@ -1164,7 +1170,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     setInterval(async () => {
       if (_isDoHWOpen()) return;
       if (_hwMaintenanceShown) return;
-      if (studentTab === 'ranking') return; // tab ranking tự quản lý refresh
       try {
         // Lưu scroll position và tab trước khi reload
         const mainEl = document.querySelector('.dash-main') || document.documentElement;
@@ -1305,9 +1310,6 @@ function renderSidebarNav() {
         <a href="#" class="slink" id="sideTab_submissions" onclick="switchAdminTab('submissions',this);setSideTab('submissions');return false" data-label="Bài nộp">
           <span class="slink-icon">📬</span><span class="slink-label">Bài nộp</span>
         </a>
-        <a href="#" class="slink" id="sideTab_ranking" onclick="switchAdminTab('ranking',this);setSideTab('ranking');return false" data-label="Xếp hạng">
-          <span class="slink-icon">📊</span><span class="slink-label">Xếp hạng</span>
-        </a>
         <a href="#" class="slink" id="sideTab_live" onclick="switchAdminTab('live',this);setSideTab('live');return false" data-label="Đang làm bài">
           <span class="slink-icon">🔴</span><span class="slink-label">Đang làm bài <span id="liveBadge" style="display:none;background:#ef4444;color:#fff;border-radius:20px;padding:.05rem .42rem;font-size:.68rem;font-weight:800;margin-left:.2rem">0</span></span>
         </a>
@@ -1331,7 +1333,7 @@ function renderSidebarNav() {
 }
 
 function setSideTab(tab) {
-  ['list','notdone','submissions','ranking','live','trash'].forEach(t => {
+  ['list','notdone','submissions','live','trash'].forEach(t => {
     const el = document.getElementById('sideTab_' + t);
     if (el) el.classList.toggle('active', t === tab);
   });
@@ -1781,7 +1783,6 @@ function switchAdminTab(tab, btn) {
 
   if (tab==='list')        renderAdminList();
   else if (tab==='submissions') renderAdminSubmissions();
-  else if (tab==='ranking')     renderAdminRanking();
   else if (tab==='notdone')     renderAdminNotDone();
   else if (tab==='live')        renderAdminLive();
   else if (tab==='trash')       renderAdminTrash();
@@ -1813,17 +1814,8 @@ function switchStudentTab(tab,btn) {
   _studentTabToken++; // hủy render đang chạy của tab cũ
   document.querySelectorAll('#studentTabs .tab-hw button').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  // Dừng ranking interval nếu rời tab ranking
-  if (tab !== 'ranking' && _rankingRefreshInterval) {
-    clearInterval(_rankingRefreshInterval);
-    _rankingRefreshInterval = null;
-  }
-  if (tab === 'ranking') {
-    renderStudentRanking();
-  } else {
-    renderStudentList();
-    updateGuideStats();
-  }
+  renderStudentList();
+  updateGuideStats();
 }
 
 // ── Accordion hướng dẫn ───────────────────
@@ -1900,6 +1892,7 @@ function renderAdminList() {
         ${hw.open_at?`<span style="display:inline-flex;align-items:center;gap:.25rem;background:#fef3c7;color:#92400e;padding:.2rem .6rem;border-radius:8px;font-weight:700">🕐 Mở: ${_fmtOpenAt(hw.open_at)}</span>`:''}
         ${hw.shuffle_questions?`<span style="display:inline-flex;align-items:center;gap:.25rem;background:#f3e8ff;color:#6b21a8;padding:.2rem .6rem;border-radius:8px;font-weight:700">🔀 Xáo câu</span>`:''}
         ${hw.anti_paste?`<span style="display:inline-flex;align-items:center;gap:.25rem;background:#fee2e2;color:#991b1b;padding:.2rem .6rem;border-radius:8px;font-weight:700">🚫 Anti-paste</span>`:''}
+        ${hw.show_solution?`<span style="display:inline-flex;align-items:center;gap:.25rem;background:#eef2ff;color:#4338ca;padding:.2rem .6rem;border-radius:8px;font-weight:700">📘 Có lời giải</span>`:''}
         ${!isDraft?`<span>📬 Đã nộp: <b style="color:var(--primary)">${subC}</b></span>`:''}
         ${!isDraft?`<span>✅ Đã chấm: <b style="color:var(--hw-green)">${gradC}</b></span>`:''}
       </div>
@@ -2251,174 +2244,6 @@ function renderAdminSubmissions(filterHwId=null) {
   }).join('');
 }
 
-// ═══════════════════════════════════════════
-// RENDER ADMIN — XẾP HẠNG TỔNG HỢP
-// ═══════════════════════════════════════════
-let _rankFilterHwId = 'all';
-
-// Live monitor state
-let _liveRefreshInterval = null;
-let _liveFilterHwId      = 'all';
-let _liveFilterClass     = 'all';
-
-function renderAdminRanking() {
-  const el = document.getElementById('hwContent');
-
-  // Chỉ lấy bài tập đã có bài nộp
-  const hwWithSubs = allHomework.filter(h =>
-    allSubmissions.some(s => s.homework_id === h.id && s.score != null)
-  );
-
-  if (!hwWithSubs.length) {
-    el.innerHTML = `<div class="hw-empty"><div class="hw-empty-icon">🏆</div><p>Chưa có bài nào được chấm điểm.</p></div>`;
-    return;
-  }
-
-  // Bộ lọc bài tập
-  const filterOpts = hwWithSubs.map(h =>
-    `<option value="${h.id}" ${String(_rankFilterHwId)===String(h.id)?'selected':''}>${esc(h.title)}</option>`
-  ).join('');
-
-  // Xác định bài đang lọc
-  const selHwId = _rankFilterHwId === 'all' ? null : Number(_rankFilterHwId);
-  const targetHws = selHwId ? hwWithSubs.filter(h => h.id === selHwId) : hwWithSubs;
-
-  // ── Gom dữ liệu học sinh ──
-  // studentMap: username → { name, class, scores: { hwId: scaled10 } }
-  const studentMap = {};
-  allSubmissions.forEach(s => {
-    if (s.score == null) return;
-    const key = s.username;
-    if (!studentMap[key]) {
-      studentMap[key] = { name: s.student_name || s.username, cls: s.class_name || '', scores: {} };
-    }
-    const scaled = s.max_score > 0 ? Math.round((s.score / s.max_score) * 10 * 100) / 100 : 0;
-    // Giữ điểm cao nhất nếu làm nhiều lần
-    if (studentMap[key].scores[s.homework_id] == null || scaled > studentMap[key].scores[s.homework_id]) {
-      studentMap[key].scores[s.homework_id] = scaled;
-    }
-  });
-
-  const students = Object.values(studentMap);
-
-  // ── Tính điểm TB các bài đang lọc & xếp hạng ──
-  const ranked = students.map(st => {
-    const vals = targetHws.map(h => st.scores[h.id] ?? null).filter(v => v != null);
-    const avg  = vals.length ? Math.round(vals.reduce((a,b)=>a+b,0) / vals.length * 100) / 100 : null;
-    return { ...st, avg, filled: vals.length };
-  }).filter(st => st.avg != null)
-    .sort((a, b) => b.avg - a.avg || a.name.localeCompare(b.name));
-
-  // Gán hạng (cùng điểm = cùng hạng)
-  let rank = 1;
-  ranked.forEach((st, i) => {
-    if (i > 0 && st.avg === ranked[i-1].avg) {
-      st.rank = ranked[i-1].rank;
-    } else {
-      st.rank = rank;
-    }
-    rank++;
-  });
-
-  const total = ranked.length;
-
-  // ── Render ──
-  el.innerHTML = `
-  <div style="margin-bottom:1rem">
-
-    <!-- Header + filter -->
-    <div style="background:linear-gradient(135deg,#1e1b4b,#4338ca);border-radius:14px;padding:1rem 1.25rem;margin-bottom:1rem;color:#fff;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem">
-      <div>
-        <div style="font-size:1rem;font-weight:900">🏆 Xếp hạng học sinh</div>
-        <div style="font-size:.76rem;opacity:.65;margin-top:.2rem">${total} học sinh · Điểm quy đổi /10</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
-        <label style="font-size:.76rem;opacity:.7;white-space:nowrap">Lọc bài:</label>
-        <select id="rankHwFilter" onchange="_rankFilterHwId=this.value;renderAdminRanking()"
-          style="padding:.4rem .75rem;border-radius:8px;border:none;font-size:.83rem;font-weight:700;background:rgba(255,255,255,.15);color:#fff;outline:none;cursor:pointer">
-          <option value="all" ${_rankFilterHwId==='all'?'selected':''}>📋 Tất cả bài</option>
-          ${filterOpts}
-        </select>
-      </div>
-    </div>
-
-    <!-- Top 3 podium (nếu có đủ) -->
-    ${ranked.length >= 1 ? `
-    <div style="display:flex;justify-content:center;align-items:flex-end;gap:.75rem;margin-bottom:1.25rem;flex-wrap:wrap">
-      ${ranked[1] ? `
-      <div style="text-align:center;flex:1;max-width:150px">
-        <div style="font-size:1.8rem">🥈</div>
-        <div style="background:linear-gradient(180deg,#e2e8f0,#f1f5f9);border:2px solid #94a3b8;border-radius:14px 14px 0 0;padding:.75rem .5rem;min-height:80px;display:flex;flex-direction:column;align-items:center;justify-content:center">
-          <div style="font-weight:800;font-size:.85rem;color:#334155">${esc(ranked[1].name)}</div>
-          <div style="font-size:.7rem;color:#64748b">${esc(ranked[1].cls)}</div>
-          <div style="font-size:1.15rem;font-weight:900;color:#475569;margin-top:.25rem">${ranked[1].avg}/10</div>
-        </div>
-        <div style="background:#94a3b8;color:#fff;border-radius:0 0 10px 10px;padding:.3rem;font-size:.75rem;font-weight:800">Hạng 2</div>
-      </div>` : ''}
-      <div style="text-align:center;flex:1;max-width:170px">
-        <div style="font-size:2.2rem">🥇</div>
-        <div style="background:linear-gradient(180deg,#fef9c3,#fde68a);border:2.5px solid #f59e0b;border-radius:14px 14px 0 0;padding:1rem .5rem;min-height:100px;display:flex;flex-direction:column;align-items:center;justify-content:center">
-          <div style="font-weight:900;font-size:.9rem;color:#78350f">${esc(ranked[0].name)}</div>
-          <div style="font-size:.7rem;color:#92400e">${esc(ranked[0].cls)}</div>
-          <div style="font-size:1.3rem;font-weight:900;color:#b45309;margin-top:.3rem">${ranked[0].avg}/10</div>
-        </div>
-        <div style="background:linear-gradient(90deg,#f59e0b,#d97706);color:#fff;border-radius:0 0 10px 10px;padding:.35rem;font-size:.78rem;font-weight:800">🏆 Hạng 1</div>
-      </div>
-      ${ranked[2] ? `
-      <div style="text-align:center;flex:1;max-width:150px">
-        <div style="font-size:1.6rem">🥉</div>
-        <div style="background:linear-gradient(180deg,#ffedd5,#fed7aa);border:2px solid #f97316;border-radius:14px 14px 0 0;padding:.6rem .5rem;min-height:70px;display:flex;flex-direction:column;align-items:center;justify-content:center">
-          <div style="font-weight:800;font-size:.85rem;color:#7c2d12">${esc(ranked[2].name)}</div>
-          <div style="font-size:.7rem;color:#9a3412">${esc(ranked[2].cls)}</div>
-          <div style="font-size:1.1rem;font-weight:900;color:#c2410c;margin-top:.25rem">${ranked[2].avg}/10</div>
-        </div>
-        <div style="background:#f97316;color:#fff;border-radius:0 0 10px 10px;padding:.28rem;font-size:.75rem;font-weight:800">Hạng 3</div>
-      </div>` : ''}
-    </div>` : ''}
-
-    <!-- Bảng xếp hạng đầy đủ -->
-    <div style="background:var(--card);border:1.5px solid var(--border);border-radius:14px;overflow:hidden">
-      <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
-        <table style="width:100%;border-collapse:collapse;font-size:.85rem">
-          <thead>
-            <tr style="background:var(--bg)">
-              <th style="padding:.6rem .9rem;text-align:center;font-weight:700;color:var(--muted);white-space:nowrap;width:60px">Hạng</th>
-              <th style="padding:.6rem .9rem;text-align:left;font-weight:700;color:var(--muted)">Học sinh</th>
-              <th style="padding:.6rem .9rem;text-align:left;font-weight:700;color:var(--muted);white-space:nowrap">Lớp</th>
-              ${targetHws.map(h=>`<th style="padding:.6rem .75rem;text-align:center;font-weight:700;color:var(--muted);white-space:nowrap;max-width:120px;font-size:.75rem">${esc(h.title.length>18?h.title.slice(0,16)+'…':h.title)}</th>`).join('')}
-              ${targetHws.length > 1 ? `<th style="padding:.6rem .9rem;text-align:center;font-weight:800;color:var(--primary);white-space:nowrap;background:var(--primary-light)">TB /10</th>` : ''}
-            </tr>
-          </thead>
-          <tbody>
-            ${ranked.map((st, i) => {
-              const rankIcon = st.rank===1?'🥇':st.rank===2?'🥈':st.rank===3?'🥉':`<span style="font-weight:800;color:var(--muted)">#${st.rank}</span>`;
-              const rowBg   = i%2===0 ? '' : 'background:var(--bg)';
-              const scoreCells = targetHws.map(h => {
-                const v = st.scores[h.id];
-                if (v == null) return `<td style="padding:.55rem .75rem;text-align:center;color:#cbd5e1;font-size:.8rem">—</td>`;
-                const col = v>=8?'#065f46':v>=6.5?'#92400e':'#991b1b';
-                const bg2 = v>=8?'#d1fae5':v>=6.5?'#fef3c7':'#fee2e2';
-                return `<td style="padding:.55rem .75rem;text-align:center"><span style="background:${bg2};color:${col};border-radius:99px;padding:.12rem .55rem;font-size:.8rem;font-weight:800">${v}</span></td>`;
-              }).join('');
-              const avgCell = targetHws.length > 1 ? (() => {
-                const col = st.avg>=8?'#065f46':st.avg>=6.5?'#92400e':'#991b1b';
-                const bg2 = st.avg>=8?'#d1fae5':st.avg>=6.5?'#fef3c7':'#fee2e2';
-                return `<td style="padding:.55rem .9rem;text-align:center;background:var(--primary-light)"><span style="background:${bg2};color:${col};border-radius:99px;padding:.18rem .65rem;font-size:.85rem;font-weight:900">${st.avg}</span></td>`;
-              })() : '';
-              return `<tr style="${rowBg}">
-                <td style="padding:.55rem .9rem;text-align:center">${rankIcon}</td>
-                <td style="padding:.55rem .9rem;font-weight:700;white-space:nowrap">${esc(st.name)}</td>
-                <td style="padding:.55rem .9rem;color:var(--muted);font-size:.8rem;white-space:nowrap">${esc(st.cls)}</td>
-                ${scoreCells}
-                ${avgCell}
-              </tr>`;
-            }).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>`;
-}
 
 // ═══════════════════════════════════════════
 // TÍNH ĐIỂM VSAT
@@ -3631,6 +3456,7 @@ function renderStudentList() {
             : `<span style="background:#fee2e2;color:#991b1b;padding:.2rem .6rem;border-radius:8px;font-weight:700">🔒 Mở lúc ${_fmtOpenAt(h.open_at)}</span>`;
         })() : ''}
         ${h.shuffle_questions?`<span style="background:#f3e8ff;color:#6b21a8;padding:.2rem .6rem;border-radius:8px;font-weight:700">🔀 Xáo câu</span>`:''}
+        ${h.show_solution?`<span style="background:#eef2ff;color:#4338ca;padding:.2rem .6rem;border-radius:8px;font-weight:700">📘 Có lời giải</span>`:''}
         ${attemptsBadge}
         <span>📅 ${fmtDate(h.created_at)}</span>
       </div>
@@ -3727,6 +3553,7 @@ function openModalHW() {
   document.getElementById('hwShuffleQ').checked = false;
   document.getElementById('hwShuffleA').checked = false;
   document.getElementById('hwAntiPaste').checked = false;
+  document.getElementById('hwShowSolution').checked = false;
   document.getElementById('hwOpenAt').value = '';
   _resetHwClassSelect();
   _resetHwStudentSelect();
@@ -3757,6 +3584,7 @@ async function openEditHW(hwId) {
   document.getElementById('hwShuffleQ').checked = !!hw.shuffle_questions;
   document.getElementById('hwShuffleA').checked = !!hw.shuffle_answers;
   document.getElementById('hwAntiPaste').checked = !!hw.anti_paste;
+  document.getElementById('hwShowSolution').checked = !!hw.show_solution;
   document.getElementById('hwOpenAt').value = hw.open_at ? _utcToLocalInput(hw.open_at) : '';
   _setHwClassSelect(hw.class_name || '');
   _setHwStudentSelect(hw.allowed_usernames || '');
@@ -3919,10 +3747,10 @@ function applyVSATScoring() {
 // Thêm câu hỏi mới vào editor
 function addQuestion(type) {
   const defaultData = {
-    multiple_choice: { options:['','','',''], correct:0 },
-    true_false:      { statements:[{text:'',answer:true},{text:'',answer:true},{text:'',answer:true},{text:'',answer:true}] },
-    matching:        { left:['','','',''], right:['','','','','',''], correct_pairs:[[0,0],[1,1],[2,2],[3,3]] },
-    short_answer:    { sample_answer:'' }
+    multiple_choice: { options:['','','',''], correct:0, solution:'' },
+    true_false:      { statements:[{text:'',answer:true},{text:'',answer:true},{text:'',answer:true},{text:'',answer:true}], solution:'' },
+    matching:        { left:['','','',''], right:['','','','','',''], correct_pairs:[[0,0],[1,1],[2,2],[3,3]], solution:'' },
+    short_answer:    { sample_answer:'', solution:'' }
   };
   editorQuestions.push({ _id:++qCounter, type, text:'', image_url:'', data:JSON.parse(JSON.stringify(defaultData[type])), points:1 });
   renderQuestionList();
@@ -4096,6 +3924,23 @@ function buildQEditor(q,idx,qNum) {
 
     <!-- Body theo loại câu -->
     <div style="margin-top:.85rem">${bodyHtml}</div>
+
+    <!-- ═══ LỜI GIẢI CHI TIẾT (học sinh xem sau khi nộp bài) ═══ -->
+    <div style="margin-top:.9rem;padding:.85rem 1rem;border:2px dashed #a5b4fc;border-radius:12px;background:#eef2ff">
+      <div class="section-title" style="margin-bottom:.45rem;color:#4338ca">
+        📘 Lời giải chi tiết
+        <span style="background:#e0e7ff;color:#3730a3;font-size:.68rem;font-weight:700;padding:.1rem .45rem;border-radius:6px;margin-left:.35rem">Học sinh xem sau khi nộp</span>
+      </div>
+      <textarea rows="3" placeholder="Giải thích chi tiết từng bước: công thức áp dụng, lập luận, lưu ý thường gặp... (hỗ trợ LaTeX)"
+        oninput="qUpdateSolution(${q._id},this.value)"
+        style="width:100%;border:1.5px solid #c7d2fe;border-radius:10px;padding:.6rem .85rem;font-size:.88rem;font-family:'Courier New',monospace;resize:vertical;background:#fff;color:#1e1b4b;transition:border-color .2s"
+        onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#c7d2fe'"
+      >${esc(q.data.solution||'')}</textarea>
+      <div id="sol_lip_${q._id}" style="margin-top:.4rem;font-size:.85rem;line-height:1.7;color:var(--text);word-break:break-word;border-left:2px solid #a5b4fc;padding:.25rem .5rem;background:rgba(255,255,255,.55);border-radius:0 6px 6px 0">${q.data.solution?esc(q.data.solution):'<em style="color:var(--muted);font-style:italic;font-size:.82rem">(chưa có lời giải)</em>'}</div>
+      <div style="font-size:.74rem;color:#6366f1;margin-top:.35rem;font-weight:600">
+        💡 Ghi rõ từng bước tính toán — học sinh sẽ thấy phần này kèm đáp án sau khi nộp bài.
+      </div>
+    </div>
   </div>`;
 }
 
@@ -4661,9 +4506,15 @@ function _shuffleQList(qs, seed, shuffleQ, shuffleA) {
       if (q.question_type !== 'multiple_choice') return q;
       const opts = q.data.options || [];
       const correct = q.data.correct;
-      const correctText = opts[correct];
-      const shuffledOpts = _shuffleArr(opts, rng);
-      const newCorrect = shuffledOpts.indexOf(correctText);
+      if (correct == null || correct < 0 || correct >= opts.length) return q;
+
+      // Xáo theo INDEX gốc (không so sánh nội dung) để tránh sai khi
+      // 2 đáp án trùng text hoặc option là object {text, img}
+      const indexed = opts.map((o, i) => ({ o, i }));
+      const shuffled = _shuffleArr(indexed, rng);
+      const shuffledOpts = shuffled.map(x => x.o);
+      const newCorrect = shuffled.findIndex(x => x.i === correct);
+      if (newCorrect < 0) return q;
       return { ...q, data: { ...q.data, options: shuffledOpts, correct: newCorrect } };
     });
   }
@@ -4692,6 +4543,20 @@ function updateQField(_id,field,val) {
 function updateSAAnswer(_id, val) {
   const q = editorQuestions.find(x=>x._id===_id);
   if (q) q.data = { ...q.data, sample_answer: val };
+}
+// ── LỜI GIẢI CHI TIẾT (hiển thị cho học sinh sau khi nộp bài) ──
+function qUpdateSolution(_id, val) {
+  const q = editorQuestions.find(x=>x._id===_id);
+  if (!q) return;
+  q.data = { ...q.data, solution: val };
+  // Live preview LaTeX bên dưới ô nhập
+  const lip = document.getElementById('sol_lip_'+_id);
+  if (!lip) return;
+  const html = val
+    ? val.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')
+    : '<em style="color:var(--muted);font-style:italic;font-size:.82rem">(chưa có lời giải)</em>';
+  lip.innerHTML = html;
+  renderLatex(lip);
 }
 function updateQText(_id, val) {
   const q = editorQuestions.find(x=>x._id===_id);
@@ -4811,6 +4676,7 @@ async function saveHomework(isDraft=false) {
     shuffle_questions: document.getElementById('hwShuffleQ').checked,
     shuffle_answers:   document.getElementById('hwShuffleA').checked,
     anti_paste:        document.getElementById('hwAntiPaste').checked,
+    show_solution:     document.getElementById('hwShowSolution').checked,
     // Convert datetime-local (local time) → ISO string (UTC) để lưu đúng timezone
     open_at: openAtRaw ? new Date(openAtRaw).toISOString() : null
   };
@@ -4831,7 +4697,7 @@ async function saveHomework(isDraft=false) {
       // Gợi ý chạy migration
       document.getElementById('hwFormErr').style.color = '#f59e0b';
       document.getElementById('hwFormErr').textContent =
-        '⚠️ Lưu thành công (cơ bản). Để dùng tính năng mới (xáo trộn, anti-paste, hẹn giờ) cần chạy file supabase_homework_features_v3.sql trong Supabase SQL Editor.';
+        '⚠️ Lưu thành công (cơ bản). Để dùng tính năng mới (xáo trộn, anti-paste, hẹn giờ, xem lời giải) cần chạy file supabase_homework_features_v3.sql và supabase_homework_solution.sql trong Supabase SQL Editor.';
       return result;
     }
     return { data, error };
@@ -5057,6 +4923,11 @@ async function previewHW(hwId) {
       if (q.data.grading_key) {
         answerBadge += `<div style="margin-top:.3rem;background:#fff1f2;border-left:3px solid #ef4444;border-radius:0 8px 8px 0;padding:.35rem .75rem;font-size:.8rem;color:#7f1d1d;white-space:pre-wrap">
           🔑 <b>Hướng dẫn chấm:</b> ${q.data.grading_key}
+        </div>`;
+      }
+      if (q.data && q.data.solution) {
+        answerBadge += `<div style="margin-top:.3rem;background:#eef2ff;border-left:3px solid #6366f1;border-radius:0 8px 8px 0;padding:.4rem .75rem;font-size:.82rem;color:#3730a3;white-space:pre-wrap">
+          📘 <b>Lời giải chi tiết:</b> ${q.data.solution}
         </div>`;
       }
     }
@@ -5426,8 +5297,16 @@ function updateQNavigator() {
     if (!btn) return;
 
     const ans = doHWAnswers[q.id];
-    const isDone = ans !== undefined && ans !== null && ans !== '' &&
-      !(typeof ans === 'object' && Object.keys(ans).length === 0);
+    // Câu đã trả lời: có giá trị khác null/undefined/''
+    // Riêng object (TF, Matching) → chỉ tính khi có ít nhất 1 giá trị hợp lệ
+    let isDone;
+    if (ans === undefined || ans === null || ans === '') {
+      isDone = false;
+    } else if (typeof ans === 'object') {
+      isDone = Object.values(ans).some(v => v !== undefined && v !== null && v !== '');
+    } else {
+      isDone = true;
+    }
     const isFlagged = doHWFlagged.has(q.id);
 
     btn.className = 'qnav-btn';
@@ -5802,7 +5681,12 @@ function buildMatchDisplay(q, answers, isPreview, idx) {
 function matchSelectAnswer(qId, leftIdx, rightIdx, selEl) {
   _trackCurrentQ(qId);
   if (!doHWAnswers[qId]) doHWAnswers[qId] = {};
-  doHWAnswers[qId][leftIdx] = rightIdx >= 0 ? rightIdx : undefined;
+  if (rightIdx >= 0) {
+    doHWAnswers[qId][leftIdx] = rightIdx;
+  } else {
+    // Bỏ chọn → xoá luôn key, tránh tính nhầm là "đã trả lời"
+    delete doHWAnswers[qId][leftIdx];
+  }
   if (selEl) selEl.style.borderColor = rightIdx >= 0 ? 'var(--primary)' : 'var(--border)';
   updateQNavigator();
   if (typeof updateCountdownUI === 'function') updateCountdownUI(doHWQList.filter(q=>q.question_type!=='section').length);
@@ -5861,8 +5745,12 @@ async function submitAnswers(autoSubmit=false) {
     const realQs = doHWQList.filter(q => q.question_type !== 'section');
     const unansweredQs = realQs.map((q, i) => ({ q, num: i + 1 })).filter(({ q }) => {
       const a = doHWAnswers[q.id];
-      return a === undefined || a === null || a === '' ||
-        (typeof a === 'object' && Object.keys(a).length === 0);
+      if (a === undefined || a === null || a === '') return true;
+      if (typeof a === 'object') {
+        // TF / Matching — chỉ coi là đã làm khi có ít nhất 1 giá trị hợp lệ
+        return !Object.values(a).some(v => v !== undefined && v !== null && v !== '');
+      }
+      return false;
     });
 
     if (unansweredQs.length > 0) {
@@ -5979,12 +5867,6 @@ async function submitAnswers(autoSubmit=false) {
   const maxAttempts = hw?.max_attempts ?? 1;
 
   // Tính attempt number = số bài đã nộp + 1
-  // Lưu lại prevSubs TRƯỚC khi insert để so sánh điểm lần trước
-  const myPrevSubs = allSubmissions.filter(s =>
-    String(s.homework_id) === String(doHWId) &&
-    s.username === currentUser.username &&
-    s.score != null  // chỉ tính bài đã có điểm
-  );
   const attemptNum = allSubmissions.filter(s =>
     String(s.homework_id) === String(doHWId) && s.username === currentUser.username
   ).length + 1;
@@ -6040,9 +5922,9 @@ async function submitAnswers(autoSubmit=false) {
   await loadStudentData();
   renderStudentList();
 
-  // ── Leaderboard realtime + so sánh lần trước ──────────────
+  // ── Thông báo nhanh + nút xem lời giải (nếu GV cho phép) ──
   if (!autoSubmit) {
-    await _showPostSubmitLeaderboard(doHWId, sc10, finalMax, myPrevSubs);
+    _showPostSubmitPanel(doHWId, sc10);
   }
 }
 </script>
@@ -6051,6 +5933,93 @@ async function submitAnswers(autoSubmit=false) {
 // ═══════════════════════════════════════════
 // XEM KẾT QUẢ BÀI LÀM (học sinh)
 // ═══════════════════════════════════════════
+
+// ── 📋 Popup sau khi nộp bài: điểm + nút xem lời giải ──
+function _showPostSubmitPanel(hwId, score10) {
+  const hw = allHomework.find(h => h.id === hwId);
+  if (!hw) return;
+
+  const panelId = '_postSubmitPanel';
+  document.getElementById(panelId)?.remove();
+
+  const ov = document.createElement('div');
+  ov.id = panelId;
+  ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(15,23,42,.75);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:1rem;overflow-y:auto';
+
+  ov.innerHTML = `
+    <div style="background:#fff;border-radius:20px;max-width:420px;width:100%;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.35)">
+      <div style="background:linear-gradient(135deg,#1e1b4b,#4338ca);padding:1.25rem 1.5rem;color:#fff;text-align:center">
+        <div style="font-size:1.05rem;font-weight:900;margin-bottom:.2rem">🎉 Đã nộp bài</div>
+        <div style="font-size:.78rem;opacity:.75">${esc(hw.title)}</div>
+      </div>
+      <div style="padding:1.4rem 1.5rem;text-align:center">
+        <div style="font-size:.7rem;font-weight:700;color:#64748b;letter-spacing:.5px">ĐIỂM CỦA BẠN</div>
+        <div style="font-size:2.6rem;font-weight:900;color:#4338ca;line-height:1.15;margin:.15rem 0 .35rem">
+          ${score10}<span style="font-size:1rem;color:#94a3b8">/10</span>
+        </div>
+        ${hw.show_solution ? `
+        <div style="margin-top:.9rem;padding:.7rem .9rem;background:#eef2ff;border:1.5px solid #a5b4fc;border-radius:12px;text-align:left">
+          <div style="font-size:.82rem;font-weight:800;color:#3730a3">📘 Bài này có lời giải chi tiết</div>
+          <div style="font-size:.75rem;color:#4f46e5;margin-top:.1rem">Xem lời giải từng bước để hiểu bài hơn nhé!</div>
+        </div>` : ''}
+      </div>
+      <div style="padding:0 1.5rem 1.4rem;display:flex;gap:.6rem;flex-wrap:wrap">
+        ${hw.show_solution ? `<button onclick="document.getElementById('${panelId}').remove();openResult(${hwId})"
+          style="flex:1;min-width:140px;padding:.85rem;border:none;background:linear-gradient(135deg,#eef2ff,#c7d2fe);color:#3730a3;border-radius:12px;font-size:.92rem;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(99,102,241,.2)">
+          📘 Xem lời giải
+        </button>` : ''}
+        <button onclick="document.getElementById('${panelId}').remove();openResult(${hwId})"
+          style="${hw.show_solution ? '' : 'width:100%;'}padding:.85rem;border:none;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border-radius:12px;font-size:.95rem;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(99,102,241,.35)">
+          📋 Xem kết quả chi tiết
+        </button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(ov);
+  ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+}
+
+// ── 📘 Mở / thu gọn lời giải chi tiết của 1 câu ──
+function _toggleSolution(qId) {
+  const body = document.getElementById('_solBody_' + qId);
+  const arrow = document.getElementById('_solArrow_' + qId);
+  if (!body) return;
+  const isOpen = body.classList.contains('open');
+  if (isOpen) {
+    body.classList.remove('open');
+  } else {
+    body.classList.add('open');
+  }
+  if (arrow) arrow.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+  // Typeset LaTeX khi mở lần đầu
+  if (!isOpen) {
+    setTimeout(() => {
+      try { renderLatex(body); } catch(e) {}
+    }, 30);
+  }
+}
+
+// ── 📘 Mở / thu gọn TẤT CẢ lời giải ──
+function _toggleAllSolutions() {
+  const bodies = document.querySelectorAll('#resultContent .hw-sol-body');
+  if (!bodies.length) return;
+  const btn = document.getElementById('_btnToggleSol');
+  // Xác định trạng thái hiện tại: đang mở hết hay đang đóng hết
+  const anyClosed = Array.prototype.some.call(bodies, b => !b.classList.contains('open'));
+  Array.prototype.forEach.call(bodies, b => {
+    if (anyClosed) b.classList.add('open'); else b.classList.remove('open');
+    const qId = b.id.replace('_solBody_', '');
+    const arrow = document.getElementById('_solArrow_' + qId);
+    if (arrow) arrow.style.transform = anyClosed ? 'rotate(180deg)' : 'rotate(0deg)';
+  });
+  if (btn) btn.textContent = anyClosed ? '📕 Thu gọn tất cả' : '📖 Mở tất cả lời giải';
+  if (anyClosed) {
+    setTimeout(() => {
+      try { renderLatexAll(document.getElementById('resultContent')); } catch(e) {}
+    }, 50);
+  }
+}
+
 async function openResult(hwId, attemptNum=null) {
   const hw  = allHomework.find(h=>h.id===hwId);
   if (!hw) return;
@@ -6097,7 +6066,9 @@ async function openResult(hwId, attemptNum=null) {
     </div>`;
   }
 
-  document.getElementById('resultTitle').textContent='📋 '+hw.title;
+  document.getElementById('resultTitle').textContent = allSubs.length > 1
+    ? `📋 ${hw.title}  —  Lần ${targetAttempt}/${allSubs.length}`
+    : '📋 ' + hw.title;
 
   // ─── Score card ───
   function fmtSecs(s) {
@@ -6214,6 +6185,21 @@ async function openResult(hwId, attemptNum=null) {
     <div style="font-size:.86rem;color:#713f12;line-height:1.75;white-space:pre-wrap">${esc(hw.grading_notes)}</div>
   </div>` : '';
 
+  // ── 📘 Banner "Có lời giải chi tiết" ──
+  const solutionCount = qs.filter(q => q.question_type !== 'section' && q.data && q.data.solution).length;
+  const solutionBannerHtml = (hw.show_solution && solutionCount > 0) ? `
+  <div style="background:linear-gradient(135deg,#eef2ff,#e0e7ff);border:2px solid #a5b4fc;border-radius:14px;padding:.85rem 1.1rem;margin-bottom:1rem;display:flex;align-items:center;gap:.65rem;flex-wrap:wrap">
+    <span style="font-size:1.6rem;flex-shrink:0">📘</span>
+    <div style="flex:1;min-width:180px">
+      <div style="font-weight:800;font-size:.9rem;color:#3730a3">Bài này có lời giải chi tiết</div>
+      <div style="font-size:.8rem;color:#4f46e5;margin-top:.1rem">${solutionCount} câu được giải thích từng bước — xem ngay dưới mỗi câu bên dưới</div>
+    </div>
+    <button onclick="_toggleAllSolutions()" id="_btnToggleSol"
+      style="background:#6366f1;color:#fff;border:none;border-radius:9px;padding:.5rem 1rem;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap;box-shadow:0 2px 8px rgba(99,102,241,.35)">
+      📖 Mở tất cả lời giải
+    </button>
+  </div>` : '';
+
   // Hiển thị từng câu với đáp án đúng/sai
   let _qResultNum = 0;
   const qResultHtml = qs.map((q,idx)=>{
@@ -6326,16 +6312,24 @@ async function openResult(hwId, attemptNum=null) {
             return Math.abs(userNorm - ansNorm) < 1e-9;
           return userNorm === ansNorm;
         });
-        verdict = matchedAns != null ? 'correct' : 'wrong';
-        correctMarkHtml = matchedAns != null
+        // Điểm thực tế: nếu GV đã chỉnh (manual_scores) thì lấy điểm GV,
+        // ngược lại lấy điểm hệ thống tự tính.
+        const qPts      = parseFloat(q.points) || 1;
+        const sysPts    = matchedAns != null ? qPts : 0;
+        const finalPts  = (manualPts != null) ? manualPts : sysPts;
+        const adjusted  = (manualPts != null && manualPts !== sysPts);
+        const isCorrect = finalPts > 0;
+
+        verdict = isCorrect ? 'correct' : 'wrong';
+        correctMarkHtml = isCorrect
           ? `<div style="margin-top:.45rem;padding:.4rem .8rem;background:#d1fae5;border-radius:8px;font-size:.84rem;font-weight:700;color:#065f46;display:flex;align-items:center;gap:.4rem">
-               ✅ Đúng — đáp án: <b>${esc(matchedAns)}</b>
-               <span style="margin-left:auto;opacity:.75;font-weight:600">${q.points||1} điểm</span>
+               ✅ ${matchedAns != null ? 'Đúng' : 'Đúng (GV chấm)'} — đáp án: <b>${esc(matchedAns!=null?matchedAns:(userAns||'(trống)'))}</b>
+               <span style="margin-left:auto;opacity:.75;font-weight:600">${finalPts} điểm${adjusted?' (GV đã chỉnh)':''}</span>
              </div>`
           : `<div style="display:flex;flex-direction:column;gap:.35rem;margin-top:.45rem">
                <div style="padding:.4rem .8rem;background:#fee2e2;border-radius:8px;font-size:.84rem;font-weight:700;color:#991b1b;display:flex;align-items:center;gap:.4rem">
                  ❌ Sai — bạn nhập: <b>${esc(userAns||'(trống)')}</b>
-                 <span style="margin-left:auto;opacity:.75;font-weight:600">0 điểm</span>
+                 <span style="margin-left:auto;opacity:.75;font-weight:600">${finalPts} điểm${adjusted?' (GV đã chỉnh)':''}</span>
                </div>
                <div style="padding:.4rem .8rem;background:#d1fae5;border-left:3px solid #10b981;border-radius:0 8px 8px 0;font-size:.83rem;color:#065f46">
                  ✅ Đáp án đúng: ${accepted.map(a=>`<b>${esc(a)}</b>`).join(' hoặc ')}
@@ -6354,6 +6348,21 @@ async function openResult(hwId, attemptNum=null) {
     }
 
     const borderColor={correct:'var(--hw-green)',wrong:'var(--hw-red)',partial:'var(--hw-orange)',manual:'var(--muted)',''  :'var(--border)'}[verdict];
+
+    // ── 📘 LỜI GIẢI CHI TIẾT (chỉ hiện nếu GV bật "Cho xem lời giải") ──
+    const _solText = (q.data && q.data.solution) ? String(q.data.solution) : '';
+    const solutionHtml = (hw.show_solution && _solText)
+      ? `<div class="hw-solution" style="margin-top:.65rem;border:2px solid #a5b4fc;border-radius:11px;background:#eef2ff;overflow:hidden">
+           <button onclick="_toggleSolution(${JSON.stringify(String(q.id))})" style="width:100%;display:flex;align-items:center;gap:.45rem;padding:.55rem .9rem;background:transparent;border:none;cursor:pointer;text-align:left;font-weight:800;font-size:.86rem;color:#3730a3">
+             <span style="font-size:1rem;flex-shrink:0">📘</span>
+             <span>Lời giải chi tiết</span>
+             <span id="_solArrow_${q.id}" class="hw-sol-arrow" style="margin-left:auto;font-size:.7rem;opacity:.7">▼</span>
+           </button>
+           <div id="_solBody_${q.id}" class="hw-sol-body" style="padding:0 .9rem .75rem">
+             <div class="q-text" style="font-size:.87rem;line-height:1.85;color:#1e1b4b;white-space:pre-wrap;border-top:1px solid #c7d2fe;padding-top:.6rem">${esc(_solText)}</div>
+           </div>
+         </div>`
+      : '';
 
     return `<div style="border:2px solid ${borderColor};border-radius:14px;padding:1rem 1.2rem;margin-bottom:.75rem;background:var(--card)">
       <div style="display:flex;align-items:flex-start;gap:.6rem;margin-bottom:.6rem">
@@ -6377,10 +6386,11 @@ async function openResult(hwId, attemptNum=null) {
            }`
       }
       ${correctMarkHtml}
+      ${solutionHtml}
     </div>`;
   }).join('');
 
-  document.getElementById('resultContent').innerHTML = attemptTabHtml + scoreHtml + gradingNotesHtml + qResultHtml;
+  document.getElementById('resultContent').innerHTML = attemptTabHtml + scoreHtml + solutionBannerHtml + gradingNotesHtml + qResultHtml;
   document.getElementById('modalResult').classList.add('open');
   setTimeout(() => renderLatexAll(document.getElementById('modalResult')), 200);
 }
@@ -6493,6 +6503,7 @@ async function viewStudentResult(subId) {
       }</div>
       ${q.data.sample_answer&&q.question_type==='short_answer'?`<div style="margin-top:.35rem;font-size:.8rem;padding:.35rem .65rem;background:#f0fdf4;border-left:3px solid var(--hw-green);border-radius:0 7px 7px 0;color:#065f46">📌 Đáp án mẫu: ${esc(q.data.sample_answer)}</div>`:''}
       ${q.data.grading_key?`<div style="margin-top:.4rem;font-size:.8rem;padding:.45rem .75rem;background:#fff1f2;border-left:3px solid #ef4444;border-radius:0 8px 8px 0;color:#7f1d1d;white-space:pre-wrap">🔑 <b>Hướng dẫn chấm:</b> ${esc(q.data.grading_key)}</div>`:''}
+      ${q.data&&q.data.solution?`<div style="margin-top:.4rem;font-size:.8rem;padding:.45rem .75rem;background:#eef2ff;border-left:3px solid #6366f1;border-radius:0 8px 8px 0;color:#3730a3;white-space:pre-wrap">📘 <b>Lời giải chi tiết:</b> ${esc(q.data.solution)}</div>`:''}
     </div>`;
   }).join('');
 
@@ -6509,9 +6520,12 @@ async function openGrade(subId, studentName) {
   const qs  = await loadQuestions(sub.homework_id);
   const answers = sub.answers||{};
 
-  // Tính điểm tự chấm (máy) — MC, TF, Matching + SA auto-grade
+  // Tính điểm tự chấm (máy) — MC, TF, Matching
+  // SA auto_grade được tính RIÊNG (autoSASCores) để không cộng trùng khi lưu điểm
   const autoTypes = ['multiple_choice','true_false','matching'];
   let autoScore=0, autoMax=0, manualMax=0;
+  const autoSASCores = {};   // qid -> điểm hệ thống tự tính cho câu SA auto_grade
+  let autoSAMax = 0;
   qs.forEach(q=>{
     const pts=parseFloat(q.points)||1;
     const a=answers[q.id];
@@ -6528,8 +6542,8 @@ async function openGrade(subId, studentName) {
         autoScore+=pts*(ok/(pairs.length||1));
       }
     } else if(q.question_type==='short_answer' && q.data.auto_grade && q.data.accepted_answers?.length) {
-      // SA tự chấm số — tính điểm tự động
-      autoMax += pts;
+      // SA tự chấm số — tính điểm tự động (KHÔNG cộng vào autoScore)
+      autoSAMax += pts;
       const userNorm = _normNumber(a||'');
       const matched  = q.data.accepted_answers.some(ans => {
         const ansNorm = _normNumber(ans);
@@ -6537,7 +6551,7 @@ async function openGrade(subId, studentName) {
           return Math.abs(userNorm - ansNorm) < 1e-9;
         return userNorm === ansNorm;
       });
-      if (matched) autoScore += pts;
+      autoSASCores[q.id] = matched ? pts : 0;
     } else {
       manualMax+=pts;
     }
@@ -6548,7 +6562,7 @@ async function openGrade(subId, studentName) {
   const manualQs = qs.filter(q=>q.question_type==='short_answer');
 
   // Lưu state để saveGrade dùng
-  window._gradeState = { subId, autoScore, autoMax, manualMax, manualQs };
+  window._gradeState = { subId, autoScore, autoMax, manualMax, manualQs, autoSASCores, autoSAMax };
 
   // Điền header
   document.getElementById('gradeSubmitId').value = subId;
@@ -6669,6 +6683,7 @@ async function openGrade(subId, studentName) {
             <div>
               <div style="font-size:.8rem;font-weight:700;color:var(--text)" class="q-text">${q.question_text}</div>
               ${q.data.sample_answer?`<div style="font-size:.73rem;color:#065f46;margin-top:.1rem">📌 Đáp án mẫu: ${esc(q.data.sample_answer)}</div>`:''}
+              ${q.data&&q.data.solution?`<div style="font-size:.73rem;color:#3730a3;margin-top:.2rem;padding:.3rem .5rem;background:#eef2ff;border-left:2px solid #6366f1;border-radius:0 5px 5px 0;white-space:pre-wrap">📘 <b>Lời giải:</b> ${esc(q.data.solution)}</div>`:''}
             </div>
           </div>
           <div style="display:flex;align-items:center;gap:.5rem;flex-shrink:0">
@@ -6708,19 +6723,25 @@ function _updateGradeSummary() {
   const st = window._gradeState;
   if (!st) return;
 
-  // Cộng điểm từng ô tự luận
-  let manualScored = 0;
+  // Cộng điểm từng ô tự luận — tách 2 nhóm để không cộng trùng
+  // (autoScore chỉ chứa MC / TF / Matching)
+  const autoSASCores = st.autoSASCores || {};
+  let manualScored = 0;   // câu SA chấm tay
+  let autoSAFinal  = 0;   // câu SA auto_grade (đã chỉnh)
   let allFilled = true;
   document.querySelectorAll('#gradeManualBlock input[data-qid]').forEach(inp => {
     const v = inp.value.trim();
     if (v === '' || v === undefined) { allFilled = false; return; }
     const n = parseFloat(v);
     const max = parseFloat(inp.dataset.max)||0;
-    if (!isNaN(n)) manualScored += Math.min(n, max);
+    const pts = isNaN(n) ? 0 : Math.min(n, max);
+    const qid = parseInt(inp.dataset.qid);
+    if (qid in autoSASCores) autoSAFinal += pts;
+    else manualScored += pts;
   });
 
-  const total = roundScore(st.autoScore + manualScored);
-  const grandMax = st.autoMax + st.manualMax;
+  const total = roundScore(st.autoScore + autoSAFinal + manualScored);
+  const grandMax = st.autoMax + (st.autoSAMax||0) + st.manualMax;
   const totalScaled = grandMax > 0 ? roundScore(total / grandMax * 10) : total;
 
   document.getElementById('gradeManualDisplay').textContent =
@@ -6740,8 +6761,17 @@ async function saveGrade() {
   const subId = parseInt(document.getElementById('gradeSubmitId').value);
   const feedback = document.getElementById('gradeFeedback').value.trim();
 
-  // Thu thập điểm từng câu tự luận
-  let manualScored = 0;
+  // ── Thu thập điểm từng câu tự luận ──────────────────────────
+  // Có 2 nhóm:
+  //  1. SA auto_grade  → GV có thể chỉnh → lấy điểm ô input (đã có sẵn điểm hệ thống)
+  //  2. SA manual      → GV nhập tay
+  // Cả hai đều gộp vào manual_scores, nhưng KHÔNG cộng vào autoScore
+  // (autoScore chỉ chứa MC / TF / Matching) để tránh nhân đôi điểm.
+  const autoSASCores = (st && st.autoSASCores) ? st.autoSASCores : {};
+  const autoSAMax    = (st && st.autoSAMax) ? st.autoSAMax : 0;
+
+  let manualScored = 0;   // điểm câu SA manual (GV nhập tay)
+  let autoSAFinal  = 0;   // điểm câu SA auto_grade (sau khi GV chỉnh)
   const manualScores = {};
   document.querySelectorAll('#gradeManualBlock input[data-qid]').forEach(inp => {
     const qid = parseInt(inp.dataset.qid);
@@ -6749,12 +6779,14 @@ async function saveGrade() {
     const v    = parseFloat(inp.value);
     const pts  = isNaN(v) ? 0 : Math.min(Math.max(v, 0), max);
     manualScores[qid] = pts;
-    manualScored += pts;
+    if (qid in autoSASCores) autoSAFinal += pts;   // nhóm auto_grade
+    else manualScored += pts;                      // nhóm manual
   });
 
+  // Điểm tự chấm MC/TF/Matching + điểm SA (auto đã chỉnh + manual)
   const finalScore = st
-    ? roundScore(st.autoScore + manualScored)
-    : roundScore(manualScored);
+    ? roundScore(st.autoScore + autoSAFinal + manualScored)
+    : roundScore(autoSAFinal + manualScored);
 
   const { error } = await sb.from('homework_submissions').update({
     score:        finalScore,
@@ -6766,8 +6798,9 @@ async function saveGrade() {
 
   if (error) { showToast('Lỗi: ' + error.message, false); return; }
   document.getElementById('modalGrade').classList.remove('open');
-  const sc10saved = st && st.autoMax+st.manualMax > 0
-    ? roundScore(finalScore / (st.autoMax+st.manualMax) * 10) : finalScore;
+  const grandMax = st ? (st.autoMax + autoSAMax + st.manualMax) : (autoSAMax);
+  const sc10saved = grandMax > 0
+    ? roundScore(finalScore / grandMax * 10) : finalScore;
   showToast('✅ Đã lưu điểm: ' + sc10saved + '/10');
   window._gradeState = null;
   await loadAdminData();
@@ -7207,667 +7240,6 @@ function _browserNotify(title, body, icon = 'icons/icon-192.png') {
 // ═══════════════════════════════════════════
 let _rtChannel = null;
 
-// ═══════════════════════════════════════════
-// BẢNG XẾP HẠNG CHO HỌC SINH
-// ═══════════════════════════════════════════
-let _rankingRefreshInterval = null;
-
-async function renderStudentRanking() {
-  const el = document.getElementById('hwContent');
-  const myToken = _studentTabToken; // snapshot token
-  el.innerHTML = `<div class="hw-empty"><div class="hw-empty-icon">⏳</div><p>Đang tải xếp hạng...</p></div>`;
-
-  // Dừng interval cũ
-  if (_rankingRefreshInterval) { clearInterval(_rankingRefreshInterval); _rankingRefreshInterval = null; }
-
-  const doRender = async () => {
-    if (studentTab !== 'ranking') { clearInterval(_rankingRefreshInterval); _rankingRefreshInterval = null; return; }
-    if (_studentTabToken !== myToken) { clearInterval(_rankingRefreshInterval); _rankingRefreshInterval = null; return; }
-
-    try {
-      const cn = currentUser.class_name || '';
-      const myClasses = cn.split(',').map(c=>c.trim()).filter(Boolean);
-
-      // Lấy bài tập đã có bài nộp
-      const hwWithSubs = allHomework.filter(h =>
-        allSubmissions.some(s => s.homework_id === h.id && s.score != null)
-      );
-
-      if (!hwWithSubs.length) {
-        el.innerHTML = `<div class="hw-empty"><div class="hw-empty-icon">🏆</div><p>Chưa có bài nào được chấm điểm.</p></div>`;
-        return;
-      }
-
-      // Lấy tất cả submissions của các bài này (cùng lớp)
-      const hwIds = hwWithSubs.map(h=>h.id);
-      const { data: allSubs } = await sb.from('homework_submissions')
-        .select('homework_id,username,student_name,score,max_score,class_name')
-        .in('homework_id', hwIds)
-        .not('score','is',null);
-
-      // Lọc cùng lớp
-      const classSubs = (allSubs||[]).filter(s => {
-        if (!myClasses.length) return true;
-        const sc = (s.class_name||'').split(',').map(c=>c.trim());
-        return sc.some(c => myClasses.includes(c));
-      });
-
-      // Gom điểm cao nhất mỗi người mỗi bài
-      const studentMap = {};
-      classSubs.forEach(s => {
-        if (!studentMap[s.username]) studentMap[s.username] = { name: s.student_name||s.username, scores: {}, isMe: s.username===currentUser.username };
-        const sc10 = s.max_score>0 ? Math.round(s.score/s.max_score*10*100)/100 : s.score;
-        if (studentMap[s.username].scores[s.homework_id] == null || sc10 > studentMap[s.username].scores[s.homework_id]) {
-          studentMap[s.username].scores[s.homework_id] = sc10;
-        }
-      });
-
-      // Tính điểm TB và xếp hạng
-      const ranked = Object.values(studentMap).map(st => {
-        const vals = hwWithSubs.map(h=>st.scores[h.id]).filter(v=>v!=null);
-        const avg  = vals.length ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length*100)/100 : null;
-        return { ...st, avg, count: vals.length };
-      }).filter(st=>st.avg!=null).sort((a,b)=>b.avg-a.avg||a.name.localeCompare(b.name));
-
-      // Gán hạng
-      let rank=1;
-      ranked.forEach((st,i)=>{
-        st.rank = (i>0&&st.avg===ranked[i-1].avg) ? ranked[i-1].rank : rank;
-        rank++;
-      });
-
-      const myEntry = ranked.find(s=>s.isMe);
-      const total = ranked.length;
-
-      let html = `
-        <!-- Header -->
-        <div style="background:linear-gradient(135deg,#1e1b4b,#4338ca);border-radius:14px;padding:1rem 1.25rem;margin-bottom:1rem;color:#fff;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem">
-          <div>
-            <div style="font-size:.95rem;font-weight:900">🏆 Bảng xếp hạng lớp</div>
-            <div style="font-size:.72rem;opacity:.65;margin-top:.1rem">${total} học sinh · Cập nhật realtime</div>
-          </div>
-          ${myEntry ? `<div style="background:rgba(255,255,255,.15);border-radius:12px;padding:.5rem .9rem;text-align:center">
-            <div style="font-size:.65rem;opacity:.65;font-weight:700;letter-spacing:.3px">HẠNG CỦA BẠN</div>
-            <div style="font-size:1.6rem;font-weight:900;line-height:1.1">${myEntry.rank===1?'🥇':myEntry.rank===2?'🥈':myEntry.rank===3?'🥉':'#'+myEntry.rank}<span style="font-size:.7rem;opacity:.5">/${total}</span></div>
-            <div style="font-size:.78rem;font-weight:800;color:#a5f3fc">${myEntry.avg}/10 TB</div>
-          </div>` : ''}
-        </div>
-
-        <!-- Filter bài -->
-        <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.85rem;align-items:center">
-          <span style="font-size:.78rem;color:var(--muted);font-weight:600">Xem theo bài:</span>
-          <button onclick="_studentRankFilter('all',this)" class="_rk-btn" style="padding:.3rem .75rem;border-radius:20px;border:1.5px solid var(--primary);background:var(--primary);color:#fff;font-size:.78rem;font-weight:700;cursor:pointer">📋 Tất cả</button>
-          ${hwWithSubs.map(h=>`<button onclick="_studentRankFilter('${h.id}',this)" class="_rk-btn" style="padding:.3rem .75rem;border-radius:20px;border:1.5px solid var(--border);background:var(--card);color:var(--muted);font-size:.78rem;font-weight:700;cursor:pointer">${esc(h.title.length>20?h.title.slice(0,18)+'…':h.title)}</button>`).join('')}
-        </div>`;
-
-      // Bảng
-      html += `<div id="_studentRankTable">` + _buildStudentRankTable(ranked, hwWithSubs, 'all') + `</div>`;
-
-      el.innerHTML = html;
-
-      // Gắn filter
-      window._studentRankAllData = { ranked, hwWithSubs };
-      document.querySelectorAll('._rk-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-          document.querySelectorAll('._rk-btn').forEach(b=>{
-            b.style.background='var(--card)'; b.style.color='var(--muted)'; b.style.borderColor='var(--border)';
-          });
-          this.style.background='var(--primary)'; this.style.color='#fff'; this.style.borderColor='var(--primary)';
-        });
-      });
-
-    } catch(e) {
-      console.error('renderStudentRanking error:', e);
-    }
-  };
-
-  await doRender();
-  // Refresh mỗi 10s
-  _rankingRefreshInterval = setInterval(doRender, 10000);
-}
-
-function _buildStudentRankTable(ranked, hwList, filterHwId) {
-  const targetHws = filterHwId === 'all' ? hwList : hwList.filter(h=>String(h.id)===filterHwId);
-
-  // Re-rank nếu filter 1 bài
-  let displayRanked = ranked;
-  if (filterHwId !== 'all') {
-    displayRanked = ranked
-      .filter(st => st.scores[parseInt(filterHwId)] != null)
-      .map(st => ({ ...st, avg: st.scores[parseInt(filterHwId)] }))
-      .sort((a,b)=>b.avg-a.avg);
-    let r=1;
-    displayRanked.forEach((st,i)=>{
-      st.rank = (i>0&&st.avg===displayRanked[i-1].avg) ? displayRanked[i-1].rank : r;
-      r++;
-    });
-  }
-
-  if (!displayRanked.length) return `<div class="hw-empty"><div class="hw-empty-icon">📭</div><p>Chưa có dữ liệu.</p></div>`;
-
-  // Top 3 podium
-  let podium = '';
-  if (displayRanked.length >= 1) {
-    const top3 = [displayRanked[1], displayRanked[0], displayRanked[2]].filter(Boolean);
-    const podiumStyles = [
-      { h:'80px', bg:'linear-gradient(180deg,#e2e8f0,#f1f5f9)', border:'#94a3b8', icon:'🥈', label:'Hạng 2', labelBg:'#94a3b8' },
-      { h:'100px', bg:'linear-gradient(180deg,#fef9c3,#fde68a)', border:'#f59e0b', icon:'🥇', label:'🏆 Hạng 1', labelBg:'linear-gradient(90deg,#f59e0b,#d97706)' },
-      { h:'70px', bg:'linear-gradient(180deg,#ffedd5,#fed7aa)', border:'#f97316', icon:'🥉', label:'Hạng 3', labelBg:'#f97316' },
-    ];
-    const order = displayRanked[1] ? [1,0,2] : [0];
-    podium = `<div style="display:flex;justify-content:center;align-items:flex-end;gap:.6rem;margin-bottom:1.1rem;flex-wrap:wrap">`;
-    order.forEach((origIdx, pi) => {
-      const st = displayRanked[origIdx];
-      if (!st) return;
-      const s = podiumStyles[pi];
-      const isMe = st.isMe;
-      podium += `<div style="text-align:center;flex:1;max-width:${origIdx===0?'160px':'140px'}">
-        <div style="font-size:${origIdx===0?'2rem':'1.6rem'}">${s.icon}</div>
-        <div style="background:${s.bg};border:2px solid ${s.border};border-radius:12px 12px 0 0;padding:.65rem .4rem;min-height:${s.h};display:flex;flex-direction:column;align-items:center;justify-content:center;${isMe?'box-shadow:0 0 0 3px #8b5cf6':''}">
-          <div style="font-weight:800;font-size:.82rem;color:#1e293b">${esc(st.name)}${isMe?` <span style="background:#8b5cf6;color:#fff;border-radius:99px;padding:.05rem .35rem;font-size:.62rem;font-weight:800">Bạn</span>`:''}</div>
-          <div style="font-size:1.1rem;font-weight:900;color:#334155;margin-top:.2rem">${st.avg}/10</div>
-        </div>
-        <div style="background:${s.labelBg};color:#fff;border-radius:0 0 8px 8px;padding:.25rem;font-size:.72rem;font-weight:800">${s.label}</div>
-      </div>`;
-    });
-    podium += `</div>`;
-  }
-
-  // Bảng đầy đủ
-  const rows = displayRanked.map((st, i) => {
-    const isMe = st.isMe;
-    const rankIcon = st.rank===1?'🥇':st.rank===2?'🥈':st.rank===3?'🥉':`<b style="color:var(--muted)">#${st.rank}</b>`;
-    const col = st.avg>=8?'#065f46':st.avg>=6.5?'#92400e':'#991b1b';
-    const scoreBg = st.avg>=8?'#d1fae5':st.avg>=6.5?'#fef3c7':'#fee2e2';
-    const rowBg = isMe ? 'background:linear-gradient(135deg,#ede9fe,#f5f3ff);' : i%2===0?'':'background:var(--bg);';
-    return `<tr style="${rowBg}${isMe?'font-weight:800;':''}" >
-      <td style="padding:.55rem .85rem;text-align:center;width:52px">${rankIcon}</td>
-      <td style="padding:.55rem .85rem">
-        <div style="display:flex;align-items:center;gap:.4rem">
-          <div style="width:28px;height:28px;border-radius:50%;background:${isMe?'linear-gradient(135deg,#8b5cf6,#6d28d9)':'linear-gradient(135deg,#6366f1,#4f46e5)'};color:#fff;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;flex-shrink:0">${(st.name||'?')[0].toUpperCase()}</div>
-          <span style="font-size:.85rem">${esc(st.name)}</span>
-          ${isMe?`<span style="background:#8b5cf6;color:#fff;border-radius:99px;padding:.05rem .4rem;font-size:.65rem;font-weight:800;flex-shrink:0">Bạn</span>`:''}
-        </div>
-      </td>
-      <td style="padding:.55rem .85rem;text-align:center">
-        <span style="background:${scoreBg};color:${col};border-radius:99px;padding:.15rem .6rem;font-size:.82rem;font-weight:800">${st.avg}/10</span>
-      </td>
-    </tr>`;
-  }).join('');
-
-  return `${podium}
-    <div style="background:var(--card);border:1.5px solid var(--border);border-radius:12px;overflow:hidden">
-      <table style="width:100%;border-collapse:collapse">
-        <thead><tr style="background:var(--bg)">
-          <th style="padding:.5rem .85rem;text-align:center;font-size:.75rem;font-weight:700;color:var(--muted);width:52px">Hạng</th>
-          <th style="padding:.5rem .85rem;text-align:left;font-size:.75rem;font-weight:700;color:var(--muted)">Học sinh</th>
-          <th style="padding:.5rem .85rem;text-align:center;font-size:.75rem;font-weight:700;color:var(--muted)">Điểm TB</th>
-        </tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>`;
-}
-
-window._studentRankFilter = function(hwId, btn) {
-  if (!window._studentRankAllData) return;
-  const { ranked, hwWithSubs } = window._studentRankAllData;
-  const table = document.getElementById('_studentRankTable');
-  if (table) table.innerHTML = _buildStudentRankTable(ranked, hwWithSubs, hwId);
-};
-
-// ── Đồng hồ đếm ngược chờ mở bài ───────────────────────
-let _openAtTimers = {};
-function _startOpenAtCountdown(hwId, openAt) {
-  if (_openAtTimers[hwId]) return; // đã chạy
-  const update = () => {
-    const el = document.getElementById(`_openAt_cd_${hwId}`);
-    if (!el) { clearInterval(_openAtTimers[hwId]); delete _openAtTimers[hwId]; return; }
-    const diff = new Date(openAt) - new Date();
-    if (diff <= 0) {
-      el.textContent = '🔓 Đã mở!';
-      el.style.background = '#d1fae5'; el.style.color = '#065f46';
-      clearInterval(_openAtTimers[hwId]); delete _openAtTimers[hwId];
-      // Reload để nút "Làm bài" hiển thị
-      setTimeout(() => { loadStudentData().then(renderStudentList); }, 500);
-      return;
-    }
-    const h = Math.floor(diff/3600000);
-    const m = Math.floor((diff%3600000)/60000);
-    const s = Math.floor((diff%60000)/1000);
-    const cdStr = h>0 ? `${h}h ${m}p ${s}s` : m>0 ? `${m}p ${s}s` : `${s}s`;
-    el.innerHTML = `⏰ Mở sau <b>${cdStr}</b> <span style="font-size:.7rem;opacity:.7">(${_fmtOpenAt(openAt)})</span>`;
-  };
-  update();
-  _openAtTimers[hwId] = setInterval(update, 1000);
-}
-
-// ── Helper: lấy anti_paste của bài đang làm ─────────────
-function _getHwAntiPaste() {
-  if (!doHWId) return false;
-  const hw = allHomework.find(h => h.id === doHWId);
-  return !!hw?.anti_paste;
-}
-
-// ── Chống copy-paste ────────────────────────────────────
-function _handlePaste(e, block) {
-  if (!block) return;
-  e.preventDefault();
-  showToast('🚫 Không được dán văn bản trong ô này', false);
-}
-function _handleCopyDoc(e, block) {
-  if (!block) return;
-  e.preventDefault();
-  showToast('🚫 Không được sao chép trong khi làm bài', false);
-}
-
-// ── Leaderboard realtime sau khi nộp bài ────────────────
-async function _showPostSubmitLeaderboard(hwId, myScore10, myMaxRaw, prevSubs) {
-  const hw = allHomework.find(h => h.id === hwId);
-  if (!hw) return;
-
-  // Lấy tất cả submissions của bài này (cùng lớp nếu có)
-  const myClass = (currentUser.class_name || '').split(',').map(c => c.trim()).filter(Boolean);
-  let subs = [];
-  try {
-    const { data } = await sb.from('homework_submissions')
-      .select('username,student_name,score,max_score,class_name,submitted_at,attempt')
-      .eq('homework_id', hwId)
-      .not('score', 'is', null)
-      .order('score', { ascending: false });
-    subs = (data || []).filter(s => {
-      if (!hw.class_name) return true;
-      const hwCls = hw.class_name.split(',').map(c => c.trim());
-      const sCls  = (s.class_name || '').split(',').map(c => c.trim());
-      return sCls.some(c => hwCls.includes(c));
-    });
-  } catch(e) { return; }
-
-  // Giữ điểm cao nhất mỗi người
-  const bestMap = {};
-  subs.forEach(s => {
-    const sc = s.max_score > 0 ? Math.round(s.score / s.max_score * 10 * 100) / 100 : s.score;
-    if (bestMap[s.username] == null || sc > bestMap[s.username].sc) {
-      bestMap[s.username] = { name: s.student_name || s.username, sc, username: s.username };
-    }
-  });
-  const ranked = Object.values(bestMap)
-    .sort((a, b) => b.sc - a.sc || a.name.localeCompare(b.name));
-
-  // Gán hạng
-  let rank = 1;
-  ranked.forEach((s, i) => {
-    s.rank = (i > 0 && s.sc === ranked[i-1].sc) ? ranked[i-1].rank : rank;
-    rank++;
-  });
-
-  const myEntry  = ranked.find(s => s.username === currentUser.username);
-  const myRank   = myEntry?.rank ?? '—';
-  const total    = ranked.length;
-
-  // So sánh với lần trước
-  let compareHtml = '';
-  if (prevSubs.length > 0) {
-    const lastSub  = prevSubs[prevSubs.length - 1];
-    const prevSc10 = lastSub.max_score > 0
-      ? Math.round(lastSub.score / lastSub.max_score * 10 * 100) / 100
-      : lastSub.score;
-    const diff = Math.round((myScore10 - prevSc10) * 100) / 100;
-    const diffColor = diff > 0 ? '#10b981' : diff < 0 ? '#ef4444' : '#94a3b8';
-    const diffIcon  = diff > 0 ? '📈 +' : diff < 0 ? '📉 ' : '= ';
-    compareHtml = `
-      <div style="background:var(--bg);border:1.5px solid var(--border);border-radius:12px;padding:.7rem 1rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap">
-        <span style="font-size:.82rem;color:var(--muted);font-weight:600">📋 So với lần trước (lần ${lastSub.attempt || prevSubs.length}):</span>
-        <div style="display:flex;align-items:center;gap:.5rem">
-          <span style="font-size:.85rem;color:var(--muted)">${prevSc10}/10</span>
-          <span style="font-size:1rem;font-weight:900;color:${diffColor}">${diffIcon}${Math.abs(diff)}</span>
-          <span style="font-size:.85rem;font-weight:800;color:var(--text)">${myScore10}/10</span>
-        </div>
-      </div>`;
-  }
-
-  // Top 5 bảng xếp hạng
-  const top5 = ranked.slice(0, 5);
-  const boardRows = top5.map((s, i) => {
-    const isMe    = s.username === currentUser.username;
-    const rankIcon = s.rank === 1 ? '🥇' : s.rank === 2 ? '🥈' : s.rank === 3 ? '🥉' : `#${s.rank}`;
-    const bg = isMe ? 'background:linear-gradient(135deg,#ede9fe,#ddd6fe);border:1.5px solid #8b5cf6;' : '';
-    const col = s.sc >= 8 ? '#065f46' : s.sc >= 6.5 ? '#92400e' : '#991b1b';
-    const scoreBg = s.sc >= 8 ? '#d1fae5' : s.sc >= 6.5 ? '#fef3c7' : '#fee2e2';
-    return `<div style="display:flex;align-items:center;gap:.65rem;padding:.5rem .75rem;border-radius:10px;${bg}">
-      <span style="font-size:.9rem;width:28px;text-align:center;flex-shrink:0">${rankIcon}</span>
-      <span style="flex:1;font-weight:${isMe?'800':'600'};font-size:.85rem;color:var(--text)">${esc(s.name)}${isMe?' <span style="font-size:.7rem;background:#8b5cf6;color:#fff;border-radius:99px;padding:.05rem .4rem;font-weight:800">Bạn</span>':''}</span>
-      <span style="background:${scoreBg};color:${col};border-radius:99px;padding:.15rem .55rem;font-size:.82rem;font-weight:800">${s.sc}/10</span>
-    </div>`;
-  }).join('');
-
-  // Hạng của mình nếu nằm ngoài top 5
-  let myRankRow = '';
-  if (myEntry && myEntry.rank > 5) {
-    myRankRow = `
-      <div style="text-align:center;padding:.3rem;font-size:.72rem;color:var(--muted)">···</div>
-      <div style="display:flex;align-items:center;gap:.65rem;padding:.5rem .75rem;border-radius:10px;background:linear-gradient(135deg,#ede9fe,#ddd6fe);border:1.5px solid #8b5cf6;">
-        <span style="font-size:.9rem;width:28px;text-align:center;flex-shrink:0">#${myEntry.rank}</span>
-        <span style="flex:1;font-weight:800;font-size:.85rem">Bạn</span>
-        <span style="background:${myScore10>=8?'#d1fae5':myScore10>=6.5?'#fef3c7':'#fee2e2'};color:${myScore10>=8?'#065f46':myScore10>=6.5?'#92400e':'#991b1b'};border-radius:99px;padding:.15rem .55rem;font-size:.82rem;font-weight:800">${myScore10}/10</span>
-      </div>`;
-  }
-
-  // Hiện popup
-  const lbId = '_hwLeaderboard_' + hwId;
-  const ov = document.createElement('div');
-  ov.id = lbId;
-  ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(15,23,42,.75);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:1rem';
-  ov.innerHTML = `
-    <div style="background:var(--card);border-radius:20px;max-width:420px;width:100%;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.3);animation:cfPop .25s cubic-bezier(.34,1.56,.64,1)">
-      <!-- Header -->
-      <div style="background:linear-gradient(135deg,#1e1b4b,#4338ca);padding:1.25rem 1.5rem;color:#fff">
-        <div style="font-size:1.05rem;font-weight:900;margin-bottom:.2rem">🏆 Kết quả &amp; Xếp hạng</div>
-        <div style="font-size:.78rem;opacity:.65">${esc(hw.title)}</div>
-      </div>
-      <!-- Điểm của mình -->
-      <div style="padding:1rem 1.25rem 0">
-        <div style="background:linear-gradient(135deg,#312e81,#4f46e5);border-radius:14px;padding:1rem 1.25rem;color:#fff;display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem">
-          <div>
-            <div style="font-size:.7rem;opacity:.65;font-weight:700;letter-spacing:.4px">ĐIỂM CỦA BẠN</div>
-            <div style="font-size:2.2rem;font-weight:900;line-height:1.1">${myScore10}<span style="font-size:.9rem;opacity:.6">/10</span></div>
-          </div>
-          <div style="text-align:right">
-            <div style="font-size:.7rem;opacity:.65;font-weight:700;letter-spacing:.4px">HẠNG</div>
-            <div style="font-size:2.2rem;font-weight:900;line-height:1.1">${myRank === 1 ? '🥇' : myRank === 2 ? '🥈' : myRank === 3 ? '🥉' : '#' + myRank}<span style="font-size:.78rem;opacity:.6">/${total}</span></div>
-          </div>
-        </div>
-        ${compareHtml}
-        <!-- Bảng xếp hạng -->
-        <div style="font-size:.75rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:.4rem">Top học sinh</div>
-        <div style="display:flex;flex-direction:column;gap:.3rem;margin-bottom:.75rem">
-          ${boardRows}
-          ${myRankRow}
-        </div>
-        <div style="font-size:.7rem;color:var(--muted);text-align:center;margin-bottom:.6rem">${total} học sinh đã nộp bài</div>
-      </div>
-      <!-- Nút -->
-      <div style="padding:0 1.25rem 1.25rem">
-        <button onclick="document.getElementById('${lbId}').remove()"
-          style="width:100%;padding:.85rem;border:none;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border-radius:12px;font-size:.95rem;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(99,102,241,.35)">
-          ✅ Đóng
-        </button>
-      </div>
-    </div>`;
-  document.body.appendChild(ov);
-  ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
-}
-
-// ── Báo cáo tổng kết bài tập (admin) ────────────────────
-async function showHWSummary(hwId) {
-  const hw   = allHomework.find(h => h.id === hwId);
-  if (!hw) return;
-
-  const qs   = await loadQuestions(hwId);
-  const subs = allSubmissions.filter(s => s.homework_id === hwId && s.score != null);
-  const totalSubs = allSubmissions.filter(s => s.homework_id === hwId).length;
-
-  if (!subs.length) { showToast('Chưa có bài nào được chấm điểm', false); return; }
-
-  // Điểm quy đổi /10
-  const scores10 = subs.map(s => s.max_score > 0 ? Math.round(s.score / s.max_score * 10 * 100) / 100 : s.score);
-  const avg10    = Math.round(scores10.reduce((a,b)=>a+b,0) / scores10.length * 100) / 100;
-  const max10    = Math.max(...scores10);
-  const min10    = Math.min(...scores10);
-  const pass     = scores10.filter(s => s >= 5).length;
-  const passRate = Math.round(pass / scores10.length * 100);
-
-  // Phân phối điểm
-  const bands = [
-    { label: '9–10', min: 9, max: 10, color: '#10b981', bg: '#d1fae5' },
-    { label: '7–<9', min: 7, max: 9,  color: '#3b82f6', bg: '#dbeafe' },
-    { label: '5–<7', min: 5, max: 7,  color: '#f59e0b', bg: '#fef3c7' },
-    { label: '<5',   min: 0, max: 5,  color: '#ef4444', bg: '#fee2e2' },
-  ];
-  const bandData = bands.map(b => ({
-    ...b,
-    count: scores10.filter(s => s >= b.min && s < b.max || (b.max === 10 && s === 10)).length
-  }));
-
-  // Câu sai nhiều nhất
-  const errorCount = {};  // questionId → count
-  const realQs = qs.filter(q => q.question_type !== 'section' && q.question_type !== 'short_answer');
-  subs.forEach(sub => {
-    const answers = sub.answers || {};
-    realQs.forEach(q => {
-      const a = answers[q.id];
-      let wrong = false;
-      if (q.question_type === 'multiple_choice') {
-        wrong = a !== q.data.correct;
-      } else if (q.question_type === 'true_false') {
-        const stmts = q.data.statements || [];
-        const numWrong = stmts.filter((s,i) => !a || a[i] !== s.answer).length;
-        wrong = numWrong > 0;
-      } else if (q.question_type === 'matching') {
-        const pairs = q.data.correct_pairs || [];
-        wrong = pairs.some(([l,r]) => !a || a[l] !== r);
-      }
-      if (wrong) errorCount[q.id] = (errorCount[q.id] || 0) + 1;
-    });
-  });
-
-  const topErrors = realQs
-    .map((q, i) => ({ q, i: i+1, cnt: errorCount[q.id] || 0, rate: Math.round((errorCount[q.id]||0) / subs.length * 100) }))
-    .filter(x => x.cnt > 0)
-    .sort((a,b) => b.cnt - a.cnt)
-    .slice(0, 5);
-
-  const summaryId = '_hwSummary_' + hwId;
-  const ov = document.createElement('div');
-  ov.id = summaryId;
-  ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(15,23,42,.72);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:1rem;overflow-y:auto';
-  ov.innerHTML = `
-    <div style="background:var(--card);border-radius:20px;max-width:560px;width:100%;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.3);animation:cfPop .25s cubic-bezier(.34,1.56,.64,1);max-height:92dvh;overflow-y:auto">
-      <div style="background:linear-gradient(135deg,#1e1b4b,#4338ca);padding:1.1rem 1.4rem;color:#fff;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:1">
-        <div>
-          <div style="font-size:1rem;font-weight:900">📈 Báo cáo tổng kết</div>
-          <div style="font-size:.75rem;opacity:.65;margin-top:.1rem">${esc(hw.title)}</div>
-        </div>
-        <button onclick="document.getElementById('${summaryId}').remove()" style="background:rgba(255,255,255,.15);border:none;color:#fff;width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:1rem">✕</button>
-      </div>
-      <div style="padding:1.1rem 1.25rem;display:flex;flex-direction:column;gap:1rem">
-
-        <!-- Nút xuất -->
-        <div style="display:flex;gap:.5rem;flex-wrap:wrap">
-          <button onclick="exportHWSummaryExcel(${hwId})"
-            style="display:inline-flex;align-items:center;gap:.35rem;background:#10b981;border:none;color:#fff;border-radius:8px;padding:.45rem .9rem;font-size:.8rem;font-weight:700;cursor:pointer">
-            📊 Xuất Excel
-          </button>
-          <button onclick="exportHWSummaryPDF('${summaryId}',${hwId})"
-            style="display:inline-flex;align-items:center;gap:.35rem;background:#6366f1;border:none;color:#fff;border-radius:8px;padding:.45rem .9rem;font-size:.8rem;font-weight:700;cursor:pointer">
-            📄 Xuất PDF
-          </button>
-        </div>
-
-        <!-- Stat cards -->
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.6rem">
-          ${[
-            { icon:'📬', val: totalSubs, label:'Đã nộp', bg:'#eef2ff', col:'#4338ca' },
-            { icon:'⌀',  val: avg10,    label:'Điểm TB', bg:'#f0fdf4', col:'#15803d' },
-            { icon:'⬆',  val: max10,    label:'Cao nhất', bg:'#fef9c3', col:'#b45309' },
-            { icon:'✅',  val: `${passRate}%`, label:'Đạt ≥5đ', bg:'#d1fae5', col:'#065f46' },
-          ].map(c=>`<div style="background:${c.bg};border-radius:12px;padding:.6rem .5rem;text-align:center">
-            <div style="font-size:.85rem">${c.icon}</div>
-            <div style="font-size:1.1rem;font-weight:900;color:${c.col}">${c.val}</div>
-            <div style="font-size:.65rem;color:var(--muted);font-weight:600;margin-top:.1rem">${c.label}</div>
-          </div>`).join('')}
-        </div>
-
-        <!-- Phân phối -->
-        <div>
-          <div style="font-size:.75rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:.5rem">Phân phối điểm</div>
-          <div style="display:flex;flex-direction:column;gap:.35rem">
-            ${bandData.map(b=>{
-              const pct = scores10.length ? Math.round(b.count/scores10.length*100) : 0;
-              return `<div style="display:flex;align-items:center;gap:.6rem">
-                <span style="font-size:.75rem;font-weight:700;color:${b.color};width:36px;flex-shrink:0">${b.label}</span>
-                <div style="flex:1;background:var(--bg);border-radius:20px;height:20px;overflow:hidden">
-                  <div style="width:${pct}%;height:100%;background:${b.color};border-radius:20px;transition:width .6s;display:flex;align-items:center;justify-content:flex-end;padding-right:.4rem">
-                    ${pct>15?`<span style="font-size:.68rem;color:#fff;font-weight:800">${pct}%</span>`:''}
-                  </div>
-                </div>
-                <span style="font-size:.75rem;color:var(--muted);width:28px;text-align:right;flex-shrink:0">${b.count}</span>
-              </div>`;
-            }).join('')}
-          </div>
-        </div>
-
-        <!-- Câu sai nhiều nhất -->
-        ${topErrors.length ? `
-        <div>
-          <div style="font-size:.75rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:.5rem">⚠️ Câu sai nhiều nhất</div>
-          <div style="display:flex;flex-direction:column;gap:.35rem">
-            ${topErrors.map(x=>`
-              <div style="display:flex;align-items:flex-start;gap:.6rem;padding:.5rem .75rem;background:var(--bg);border-radius:10px;border-left:3px solid #ef4444">
-                <span style="background:#ef4444;color:#fff;border-radius:6px;padding:.1rem .4rem;font-size:.7rem;font-weight:800;flex-shrink:0">Câu ${x.i}</span>
-                <span style="flex:1;font-size:.8rem;color:var(--text);line-height:1.5">${esc(x.q.question_text.slice(0,80))}${x.q.question_text.length>80?'…':''}</span>
-                <span style="background:#fee2e2;color:#991b1b;border-radius:20px;padding:.12rem .5rem;font-size:.75rem;font-weight:800;flex-shrink:0;white-space:nowrap">${x.rate}% sai</span>
-              </div>`).join('')}
-          </div>
-        </div>` : ''}
-
-      </div>
-    </div>`;
-  document.body.appendChild(ov);
-  ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
-}
-
-// ── Export Excel báo cáo tổng kết ───────────────────────────────
-async function exportHWSummaryExcel(hwId) {
-  const hw   = allHomework.find(h => h.id === hwId);
-  if (!hw) return;
-  const qs   = await loadQuestions(hwId);
-  const subs = allSubmissions.filter(s => s.homework_id === hwId);
-  if (!subs.length) { showToast('Chưa có bài nộp nào', false); return; }
-
-  const grandMax = qs.filter(q=>q.question_type!=='section')
-    .reduce((s,q)=>s+(parseFloat(q.points)||1),0) || (hw.total_score||10);
-
-  // Sheet 1: Bảng điểm
-  const scores10 = subs.filter(s=>s.score!=null).map(s=>
-    s.max_score>0 ? Math.round(s.score/s.max_score*10*100)/100 : s.score
-  );
-  const avg10 = scores10.length ? Math.round(scores10.reduce((a,b)=>a+b,0)/scores10.length*100)/100 : 0;
-
-  const wsData = [
-    ['STT','Họ tên','Mã HV','Lớp','Lần','TN','ĐS','GH','TL','Điểm thô','Tổng','Điểm/10','Xếp loại','Trạng thái','Ngày nộp']
-  ];
-
-  const sorted = [...subs].sort((a,b)=>
-    (a.class_name||'').localeCompare(b.class_name||'') ||
-    (a.student_name||'').localeCompare(b.student_name||'')
-  );
-
-  sorted.forEach((s, i) => {
-    const bd = calcScoreBreakdown(s);
-    const sc10 = s.score!=null && s.max_score>0 ? Math.round(s.score/s.max_score*10*100)/100 : (s.score??'');
-    const xepLoai = sc10==='' ? '' : sc10>=8?'Giỏi':sc10>=6.5?'Khá':sc10>=5?'TB':'Yếu';
-    wsData.push([
-      i+1,
-      s.student_name||s.username,
-      allStudentCodes[s.username]||'',
-      s.class_name||'',
-      s.attempt||1,
-      bd?.mc.max ? `${bd.mc.got}/${bd.mc.max}` : '',
-      bd?.tf.max ? `${bd.tf.got}/${bd.tf.max}` : '',
-      bd?.mt.max ? `${bd.mt.got}/${bd.mt.max}` : '',
-      bd?.sa.max ? `${bd.sa.got??'?'}/${bd.sa.max}` : '',
-      s.score??'',
-      grandMax,
-      sc10,
-      xepLoai,
-      s.status==='graded'?'Đã chấm':'Chờ chấm',
-      s.submitted_at ? new Date(s.submitted_at).toLocaleDateString('vi-VN') : ''
-    ]);
-  });
-
-  // Sheet 2: Thống kê tổng hợp
-  const statData = [
-    ['Chỉ số','Giá trị'],
-    ['Tên bài', hw.title],
-    ['Lớp', hw.class_name||'Tất cả'],
-    ['Tổng bài nộp', subs.length],
-    ['Đã chấm', subs.filter(s=>s.status==='graded').length],
-    ['Điểm TB', avg10],
-    ['Điểm cao nhất', scores10.length?Math.max(...scores10):''],
-    ['Điểm thấp nhất', scores10.length?Math.min(...scores10):''],
-    ['Tỉ lệ đạt ≥5', scores10.length ? `${Math.round(scores10.filter(s=>s>=5).length/scores10.length*100)}%` : ''],
-    ['Giỏi (≥8)', scores10.filter(s=>s>=8).length],
-    ['Khá (6.5–<8)', scores10.filter(s=>s>=6.5&&s<8).length],
-    ['TB (5–<6.5)', scores10.filter(s=>s>=5&&s<6.5).length],
-    ['Yếu (<5)', scores10.filter(s=>s<5).length],
-  ];
-
-  const wb = XLSX.utils.book_new();
-  const ws1 = XLSX.utils.aoa_to_sheet(wsData);
-  const ws2 = XLSX.utils.aoa_to_sheet(statData);
-
-  // Độ rộng cột tự động
-  ws1['!cols'] = [4,22,10,10,5,8,8,8,8,10,8,10,10,12,12].map(w=>({wch:w}));
-  ws2['!cols'] = [{wch:22},{wch:18}];
-
-  XLSX.utils.book_append_sheet(wb, ws1, 'Bảng điểm');
-  XLSX.utils.book_append_sheet(wb, ws2, 'Thống kê');
-
-  const safeName = (hw.title||'baitap').replace(/[/\\:*?"<>|]/g,'_').slice(0,40);
-  XLSX.writeFile(wb, `BaoCao_${safeName}_${new Date().toLocaleDateString('vi-VN').replace(/\//g,'-')}.xlsx`);
-  showToast(`✅ Đã xuất Excel ${subs.length} học sinh`);
-}
-
-// ── Export PDF báo cáo tổng kết ─────────────────────────────────
-async function exportHWSummaryPDF(summaryId, hwId) {
-  const ov = document.getElementById(summaryId);
-  const el = ov?.querySelector('div[style*="border-radius:20px"]');
-  if (!el) { showToast('Không tìm thấy nội dung', false); return; }
-  showToast('Đang tạo PDF...', true);
-  try {
-    // Tạm đặt background trắng để pdf rõ hơn
-    const oldBg = el.style.background;
-    el.style.background = '#ffffff';
-    const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false });
-    el.style.background = oldBg;
-
-    const imgData = canvas.toDataURL('image/png');
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
-    const pageW = pdf.internal.pageSize.getWidth();
-    const pageH = pdf.internal.pageSize.getHeight();
-    const imgW  = pageW - 20;
-    const imgH  = canvas.height * imgW / canvas.width;
-
-    if (imgH <= pageH - 20) {
-      pdf.addImage(imgData, 'PNG', 10, 10, imgW, imgH);
-    } else {
-      // Cắt nhiều trang
-      const ratio = canvas.width / imgW;
-      const pageImgH = (pageH - 20) * ratio;
-      let srcY = 0;
-      while (srcY < canvas.height) {
-        const sliceCanvas = document.createElement('canvas');
-        sliceCanvas.width  = canvas.width;
-        sliceCanvas.height = Math.min(pageImgH, canvas.height - srcY);
-        const ctx = sliceCanvas.getContext('2d');
-        ctx.drawImage(canvas, 0, srcY, sliceCanvas.width, sliceCanvas.height, 0, 0, sliceCanvas.width, sliceCanvas.height);
-        if (srcY > 0) pdf.addPage();
-        const sliceH = sliceCanvas.height / ratio;
-        pdf.addImage(sliceCanvas.toDataURL('image/png'), 'PNG', 10, 10, imgW, sliceH);
-        srcY += pageImgH;
-      }
-    }
-
-    const hw = hwId ? allHomework.find(h => String(h.id) === String(hwId)) : null;
-    const safeName = (hw?.title||'baocao').replace(/[^\w\s-]/g,'_').slice(0,40);
-    pdf.save(`BaoCao_${safeName}_${new Date().toLocaleDateString('vi-VN').replace(/\//g,'-')}.pdf`);
-    showToast('✅ Đã xuất PDF');
-  } catch(e) {
-    console.error('exportHWSummaryPDF error:', e);
-    showToast('❌ Lỗi xuất PDF: ' + e.message, false);
-  }
-}
 
 // ── Lịch sử điểm học sinh (tất cả bài + tất cả lần) ─────────────
 async function openStudentHistory() {
@@ -8139,7 +7511,6 @@ function initRealtime() {
         // Render đúng tab đang mở
         if      (adminTab === 'list')        renderAdminList();
         else if (adminTab === 'submissions') renderAdminSubmissions();
-        else if (adminTab === 'ranking')     renderAdminRanking();
         else if (adminTab === 'notdone')     renderAdminNotDone();
       } else {
         // Học sinh: kiểm tra bài mới có dành cho lớp mình không
@@ -8216,7 +7587,6 @@ function initRealtime() {
         // Cập nhật tab đang mở
         if      (adminTab === 'list')        renderAdminList();
         else if (adminTab === 'submissions') renderAdminSubmissions();
-        else if (adminTab === 'ranking')     renderAdminRanking();
         else if (adminTab === 'notdone')     renderAdminNotDone();
 
         if (eventType === 'INSERT') {
@@ -8248,10 +7618,6 @@ function initRealtime() {
               `${hwTitle?hwTitle+' — ':''}Điểm: ${nw.score}/${nw.max_score||10}`
             );
           }
-        }
-        // Cập nhật ranking realtime khi có bài nộp mới từ bất kỳ ai
-        if (studentTab === 'ranking') {
-          renderStudentRanking();
         }
       }
     })
@@ -8291,12 +7657,10 @@ function _startFallbackPolling() {
         await loadAdminData();
         if      (adminTab === 'list')        renderAdminList();
         else if (adminTab === 'submissions') renderAdminSubmissions();
-        else if (adminTab === 'ranking')     renderAdminRanking();
         else if (adminTab === 'notdone')     renderAdminNotDone();
         else if (adminTab === 'live')        await _renderLiveTable(true);
       } else {
         // Học sinh: reload danh sách bài
-        if (studentTab === 'ranking') { renderStudentRanking(); return; }
         const mainEl = document.querySelector('.dash-main') || document.documentElement;
         const scrollY = mainEl.scrollTop || window.scrollY;
         await loadStudentData();
@@ -8511,6 +7875,11 @@ async function exportHW(hwId) {
             : `<div class="answer-line"><i>Chấm tự luận</i></div>`);
     }
 
+    // 📘 Lời giải chi tiết — chỉ xuất cho GV (bản HS tải về không có đáp án)
+    if (!isStudent && q.data && q.data.solution) {
+      bodyHtml += `<div class="solution-line"><b>📘 Lời giải chi tiết:</b> ${q.data.solution}</div>`;
+    }
+
     return `<div class="q-block">
       <div class="q-header">
         <span class="q-num">Câu ${qNum}</span>
@@ -8567,6 +7936,7 @@ async function exportHW(hwId) {
   .check{text-align:center;font-size:14pt;color:#16a34a}
   .answer-row{margin-top:.55em;font-style:italic;color:#444;font-size:11pt}
   .answer-line{margin:.6em 0 .3em 1em;font-style:italic;color:#444;font-size:11pt}
+  .solution-line{margin:.45em 0 .3em 1em;padding:.35em .7em;background:#eef2ff;border-left:3px solid #6366f1;color:#1e1b4b;font-size:11pt;line-height:1.6;white-space:pre-wrap;page-break-inside:avoid}
   .footer{margin-top:2em;border-top:1px solid #ccc;padding-top:.5em;font-size:9.5pt;color:#999;text-align:right}
   .key-badge{display:inline-block;background:#dcfce7;border:1px solid #86efac;color:#166534;padding:.1em .5em;border-radius:4px;font-size:9.5pt;font-weight:700;margin-left:.5em}
   .section-block{display:flex;align-items:center;gap:.6em;background:#1e1b4b;color:#fff;border-radius:6px;padding:.45em .9em;margin:1.2em 0 .6em;font-size:12pt;font-weight:bold;page-break-after:avoid}
