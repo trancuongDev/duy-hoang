@@ -4309,6 +4309,22 @@ function buildQEditor(q,idx,qNum) {
         onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#c7d2fe'"
       >${esc(q.data.solution||'')}</textarea>
       <div id="sol_lip_${q._id}" style="margin-top:.4rem;font-size:.85rem;line-height:1.7;color:var(--text);word-break:break-word;border-left:2px solid #a5b4fc;padding:.25rem .5rem;background:rgba(255,255,255,.55);border-radius:0 6px 6px 0">${q.data.solution?esc(q.data.solution):'<em style="color:var(--muted);font-style:italic;font-size:.82rem">(chưa có lời giải)</em>'}</div>
+
+      <!-- ═══ ẢNH TRONG LỜI GIẢI ═══ -->
+      <div class="section-title" style="margin:.6rem 0 .35rem;color:#4338ca">🖼️ Hình ảnh trong lời giải <span style="background:#e0e7ff;color:#3730a3;font-size:.66rem;font-weight:700;padding:.1rem .4rem;border-radius:5px;margin-left:.3rem">tuỳ chọn</span></div>
+      <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+        <label class="btn-sm" style="cursor:pointer;border-color:#6366f1;color:#4338ca;background:#fff;padding:.45rem .8rem;font-size:.78rem">
+          📁 Chọn ảnh
+          <input type="file" accept="image/*" multiple style="display:none" onchange="uploadSolutionImages(${q._id},this)"/>
+        </label>
+        <input type="url" placeholder="Hoặc dán link ảnh (https://...)"
+          oninput="qAddSolutionImageByUrl(${q._id},this.value)"
+          style="flex:1;min-width:180px;padding:.5rem .75rem;border:1.5px solid #c7d2fe;border-radius:9px;font-size:.85rem;outline:none;background:#fff;color:#1e1b4b"/>
+      </div>
+      <div id="solimgs_${q._id}" style="margin-top:.45rem;display:flex;flex-wrap:wrap;gap:.5rem">
+        ${_renderSolutionImageList(q._id, q.data.solution_images)}
+      </div>
+
       <div style="font-size:.74rem;color:#6366f1;margin-top:.35rem;font-weight:600">
         💡 Ghi rõ từng bước tính toán — học sinh sẽ thấy phần này kèm đáp án sau khi nộp bài.
       </div>
@@ -4917,6 +4933,99 @@ function updateSAAnswer(_id, val) {
   if (q) q.data = { ...q.data, sample_answer: val };
 }
 // ── LỜI GIẢI CHI TIẾT (hiển thị cho học sinh sau khi nộp bài) ──
+// ── 🖼️ ẢNH TRONG LỜI GIẢI CHI TIẾT ────────────────────────────
+function _getSolutionImages(_id) {
+  const q = editorQuestions.find(x => x._id === _id);
+  if (!q) return [];
+  if (!q.data) q.data = {};
+  if (!Array.isArray(q.data.solution_images)) q.data.solution_images = [];
+  return q.data.solution_images;
+}
+
+// Render danh sách ảnh (thumb + nút xoá)
+function _renderSolutionImageList(_id, list) {
+  const arr = Array.isArray(list) ? list : [];
+  if (!arr.length) {
+    return `<span style="font-size:.78rem;color:var(--muted);font-style:italic">(chưa có ảnh nào)</span>`;
+  }
+  return arr.map((url, i) => `
+    <div style="position:relative;display:inline-block">
+      <img src="${esc(url)}" title="${esc(url)}"
+        style="max-height:110px;max-width:160px;border-radius:9px;border:1.5px solid #c7d2fe;background:#fff"
+        onerror="this.style.display='none'"/>
+      <button onclick="qRemoveSolutionImage(${_id},${i})"
+        title="Xoá ảnh"
+        style="position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;
+               background:#ef4444;color:#fff;border:2px solid #fff;font-size:.72rem;font-weight:800;
+               line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;
+               box-shadow:0 2px 6px rgba(0,0,0,.25)">✕</button>
+    </div>`).join('');
+}
+
+// Thêm ảnh từ URL
+function qAddSolutionImageByUrl(_id, url) {
+  const u = (url || '').trim();
+  if (!u) return;
+  const arr = _getSolutionImages(_id);
+  if (arr.includes(u)) { showToast('Ảnh này đã có rồi', false); return; }
+  arr.push(u);
+  const box = document.getElementById('solimgs_' + _id);
+  if (box) box.innerHTML = _renderSolutionImageList(_id, arr);
+  // Xoá ô nhập để tránh dán trùng
+  const inp = box?.closest('div')?.parentElement?.querySelector('input[type=url]');
+  if (inp) inp.value = '';
+  showToast('✅ Đã thêm ảnh vào lời giải');
+}
+
+// Xoá ảnh
+function qRemoveSolutionImage(_id, idx) {
+  const arr = _getSolutionImages(_id);
+  arr.splice(idx, 1);
+  const box = document.getElementById('solimgs_' + _id);
+  if (box) box.innerHTML = _renderSolutionImageList(_id, arr);
+}
+
+// Upload nhiều ảnh cho lời giải
+async function uploadSolutionImages(_id, input) {
+  const files = Array.from(input.files || []);
+  if (!files.length) return;
+  const arr = _getSolutionImages(_id);
+  const box = document.getElementById('solimgs_' + _id);
+  const MAX = 5 * 1024 * 1024;
+
+  showToast(`Đang xử lý ${files.length} ảnh...`, true);
+
+  for (const file of files) {
+    if (file.size > MAX) { showToast(`Ảnh "${file.name}" vượt quá 5MB`, false); continue; }
+    let url = null;
+    // 1) Thử Storage
+    try {
+      const ext = (file.name.split('.').pop() || 'png').toLowerCase();
+      const path = `sol_${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`;
+      const { error } = await ViettelStorage.from('homework-images').upload(path, file, { upsert:true });
+      if (!error) {
+        const { data:{ publicUrl } } = ViettelStorage.from('homework-images').getPublicUrl(path);
+        url = publicUrl;
+      }
+    } catch(e) { /* fallback Base64 */ }
+
+    // 2) Fallback Base64
+    if (!url) {
+      url = await new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result);
+        reader.onerror = () => resolve(null);
+        reader.readAsDataURL(file);
+      });
+    }
+    if (url) arr.push(url);
+  }
+
+  if (box) box.innerHTML = _renderSolutionImageList(_id, arr);
+  input.value = '';  // reset để chọn lại cùng file được
+  showToast(`✅ Đã thêm ${arr.length} ảnh vào lời giải`);
+}
+
 function qUpdateSolution(_id, val) {
   const q = editorQuestions.find(x=>x._id===_id);
   if (!q) return;
@@ -5297,8 +5406,8 @@ async function previewHW(hwId) {
           🔑 <b>Hướng dẫn chấm:</b> ${q.data.grading_key}
         </div>`;
       }
-      if (q.data && q.data.solution) {
-        answerBadge += _buildSolutionAccordion(q.id, q.data.solution);
+      if (q.data && (q.data.solution || (q.data.solution_images||[]).length)) {
+        answerBadge += _buildSolutionAccordion(q.id, q.data.solution, null, q.data.solution_images);
       }
     }
 
@@ -6391,11 +6500,16 @@ function _showPostSubmitPanel(hwId, score10) {
 
 // ── 📘 Component dùng chung: Lời giải chi tiết dạng accordion ──
 // Bấm vào để mở, bấm lại để đóng (không cần nút "Mở tất cả")
-function _buildSolutionAccordion(qId, solutionText, label) {
+function _buildSolutionAccordion(qId, solutionText, label, images) {
   const txt = (solutionText || '').toString();
-  if (!txt.trim()) return '';
+  const imgs = Array.isArray(images) ? images.filter(u => u && String(u).trim()) : [];
+  if (!txt.trim() && !imgs.length) return '';
   const title = label || 'Lời giải chi tiết';
   const sid  = 'sol_' + qId;
+  const imgHtml = imgs.length ? `
+    <div style="margin-top:.6rem;padding-top:.55rem;border-top:1px solid #c7d2fe;display:flex;flex-wrap:wrap;gap:.5rem">
+      ${imgs.map(u => `<img src="${esc(u)}" style="max-width:100%;max-height:260px;border-radius:9px;border:1.5px solid #c7d2fe;background:#fff" onerror="this.style.display='none'"/>`).join('')}
+    </div>` : '';
   return `<div class="hw-solution" style="margin-top:.65rem;border:2px solid #a5b4fc;border-radius:11px;background:#eef2ff;overflow:hidden">
     <button onclick="_toggleSolution('${sid}')" style="width:100%;display:flex;align-items:center;gap:.45rem;padding:.55rem .9rem;background:transparent;border:none;cursor:pointer;text-align:left;font-weight:800;font-size:.86rem;color:#3730a3">
       <span style="font-size:1rem;flex-shrink:0">📘</span>
@@ -6403,7 +6517,8 @@ function _buildSolutionAccordion(qId, solutionText, label) {
       <span id="_solArrow_${sid}" class="hw-sol-arrow" style="margin-left:auto;font-size:.7rem;opacity:.7">▼</span>
     </button>
     <div id="_solBody_${sid}" class="hw-sol-body" style="padding:0 .9rem .75rem">
-      <div class="q-text" style="font-size:.87rem;line-height:1.85;color:#1e1b4b;white-space:pre-wrap;border-top:1px solid #c7d2fe;padding-top:.6rem">${esc(txt)}</div>
+      ${txt ? `<div class="q-text" style="font-size:.87rem;line-height:1.85;color:#1e1b4b;white-space:pre-wrap;border-top:1px solid #c7d2fe;padding-top:.6rem">${esc(txt)}</div>` : ''}
+      ${imgHtml}
     </div>
   </div>`;
 }
@@ -6594,7 +6709,7 @@ async function openResult(hwId, attemptNum=null) {
   </div>` : '';
 
   // ── 📘 Banner "Có lời giải chi tiết" ──
-  const solutionCount = qs.filter(q => q.question_type !== 'section' && q.question_type !== 'shared_content' && q.data && q.data.solution).length;
+  const solutionCount = qs.filter(q => q.question_type !== 'section' && q.question_type !== 'shared_content' && q.data && (q.data.solution || (q.data.solution_images||[]).length)).length;
   const solutionBannerHtml = (hw.show_solution && solutionCount > 0) ? `
   <div style="background:linear-gradient(135deg,#eef2ff,#e0e7ff);border:2px solid #a5b4fc;border-radius:14px;padding:.85rem 1.1rem;margin-bottom:1rem;display:flex;align-items:center;gap:.65rem;flex-wrap:wrap">
     <span style="font-size:1.6rem;flex-shrink:0">📘</span>
@@ -6755,8 +6870,9 @@ async function openResult(hwId, attemptNum=null) {
 
     // ── 📘 LỜI GIẢI CHI TIẾT (chỉ hiện nếu GV bật "Cho xem lời giải") ──
     const _solText = (q.data && q.data.solution) ? String(q.data.solution) : '';
-    const solutionHtml = (hw.show_solution && _solText)
-      ? _buildSolutionAccordion(q.id, _solText)
+    const _solImgs = (q.data && q.data.solution_images) ? q.data.solution_images : [];
+    const solutionHtml = (hw.show_solution && (_solText || _solImgs.length))
+      ? _buildSolutionAccordion(q.id, _solText, null, _solImgs)
       : '';
 
     return `<div style="border:2px solid ${borderColor};border-radius:14px;padding:1rem 1.2rem;margin-bottom:.75rem;background:var(--card)">
@@ -6898,7 +7014,7 @@ async function viewStudentResult(subId) {
       }</div>
       ${q.data.sample_answer&&q.question_type==='short_answer'?`<div style="margin-top:.35rem;font-size:.8rem;padding:.35rem .65rem;background:#f0fdf4;border-left:3px solid var(--hw-green);border-radius:0 7px 7px 0;color:#065f46">📌 Đáp án mẫu: ${esc(q.data.sample_answer)}</div>`:''}
       ${q.data.grading_key?`<div style="margin-top:.4rem;font-size:.8rem;padding:.45rem .75rem;background:#fff1f2;border-left:3px solid #ef4444;border-radius:0 8px 8px 0;color:#7f1d1d;white-space:pre-wrap">🔑 <b>Hướng dẫn chấm:</b> ${esc(q.data.grading_key)}</div>`:''}
-      ${q.data&&q.data.solution?_buildSolutionAccordion(q.id, q.data.solution):''}
+      ${q.data&&(q.data.solution||(q.data.solution_images||[]).length)?_buildSolutionAccordion(q.id, q.data.solution, null, q.data.solution_images):''}
     </div>`;
   }).join('');
 
@@ -8282,8 +8398,15 @@ async function exportHW(hwId) {
     }
 
     // 📘 Lời giải chi tiết — chỉ xuất cho GV (bản HS tải về không có đáp án)
-    if (!isStudent && q.data && q.data.solution) {
-      bodyHtml += `<div class="solution-line"><b>📘 Lời giải chi tiết:</b> ${q.data.solution}</div>`;
+    if (!isStudent && q.data && (q.data.solution || (q.data.solution_images||[]).length)) {
+      if (q.data.solution) {
+        bodyHtml += `<div class="solution-line"><b>📘 Lời giải chi tiết:</b> ${q.data.solution}</div>`;
+      }
+      const _solImgs = q.data.solution_images || [];
+      if (_solImgs.length) {
+        bodyHtml += `<div class="solution-line" style="padding-top:.25em"><b>🖼️ Hình ảnh lời giải:</b></div>`
+          + `<div class="solution-imgs">${_solImgs.map(u => `<img src="${u}" crossorigin="anonymous"/>`).join('')}</div>`;
+      }
     }
 
     return `<div class="q-block">
@@ -8343,6 +8466,8 @@ async function exportHW(hwId) {
   .answer-row{margin-top:.55em;font-style:italic;color:#444;font-size:11pt}
   .answer-line{margin:.6em 0 .3em 1em;font-style:italic;color:#444;font-size:11pt}
   .solution-line{margin:.45em 0 .3em 1em;padding:.35em .7em;background:#eef2ff;border-left:3px solid #6366f1;color:#1e1b4b;font-size:11pt;line-height:1.6;white-space:pre-wrap;page-break-inside:avoid}
+  .solution-imgs{margin:.3em 0 .5em 1em;display:flex;flex-wrap:wrap;gap:.35em;page-break-inside:avoid}
+  .solution-imgs img{max-width:100%;max-height:7em;display:inline-block;border-radius:4px;border:1px solid #c7d2fe}
   .passage-block{margin:.5em 0 .7em;border:1px solid #c7d2fe;border-radius:6px;background:#f8fafc;overflow:hidden;page-break-inside:avoid}
   .passage-label{background:#eef2ff;border-bottom:1px solid #c7d2fe;color:#4338ca;font-size:9.5pt;font-weight:700;padding:.22em .7em;letter-spacing:.3px}
   .passage-text{padding:.5em .7em;font-size:11pt;line-height:1.7;color:#1f2937;white-space:pre-wrap}
