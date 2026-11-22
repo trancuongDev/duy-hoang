@@ -240,6 +240,19 @@
   z-index:20;
   transition:border-top-color .3s, background .3s;
 }
+/* Nút Nộp bài ở cuối nội dung */
+#hwSubmitEnd {
+  margin-top:1.25rem;
+  padding-top:.9rem;
+  border-top:1px dashed var(--border);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:.5rem;
+  text-align:center;
+}
+#hwSubmitBtn { width:auto; }
+
 /* Header row */
 #qNavHeader {
   display:flex;align-items:center;gap:.75rem;
@@ -542,6 +555,21 @@
    📱 TỐI ƯU ĐIỆN THOẠI (mobile)
    ═══════════════════════════════════════════ */
 @media(max-width:768px) {
+  /* ── Ẩn banner "Giáo viên đang giám sát" trên điện thoại ── */
+  #_liveBanner { display:none !important; }
+
+  /* ── Nút Nộp bài cuối trang: vừa phải, dễ bấm ── */
+  #hwSubmitEnd { margin-top:1rem; }
+  #hwSubmitBtn {
+    padding:.55rem 1.25rem !important;
+    font-size:.84rem !important;
+    border-radius:99px !important;
+    min-height:38px;
+  }
+  #hwSubmitEndInfo { font-size:.76rem !important; }
+}
+
+@media(max-width:768px) {
   /* ── Modal fullscreen: chiếm toàn màn hình, bo góc 0 ── */
   .modal-overlay.fullscreen-mode { padding:0; }
   .hw-modal-fullscreen {
@@ -573,13 +601,6 @@
   .cd-progress-wrap { width:42px; }
   .qnav-flag-btn { padding:.2rem .5rem; font-size:.68rem; }
 
-  /* ── Nút Nộp bài: to, dễ bấm ── */
-  #qNavHeader button[onclick="submitAnswers()"] {
-    padding:.6rem 1rem !important;
-    font-size:.84rem !important;
-    border-radius:99px !important;
-    min-height:40px;
-  }
   /* Ẩn chú thích điều hướng trên màn nhỏ để tiết kiệm chỗ */
   #qNavLegend { display:none; }
   #qNavLabel { font-size:.68rem; }
@@ -1007,6 +1028,24 @@
         <textarea id="doHWNoteText" rows="2" placeholder="..." style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:.65rem .9rem;font-size:.9rem;outline:none;font-family:inherit;background:var(--card);color:var(--text);resize:vertical"></textarea>
       </div>
       <div id="doHWErr" class="error-msg" style="margin-top:.5rem;margin-bottom:1rem"></div>
+
+      <!-- ── Nút Nộp bài: đặt ở CUỐI trang (sau câu cuối cùng) ── -->
+      <div id="hwSubmitEnd">
+        <div id="hwSubmitEndInfo" style="text-align:center;font-size:.8rem;color:var(--muted);margin-bottom:0">
+          Bạn đã xem hết bài. Hãy kiểm tra lại các câu đã làm trước khi nộp.
+        </div>
+        <button onclick="submitAnswers()" id="hwSubmitBtn"
+          style="display:inline-flex;align-items:center;justify-content:center;gap:.4rem;
+                 background:linear-gradient(135deg,#10b981,#059669);color:#fff;
+                 border:none;border-radius:99px;padding:.6rem 1.35rem;
+                 font-size:.86rem;font-weight:800;cursor:pointer;
+                 box-shadow:0 3px 12px rgba(16,185,129,.3);
+                 transition:filter .15s,transform .15s"
+          onmouseover="this.style.filter='brightness(1.1)';this.style.transform='translateY(-1px)'"
+          onmouseout="this.style.filter='';this.style.transform=''">
+          📤 Nộp bài
+        </button>
+      </div>
     </div>
 
     <!-- ── Navigator + Timer + Nút nộp bài cố định ở đáy modal ── -->
@@ -1046,19 +1085,7 @@
           </div>
         </div>
 
-        <!-- Nút nộp bài — cố định trong thanh navigator -->
-        <button onclick="submitAnswers()"
-          style="flex-shrink:0;display:flex;align-items:center;gap:.45rem;
-                 background:linear-gradient(135deg,#10b981,#059669);color:#fff;
-                 border:none;border-radius:10px;padding:.55rem 1.1rem;
-                 font-size:.88rem;font-weight:800;cursor:pointer;
-                 box-shadow:0 3px 12px rgba(16,185,129,.4);
-                 transition:filter .15s,transform .15s;white-space:nowrap"
-          onmouseover="this.style.filter='brightness(1.1)';this.style.transform='translateY(-1px)'"
-          onmouseout="this.style.filter='';this.style.transform=''">
-          📤 Nộp bài
-        </button>
-
+        <!-- Nút nộp bài — đã chuyển xuống cuối nội dung (xem #hwSubmitEnd) -->
       </div>
 
       <!-- Lưới số câu -->
@@ -5790,7 +5817,8 @@ async function openDoHW(hwId) {
   _pushDoHWState(); // chặn nút Back trình duyệt
 
   // ── Cảnh báo giáo viên đang giám sát + số bạn làm cùng ──
-  _startLiveBanner(hwId, hw);
+  // (Chỉ hiện trên desktop — trên điện thoại bị ẩn để tiết kiệm màn hình)
+  if (!_isMobile()) _startLiveBanner(hwId, hw);
 
   buildQNavigator(doHWQList);
   setTimeout(() => {
@@ -5819,6 +5847,11 @@ async function closeDoHW(force=false) {
 
 // ── Banner "Giáo viên đang giám sát" + số bạn làm cùng ──────
 let _liveBannerInterval = null;
+
+// Kiểm tra đang xem trên điện thoại / tablet nhỏ không
+function _isMobile() {
+  return (window.innerWidth || 0) <= 768;
+}
 
 function _stopLiveBanner() {
   if (_liveBannerInterval) { clearInterval(_liveBannerInterval); _liveBannerInterval = null; }
@@ -5898,7 +5931,11 @@ function buildQNavigator(qs) {
 
   // Chỉ tính câu hỏi thật (bỏ section)
   const realQs = qs.filter(q => q.question_type !== 'section' && q.question_type !== 'shared_content');
-  if (!realQs.length) { wrap.style.display = 'none'; return; }
+  if (!realQs.length) {
+    wrap.style.display = 'none';
+    updateQNavigator(); // vẫn cập nhật trạng thái nút Nộp bài cuối trang
+    return;
+  }
 
   wrap.style.display = '';
   grid.innerHTML = realQs.map((q, i) =>
@@ -5939,6 +5976,31 @@ function updateQNavigator() {
     const unanswered = realQs.length - answeredCount;
     progEl.textContent = `${answeredCount}/${realQs.length} câu`;
     progEl.style.color = unanswered > 0 ? 'var(--hw-orange)' : 'var(--hw-green)';
+  }
+
+  // ── Cập nhật nút "Nộp bài" ở cuối trang ──
+  const endInfo = document.getElementById('hwSubmitEndInfo');
+  const endBtn  = document.getElementById('hwSubmitBtn');
+  if (endInfo && endBtn) {
+    const unanswered = realQs.length - answeredCount;
+    if (realQs.length === 0) {
+      endInfo.textContent = 'Bài này chưa có câu hỏi nào.';
+      endBtn.disabled = true;
+      endBtn.style.opacity = '.5';
+      endBtn.style.cursor = 'not-allowed';
+    } else if (unanswered > 0) {
+      endInfo.innerHTML = `⚠️ Bạn còn <b>${unanswered}</b> câu chưa trả lời — câu chưa làm sẽ được tính <b>0 điểm</b>.`;
+      endInfo.style.color = 'var(--hw-orange)';
+      endBtn.disabled = false;
+      endBtn.style.opacity = '1';
+      endBtn.style.cursor = 'pointer';
+    } else {
+      endInfo.innerHTML = `✅ Đã làm đủ <b>${answeredCount}</b> câu. Sẵn sàng nộp bài!`;
+      endInfo.style.color = 'var(--hw-green)';
+      endBtn.disabled = false;
+      endBtn.style.opacity = '1';
+      endBtn.style.cursor = 'pointer';
+    }
   }
 
   // Push tiến trình lên DB (debounced — thực ra được gọi từ interval 2s)
