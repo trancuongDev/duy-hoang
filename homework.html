@@ -463,10 +463,17 @@
 .section-title { font-weight:800;font-size:.88rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:.9rem 0 .5rem; }
 /* ═══ SECTION DIVIDER ═══ */
 .q-section-card {
-  background: linear-gradient(135deg,#1e1b4b,#312e81);
+  background: linear-gradient(135deg,#1e1b4b,#312e81) !important;
   border-radius:12px;padding:.85rem 1.1rem;
   display:flex;flex-direction:column;gap:.5rem;
-  color:#fff;
+  color:#fff !important;
+}
+/* Ô nhập trong section: luôn nền tối + chữ sáng (tránh trắng dãy) */
+.q-section-card textarea,
+.q-section-card input {
+  background:rgba(255,255,255,.08) !important;
+  color:#fff !important;
+  caret-color:#fbbf24;
 }
 .q-section-card .section-title { color:rgba(255,255,255,.72); }
 .q-section-card .latex-preview {
@@ -1832,10 +1839,31 @@ async function loadStudentData() {
   }
 }
 
+// ── Chuẩn hoá data của câu hỏi (chống lỗi khi data null/không phải object) ──
+function _normalizeQData(q) {
+  if (!q) return q;
+  let d = q.data;
+  // data có thể là null, undefined, string JSON, hoặc array → chuẩn về object
+  if (typeof d === 'string') {
+    try { d = JSON.parse(d); } catch(e) { d = {}; }
+  }
+  if (!d || typeof d !== 'object' || Array.isArray(d)) d = {};
+  q.data = d;
+  // Đảm bảo các mảng quan trọng là mảng thật
+  if (d.options !== undefined && !Array.isArray(d.options)) d.options = [];
+  if (d.statements !== undefined && !Array.isArray(d.statements)) d.statements = [];
+  if (d.left !== undefined && !Array.isArray(d.left)) d.left = [];
+  if (d.right !== undefined && !Array.isArray(d.right)) d.right = [];
+  if (d.correct_pairs !== undefined && !Array.isArray(d.correct_pairs)) d.correct_pairs = [];
+  if (d.accepted_answers !== undefined && !Array.isArray(d.accepted_answers)) d.accepted_answers = [];
+  if (d.solution_images !== undefined && !Array.isArray(d.solution_images)) d.solution_images = [];
+  return q;
+}
+
 async function loadQuestions(hwId) {
   if (allQuestions[hwId]) return allQuestions[hwId];
   const { data } = await sb.from('homework_questions').select('*').eq('homework_id',hwId).order('order_index');
-  allQuestions[hwId] = data || [];
+  allQuestions[hwId] = (data || []).map(_normalizeQData);
   return allQuestions[hwId];
 }
 
@@ -4314,6 +4342,7 @@ function renderQuestionList() {
 
 // Section editor — có tiêu đề + nội dung mô tả + nút thêm câu hỏi vào phần
 function buildSectionEditor(q, idx) {
+  if (!q.data || typeof q.data !== 'object' || Array.isArray(q.data)) q.data = {};
   // Tính số thứ tự mục (La Mã)
   const sectionIdx = editorQuestions.slice(0, idx+1).filter(x=>x.type==='section').length;
   const romans = ['I','II','III','IV','V','VI','VII','VIII','IX','X'];
@@ -4324,8 +4353,7 @@ function buildSectionEditor(q, idx) {
 
   return `<div class="q-section-card" id="qcard_${q._id}">
     <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:.45rem">
-      <span class="q-section-num">Phần ${roman}</span>
-      <input class="q-section-input" placeholder="Tên mục (VD: Trắc nghiệm nhiều phương án)"
+      <span class="q-section-num">Phần ${roman}</span>      <input class="q-section-input" placeholder="Tên mục (VD: Trắc nghiệm nhiều phương án)"
         value="${esc(q.text)}"
         oninput="updateQField(${q._id},'text',this.value)"/>
       <span style="font-size:.72rem;color:rgba(255,255,255,.55);font-weight:600;white-space:nowrap">${inThis} câu</span>
@@ -4335,17 +4363,10 @@ function buildSectionEditor(q, idx) {
         onmouseout="this.style.background='rgba(255,255,255,.1)'">🗑</button>
     </div>
 
-    <!-- Nội dung mô tả của phần -->
-    <div class="section-title" style="color:rgba(255,255,255,.75);margin-bottom:.3rem">Nội dung phần (hỗ trợ LaTeX) — hiển thị cho học sinh</div>
-    <div class="latex-field-wrap" id="sec_wrap_${q._id}">
-      <textarea placeholder="VD: Chọn đáp án đúng nhất trong 4 phương án cho mỗi câu hỏi sau..."
-        style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.18);color:rgba(255,255,255,.92)"
-        oninput="updateSectionDesc(${q._id},this.value)"
-      >${esc(desc)}</textarea>
-      <div class="latex-toolbar">${latexToolbar('sec_wrap_'+q._id)}</div>
+    <!-- Nội dung phần: dùng chung "Đề bài chung" để nhập, không cần nhập lại ở đây -->
+    <div style="font-size:.73rem;color:rgba(255,255,255,.5);font-weight:600;padding:.35rem .5rem;background:rgba(255,255,255,.05);border-radius:7px;border-left:2px solid rgba(255,255,255,.25)">
+      💡 Nội dung đọc chung cho phần này: thêm mục <b>📄 Đề bài chung</b> ở thanh công cụ bên dưới.
     </div>
-    <div class="section-title" style="color:rgba(255,255,255,.6);margin-top:.35rem">Xem trước</div>
-    <div class="latex-preview${desc?'':' empty'}" id="secpreview_${q._id}">${desc ? desc.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>') : '(chưa có nội dung)'}</div>
 
     <!-- Nút thêm câu hỏi vào phần này -->
     <div style="display:flex;gap:.35rem;flex-wrap:wrap;align-items:center;margin-top:.55rem;padding-top:.5rem;border-top:1px dashed rgba(255,255,255,.15)">
@@ -4364,6 +4385,7 @@ function buildSectionEditor(q, idx) {
 
 // ── Editor cho MỤC RIÊNG: Đề bài chung (độc lập, không nằm trong "Thêm mục") ──
 function buildSharedContentEditor(q, idx) {
+  if (!q.data || typeof q.data !== 'object' || Array.isArray(q.data)) q.data = {};
   const content = (q.data && q.data.content) ? q.data.content : '';
   const title   = q.text || '';
   return `<div class="q-shared-card" id="qcard_${q._id}">
@@ -4410,6 +4432,8 @@ function buildSharedContentEditor(q, idx) {
 
 function buildQEditor(q,idx,qNum) {
   qNum = qNum || (idx+1);
+  // Đảm bảo q.data luôn là object (chống lỗi khi data null từ DB)
+  if (!q.data || typeof q.data !== 'object' || Array.isArray(q.data)) q.data = {};
   const typeNames={multiple_choice:'Trắc nghiệm nhiều phương án',true_false:'Đúng / Sai',matching:'Ghép hợp',short_answer:'Trả lời ngắn'};
   const typeIcons={multiple_choice:'🔵',true_false:'✅',matching:'🔗',short_answer:'✏️'};
   const tClass=typeClass(q.type);
@@ -4475,8 +4499,8 @@ function buildQEditor(q,idx,qNum) {
         oninput="qUpdateSolution(${q._id},this.value)"
         style="width:100%;border:1.5px solid #c7d2fe;border-radius:10px;padding:.6rem .85rem;font-size:.88rem;font-family:'Courier New',monospace;resize:vertical;background:#fff;color:#1e1b4b;transition:border-color .2s"
         onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#c7d2fe'"
-      >${esc(q.data.solution||'')}</textarea>
-      <div id="sol_lip_${q._id}" style="margin-top:.4rem;font-size:.85rem;line-height:1.7;color:var(--text);word-break:break-word;border-left:2px solid #a5b4fc;padding:.25rem .5rem;background:rgba(255,255,255,.55);border-radius:0 6px 6px 0">${q.data.solution?esc(q.data.solution):'<em style="color:var(--muted);font-style:italic;font-size:.82rem">(chưa có lời giải)</em>'}</div>
+      >${esc(_qdata(q).solution||'')}</textarea>
+      <div id="sol_lip_${q._id}" style="margin-top:.4rem;font-size:.85rem;line-height:1.7;color:var(--text);word-break:break-word;border-left:2px solid #a5b4fc;padding:.25rem .5rem;background:rgba(255,255,255,.55);border-radius:0 6px 6px 0">${_qdata(q).solution?esc(_qdata(q).solution):'<em style="color:var(--muted);font-style:italic;font-size:.82rem">(chưa có lời giải)</em>'}</div>
 
       <!-- ═══ ẢNH TRONG LỜI GIẢI ═══ -->
       <div class="section-title" style="margin:.6rem 0 .35rem;color:#4338ca">🖼️ Hình ảnh trong lời giải <span style="background:#e0e7ff;color:#3730a3;font-size:.66rem;font-weight:700;padding:.1rem .4rem;border-radius:5px;margin-left:.3rem">tuỳ chọn</span></div>
@@ -4490,7 +4514,7 @@ function buildQEditor(q,idx,qNum) {
           style="flex:1;min-width:180px;padding:.5rem .75rem;border:1.5px solid #c7d2fe;border-radius:9px;font-size:.85rem;outline:none;background:#fff;color:#1e1b4b"/>
       </div>
       <div id="solimgs_${q._id}" style="margin-top:.45rem;display:flex;flex-wrap:wrap;gap:.5rem">
-        ${_renderSolutionImageList(q._id, q.data.solution_images)}
+        ${_renderSolutionImageList(q._id, _qdata(q).solution_images)}
       </div>
 
       <div style="font-size:.74rem;color:#6366f1;margin-top:.35rem;font-weight:600">
@@ -4550,7 +4574,8 @@ function insertNewline(wrapId,qCard) {
 
 // --- MULTIPLE CHOICE ---
 function buildMCEditor(q) {
-  const opts = q.data.options||['','','',''];
+  if (!q.data || typeof q.data !== 'object' || Array.isArray(q.data)) q.data = {};
+  const opts = Array.isArray(q.data.options) ? q.data.options : ['','','',''];
   // Normalize: option có thể là string (cũ) hoặc {text,img} (mới)
   const normalizedOpts = opts.map(o => typeof o === 'string' ? {text:o, img:''} : o);
   // Cập nhật data luôn sang format mới
@@ -4670,7 +4695,8 @@ function mcRemoveOpt(_id,i) {
 
 // --- TRUE/FALSE ---
 function buildTFEditor(q) {
-  const stmts=q.data.statements||[];
+  if (!q.data || typeof q.data !== 'object' || Array.isArray(q.data)) q.data = {};
+  const stmts=Array.isArray(q.data.statements)?q.data.statements:[];
   return `<div class="section-title">Các mệnh đề Đúng / Sai</div>
     <div id="tf_stmts_${q._id}" style="display:flex;flex-direction:column;gap:.5rem">
       ${stmts.map((s,i)=>`
@@ -4752,9 +4778,10 @@ function tfRemoveStmt(_id,i){
 
 // --- MATCHING ---
 function buildMatchEditor(q) {
-  const left  = q.data.left  || [];
-  const right = q.data.right || [];
-  const pairs = q.data.correct_pairs || [];
+  if (!q.data || typeof q.data !== 'object' || Array.isArray(q.data)) q.data = {};
+  const left  = Array.isArray(q.data.left)  ? q.data.left  : [];
+  const right = Array.isArray(q.data.right) ? q.data.right : [];
+  const pairs = Array.isArray(q.data.correct_pairs) ? q.data.correct_pairs : [];
 
   // helper: đáp án đúng của mệnh đề i là index nào trong right
   const correctFor = i => { const p=pairs.find(p=>p[0]===i); return p!=null?p[1]:-1; };
@@ -4870,8 +4897,9 @@ function matchRemovePair(_id,i){ matchRemoveLeft(_id,i); }
 
 // --- SHORT ANSWER ---
 function buildSAEditor(q) {
+  if (!q.data || typeof q.data !== 'object' || Array.isArray(q.data)) q.data = {};
   const autoGrade = q.data.auto_grade || false;
-  const accepted  = q.data.accepted_answers || [];
+  const accepted  = Array.isArray(q.data.accepted_answers) ? q.data.accepted_answers : [];
   const hint      = q.data.hint || '';
   return `
     <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.65rem;padding:.5rem .75rem;background:${autoGrade?'#d1fae5':'var(--bg)'};border-radius:10px;border:1.5px solid ${autoGrade?'#10b981':'var(--border)'};transition:all .2s">
@@ -5094,7 +5122,11 @@ function _normNumber(s) {
 // ═══════════════════════════════════════════
 function updateQField(_id,field,val) {
   const q=editorQuestions.find(x=>x._id===_id);
-  if(q)q[field]=val;
+  if(!q)return;
+  if(field==='data'){ q.data = val || {}; return; }
+  q[field]=val;
+  // Luôn đảm bảo q.data tồn tại (tránh lỗi khi câu cũ thiếu data)
+  if(!q.data || typeof q.data!=='object') q.data = {};
 }
 function updateSAAnswer(_id, val) {
   const q = editorQuestions.find(x=>x._id===_id);
@@ -6194,7 +6226,7 @@ function _renderSectionHeader(q, roman, opts = {}) {
 
 // Build display HTML cho câu hỏi (cả preview lẫn làm bài)
 function buildQDisplay(qs, answers, isPreview) {
-  if (!qs.length) return `<div class="hw-empty"><div class="hw-empty-icon">📭</div><p>Chưa có câu hỏi.</p></div>`;
+  if (!qs || !qs.length) return `<div class="hw-empty"><div class="hw-empty-icon">📭</div><p>Chưa có câu hỏi.</p></div>`;
 
   const romans = ['I','II','III','IV','V','VI','VII','VIII','IX','X'];
   let sectionCount = 0;
@@ -6223,7 +6255,7 @@ function buildQDisplay(qs, answers, isPreview) {
       else if (q.question_type==='short_answer') ansHtml = buildSADisplay(q, answers, isPreview, qNum-1);
     } catch(e) {
       console.error('buildQDisplay error câu', qNum, e);
-      ansHtml = `<div style="color:red;font-size:.82rem">Lỗi hiển thị câu hỏi</div>`;
+      ansHtml = `<div style="color:red;font-size:.82rem">Lỗi hiển thị câu hỏi: ${esc(e.message||'không rõ nguyên nhân')}</div>`;
     }
 
     return `<div class="q-display" id="q_anchor_${q.id}">
@@ -6250,9 +6282,22 @@ function buildQDisplay(qs, answers, isPreview) {
 // DISPLAY CÁC LOẠI CÂU HỎI (học sinh làm bài)
 // ═══════════════════════════════════════════
 
+// ═══════════════════════════════════════════
+// HELPER AN TOÀN: đọc field trong q.data mà không throw khi data null
+// ═══════════════════════════════════════════
+function _qdata(q) {
+  const d = q && q.data;
+  return (d && typeof d === 'object' && !Array.isArray(d)) ? d : {};
+}
+function _qArr(q, field) {
+  const d = _qdata(q);
+  return Array.isArray(d[field]) ? d[field] : [];
+}
+
 function buildMCDisplay(q, answers, isPreview, idx) {
-  const opts=q.data.options||[];
-  const correct=q.data.correct;
+  const data = q.data || {};
+  const opts=data.options||[];
+  const correct=data.correct;
   const chosen=answers?answers[q.id]:undefined;
   return `<div style="display:flex;flex-direction:column;gap:.4rem">
     ${opts.map((o,i)=>{
@@ -6296,7 +6341,8 @@ function mcSelectAnswer(qId,i) {
 }
 
 function buildTFDisplay(q, answers, isPreview, idx) {
-  const stmts=q.data.statements||[];
+  const data = q.data || {};
+  const stmts=Array.isArray(data.statements)?data.statements:[];
   const chosen=answers?answers[q.id]:undefined;
   return `<div style="display:flex;flex-direction:column;gap:.5rem">
     ${stmts.map((s,i)=>{
@@ -6336,9 +6382,10 @@ function tfSelectAnswer(qId,stmtIdx,val) {
 }
 
 function buildMatchDisplay(q, answers, isPreview, idx) {
-  const left  = q.data.left  || [];
-  const right = q.data.right || [];
-  const pairs = q.data.correct_pairs || [];
+  const data = q.data || {};
+  const left  = data.left  || [];
+  const right = data.right || [];
+  const pairs = data.correct_pairs || [];
   const chosen = answers ? (answers[q.id] || {}) : {};
 
   // Map: leftIdx → rightIdx đúng
@@ -6456,10 +6503,11 @@ function _handleCopyDoc(e, enabled) {
 }
 
 function buildSADisplay(q, answers, isPreview, idx) {
+  const data = q.data || {};
   const chosen  = answers ? answers[q.id] : '';
-  const sample  = q.data.sample_answer || '';
-  const isAuto  = q.data.auto_grade && q.data.accepted_answers?.length;
-  const hint    = q.data.hint || '';
+  const sample  = data.sample_answer || '';
+  const isAuto  = data.auto_grade && data.accepted_answers?.length;
+  const hint    = data.hint || '';
 
   return `<div>
     ${isPreview && sample
@@ -7134,9 +7182,9 @@ async function openResult(hwId, attemptNum=null) {
            <div style="border:1.5px solid var(--border);border-radius:9px;padding:.5rem .8rem;font-size:.88rem;background:var(--bg);color:var(--text);min-height:2rem;white-space:pre-wrap">${esc(userAns||'(chưa trả lời)')}</div>`
         : `<div style="font-size:.82rem;color:var(--muted);margin-bottom:.3rem">Câu trả lời của bạn:</div>
            ${q.question_type==='multiple_choice'
-             ? `<div style="font-size:.9rem;font-weight:700">${userAns!=null?String.fromCharCode(65+userAns)+'. '+esc(typeof q.data.options[userAns]==='string'?q.data.options[userAns]:(q.data.options[userAns]?.text||'')):'(chưa chọn)'}</div>`
+             ? `<div style="font-size:.9rem;font-weight:700">${userAns!=null?String.fromCharCode(65+userAns)+'. '+esc(typeof _qdata(q).options?.[userAns]==='string'?_qdata(q).options[userAns]:(_qdata(q).options?.[userAns]?.text||'')):'(chưa chọn)'}</div>`
              : q.question_type==='true_false'
-               ? `<div style="display:flex;flex-wrap:wrap;gap:.3rem">${(q.data.statements||[]).map((s,i)=>`<span style="font-size:.8rem;padding:.15rem .45rem;border-radius:6px;background:var(--bg);border:1px solid var(--border)">${i+1}: ${userAns&&userAns[i]!==undefined?(userAns[i]?'Đúng':'Sai'):'?'}</span>`).join('')}</div>`
+               ? `<div style="display:flex;flex-wrap:wrap;gap:.3rem">${_qArr(q,'statements').map((s,i)=>`<span style="font-size:.8rem;padding:.15rem .45rem;border-radius:6px;background:var(--bg);border:1px solid var(--border)">${i+1}: ${userAns&&userAns[i]!==undefined?(userAns[i]?'Đúng':'Sai'):'?'}</span>`).join('')}</div>`
                : `<div style="font-size:.85rem">${JSON.stringify(userAns||'(chưa trả lời)')}</div>`
            }`
       }
@@ -7207,17 +7255,18 @@ async function viewStudentResult(subId) {
     }
     _vsrNum++;
     const ua=answers[q.id];
+    const _d = _qdata(q);
     // Tính đúng/sai
     let verdict='';
     if(q.question_type==='multiple_choice'){
-      verdict = ua===q.data.correct ? 'correct' : 'wrong';
+      verdict = ua===_d.correct ? 'correct' : 'wrong';
     } else if(q.question_type==='true_false'){
-      const stmts=q.data.statements||[];
+      const stmts=Array.isArray(_d.statements)?_d.statements:[];
       const allOk = stmts.every((s,i)=>ua&&ua[i]===s.answer);
       const anyOk = stmts.some((s,i)=>ua&&ua[i]===s.answer);
       verdict = allOk?'correct':anyOk?'partial':'wrong';
     } else if(q.question_type==='matching'){
-      const pairs=q.data.correct_pairs||[];
+      const pairs=Array.isArray(_d.correct_pairs)?_d.correct_pairs:[];
       const allOk = pairs.every(([l,r])=>ua&&ua[l]===r);
       const anyOk = pairs.some(([l,r])=>ua&&ua[l]===r);
       verdict = allOk?'correct':anyOk?'partial':'wrong';
@@ -7240,25 +7289,25 @@ async function viewStudentResult(subId) {
         q.question_type==='short_answer'
           ? esc(ua||'(trống)')
           : q.question_type==='multiple_choice'
-            ? (ua!=null ? String.fromCharCode(65+ua)+'. '+esc(typeof q.data.options[ua]==='string'?q.data.options[ua]:(q.data.options[ua]?.text||'')) : '(chưa chọn)')
+            ? (ua!=null ? String.fromCharCode(65+ua)+'. '+esc(typeof _d.options?.[ua]==='string'?_d.options[ua]:(_d.options?.[ua]?.text||'')) : '(chưa chọn)')
             : q.question_type==='true_false'
-              ? `<div style="display:flex;flex-wrap:wrap;gap:.3rem">${(q.data.statements||[]).map((s,i)=>{
+              ? `<div style="display:flex;flex-wrap:wrap;gap:.3rem">${(Array.isArray(_d.statements)?_d.statements:[]).map((s,i)=>{
                   const ok=ua&&ua[i]===s.answer;
                   return `<span style="font-size:.78rem;padding:.15rem .45rem;border-radius:6px;background:${ok?'#d1fae5':'#fee2e2'};color:${ok?'#065f46':'#991b1b'}">${i+1}: ${ua&&ua[i]!==undefined?(ua[i]?'Đúng':'Sai'):'?'} ${ok?'✅':'❌'} (đúng: ${s.answer?'Đúng':'Sai'})</span>`;
                 }).join('')}</div>`
               : q.question_type==='matching'
-                ? `<div style="display:flex;flex-direction:column;gap:.2rem">${(q.data.left||[]).map((l,i)=>{
-                    const correctR=(q.data.correct_pairs||[]).find(p=>p[0]===i);
-                    const correctVal=correctR!=null?(q.data.right||[])[correctR[1]]:'?';
-                    const userVal=ua!=null?((q.data.right||[])[ua[i]]||'(chưa chọn)'):'(chưa chọn)';
+                ? `<div style="display:flex;flex-direction:column;gap:.2rem">${(Array.isArray(_d.left)?_d.left:[]).map((l,i)=>{
+                    const correctR=(Array.isArray(_d.correct_pairs)?_d.correct_pairs:[]).find(p=>p[0]===i);
+                    const correctVal=correctR!=null?(Array.isArray(_d.right)?_d.right:[])[correctR[1]]:'?';
+                    const userVal=ua!=null?((Array.isArray(_d.right)?_d.right:[])[ua[i]]||'(chưa chọn)'):'(chưa chọn)';
                     const ok=ua&&ua[i]===(correctR?.[1]);
                     return `<span style="font-size:.78rem"><b>${i+1}. ${esc(l)}</b> → <span style="color:${ok?'var(--hw-green)':'var(--hw-red)'}">${esc(userVal)} ${ok?'✅':'❌'}</span> <span style="color:var(--muted)">(đúng: ${esc(correctVal)})</span></span>`;
                   }).join('')}</div>`
               : esc(JSON.stringify(ua||''))
       }</div>
-      ${q.data.sample_answer&&q.question_type==='short_answer'?`<div style="margin-top:.35rem;font-size:.8rem;padding:.35rem .65rem;background:#f0fdf4;border-left:3px solid var(--hw-green);border-radius:0 7px 7px 0;color:#065f46">📌 Đáp án mẫu: ${esc(q.data.sample_answer)}</div>`:''}
-      ${q.data.grading_key?`<div style="margin-top:.4rem;font-size:.8rem;padding:.45rem .75rem;background:#fff1f2;border-left:3px solid #ef4444;border-radius:0 8px 8px 0;color:#7f1d1d;white-space:pre-wrap">🔑 <b>Hướng dẫn chấm:</b> ${esc(q.data.grading_key)}</div>`:''}
-      ${q.data&&(q.data.solution||(q.data.solution_images||[]).length)?_buildSolutionAccordion(q.id, q.data.solution, null, q.data.solution_images):''}
+      ${_d.sample_answer&&q.question_type==='short_answer'?`<div style="margin-top:.35rem;font-size:.8rem;padding:.35rem .65rem;background:#f0fdf4;border-left:3px solid var(--hw-green);border-radius:0 7px 7px 0;color:#065f46">📌 Đáp án mẫu: ${esc(_d.sample_answer)}</div>`:''}
+      ${_d.grading_key?`<div style="margin-top:.4rem;font-size:.8rem;padding:.45rem .75rem;background:#fff1f2;border-left:3px solid #ef4444;border-radius:0 8px 8px 0;color:#7f1d1d;white-space:pre-wrap">🔑 <b>Hướng dẫn chấm:</b> ${esc(_d.grading_key)}</div>`:''}
+      ${(_d.solution||(Array.isArray(_d.solution_images)?_d.solution_images:[]).length)?_buildSolutionAccordion(q.id, _d.solution, null, _d.solution_images):''}
     </div>`;
   }).join('');
 
@@ -8992,53 +9041,101 @@ async function exportHW(hwId) {
 
       <div style="border-top:1.5px dashed var(--border);margin:.1rem 0"></div>
 
-      <!-- Cách tính điểm -->
-      <div style="font-weight:800;font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">📊 Cách tính điểm từng loại câu</div>
+      <!-- Cách tính điểm — THANG ĐIỂM V-SAT -->
+      <div style="font-weight:800;font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">📊 Thang điểm V-SAT</div>
 
+      <div style="padding:.55rem .85rem;background:linear-gradient(135deg,#eef2ff,#e0e7ff);border-radius:9px;border-left:3px solid var(--primary);font-size:.75rem;color:#3730a3;line-height:1.7">
+        Mỗi câu hỏi chuẩn V-SAT có <b>tối đa 6 điểm</b>. Điểm từng câu cộng lại thành điểm thô (raw), quy đổi theo thang chuẩn của kỳ thi.
+      </div>
+
+      <!-- Trắc nghiệm 4 lựa chọn -->
       <div style="border:1.5px solid #bfdbfe;border-radius:10px;overflow:hidden">
-        <div style="padding:.4rem .8rem;background:#dbeafe;font-weight:800;font-size:.77rem;color:#1e40af;display:flex;justify-content:space-between">🔵 Trắc nghiệm <span style="font-weight:500;opacity:.7">Chọn 1 đáp án</span></div>
-        <div style="padding:.5rem .85rem;font-size:.76rem;color:var(--text);line-height:1.75">
-          <div>✅ <b>Chọn đúng</b> → <b style="color:#15803d">full điểm</b> của câu</div>
-          <div>❌ <b>Chọn sai / bỏ trống</b> → <b style="color:#991b1b">0 điểm</b></div>
+        <div style="padding:.45rem .8rem;background:#dbeafe;font-weight:800;font-size:.78rem;color:#1e40af;display:flex;justify-content:space-between;align-items:center">
+          <span>🔵 Trắc nghiệm 4 lựa chọn</span>
+          <span style="font-weight:500;opacity:.75;font-size:.72rem">Chọn 1 đáp án</span>
+        </div>
+        <div style="padding:.55rem .85rem;font-size:.76rem;color:var(--text);line-height:1.9">
+          <div style="display:flex;justify-content:space-between"><span>✅ Trả lời đúng</span><b style="color:#15803d">6 điểm</b></div>
+          <div style="display:flex;justify-content:space-between"><span>❌ Trả lời sai / bỏ trống</span><b style="color:#991b1b">0 điểm</b></div>
         </div>
       </div>
 
+      <!-- Đúng/Sai — thang điểm bậc -->
       <div style="border:1.5px solid #bbf7d0;border-radius:10px;overflow:hidden">
-        <div style="padding:.4rem .8rem;background:#dcfce7;font-weight:800;font-size:.77rem;color:#15803d;display:flex;justify-content:space-between">✅ Đúng / Sai <span style="font-weight:500;opacity:.7">Chọn Đúng/Sai từng mệnh đề</span></div>
-        <div style="padding:.5rem .85rem;font-size:.76rem;color:var(--text);line-height:1.75">
-          <div style="padding:.3rem .6rem;background:#dcfce7;border-radius:7px;font-weight:800;color:#15803d;text-align:center;font-size:.78rem">Điểm = Điểm câu × (Số tiểu mục đúng ÷ Tổng số tiểu mục)</div>
-          <div style="margin-top:.35rem;font-size:.72rem;color:var(--muted)">
-            <div>• Câu <b>2đ — 4 tiểu mục</b> — đúng 3 → 2 × 3/4 = <b style="color:#15803d">1.5đ</b></div>
-            <div>• Câu <b>3đ — 4 tiểu mục</b> — đúng 4 → 3 × 4/4 = <b style="color:#15803d">3đ</b></div>
-            <div>• Câu <b>2đ — 4 tiểu mục</b> — đúng 1 → 2 × 1/4 = <b style="color:#ca8a04">0.5đ</b></div>
+        <div style="padding:.45rem .8rem;background:#dcfce7;font-weight:800;font-size:.78rem;color:#15803d;display:flex;justify-content:space-between;align-items:center">
+          <span>✅ Đúng / Sai</span>
+          <span style="font-weight:500;opacity:.75;font-size:.72rem">Mỗi câu gồm 4 tiểu mục</span>
+        </div>
+        <div style="padding:.55rem .85rem;font-size:.76rem;color:var(--text)">
+          <div style="display:grid;grid-template-columns:1fr auto auto;gap:.35rem .6rem;align-items:center">
+            <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Số tiểu mục đúng</div>
+            <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;text-align:center">Tỉ lệ</div>
+            <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;text-align:right">Điểm</div>
+
+            <div>Đúng <b>1</b>/4 tiểu mục</div><div style="text-align:center;color:var(--muted)">25%</div>
+            <div style="text-align:right"><b style="color:#ca8a04">1 điểm</b></div>
+
+            <div>Đúng <b>2</b>/4 tiểu mục</div><div style="text-align:center;color:var(--muted)">50%</div>
+            <div style="text-align:right"><b style="color:#15803d">2 điểm</b></div>
+
+            <div>Đúng <b>3</b>/4 tiểu mục</div><div style="text-align:center;color:var(--muted)">75%</div>
+            <div style="text-align:right"><b style="color:#15803d">3 điểm</b></div>
+
+            <div>Đúng <b>cả 4</b>/4 tiểu mục</div><div style="text-align:center;color:var(--muted)">100%</div>
+            <div style="text-align:right"><b style="color:#15803d;font-size:.85rem">6 điểm</b></div>
+          </div>
+          <div style="margin-top:.4rem;padding-top:.4rem;border-top:1px dashed #bbf7d0;font-size:.72rem;color:var(--muted)">
+            💡 Đúng 0 tiểu mục → <b style="color:#991b1b">0 điểm</b>. Đúng 4/4 nhảy vọt lên <b>6 điểm</b> (không phải 4).
           </div>
         </div>
       </div>
 
+      <!-- Ghép hợp -->
       <div style="border:1.5px solid #fde68a;border-radius:10px;overflow:hidden">
-        <div style="padding:.4rem .8rem;background:#fef9c3;font-weight:800;font-size:.77rem;color:#b45309;display:flex;justify-content:space-between">🔗 Ghép hợp <span style="font-weight:500;opacity:.7">Nối cột trái với cột phải</span></div>
-        <div style="padding:.5rem .85rem;font-size:.76rem;color:var(--text);line-height:1.75">
-          <div style="padding:.3rem .6rem;background:#fef9c3;border-radius:7px;font-weight:800;color:#b45309;text-align:center;font-size:.78rem">Điểm = Điểm câu × (Số cặp đúng ÷ Tổng số cặp)</div>
-          <div style="margin-top:.35rem;font-size:.72rem;color:var(--muted)">
-            <div>• Câu <b>2đ — 4 cặp</b> — đúng 3 → 2 × 3/4 = <b style="color:#15803d">1.5đ</b></div>
-            <div>• Câu <b>4đ — 6 cặp</b> — đúng 4 → 4 × 4/6 ≈ <b style="color:#15803d">2.67đ</b></div>
-            <div>• Câu <b>3đ — 5 cặp</b> — đúng 5 → 3 × 5/5 = <b style="color:#15803d">3đ</b></div>
+        <div style="padding:.45rem .8rem;background:#fef9c3;font-weight:800;font-size:.78rem;color:#b45309;display:flex;justify-content:space-between;align-items:center">
+          <span>🔗 Ghép hợp</span>
+          <span style="font-weight:500;opacity:.75;font-size:.72rem">Mỗi câu gồm 4 tiểu mục</span>
+        </div>
+        <div style="padding:.55rem .85rem;font-size:.76rem;color:var(--text);line-height:1.9">
+          <div style="display:flex;justify-content:space-between"><span>🔸 Mỗi tiểu mục ghép đúng</span><b style="color:#b45309">1,5 điểm</b></div>
+          <div style="display:flex;justify-content:space-between"><span>🎯 Hoàn thành đúng cả 4 tiểu mục</span><b style="color:#15803d">6 điểm</b></div>
+          <div style="margin-top:.4rem;padding-top:.4rem;border-top:1px dashed #fde68a;font-size:.72rem;color:var(--muted)">
+            💡 Đúng 3/4 → 3 × 1,5 = <b style="color:#15803d">4,5 điểm</b> · Đúng 4/4 → <b style="color:#15803d">6 điểm</b>
           </div>
         </div>
       </div>
 
+      <!-- Trả lời ngắn -->
       <div style="border:1.5px solid #e9d5ff;border-radius:10px;overflow:hidden">
-        <div style="padding:.4rem .8rem;background:#f3e8ff;font-weight:800;font-size:.77rem;color:#7c3aed;display:flex;justify-content:space-between">✏️ Trả lời ngắn <span style="font-weight:500;opacity:.7">Nhập số hoặc đoạn văn</span></div>
-        <div style="padding:.5rem .85rem;font-size:.76rem;color:var(--text);line-height:1.75">
-          <div><b>⚡ Tự chấm (câu số):</b></div>
-          <div style="padding-left:.75rem">
-            <div>• Nhập <b>đúng</b> → <b style="color:#15803d">full điểm</b></div>
-            <div>• Nhập <b>sai / bỏ trống</b> → <b style="color:#991b1b">0 điểm</b></div>
-            <div style="color:var(--muted);font-size:.71rem">Chấp nhận: số thập phân, phân số (1/2), số âm (-3)</div>
-          </div>
-          <div style="margin-top:.35rem"><b>✏️ GV chấm tay (câu văn):</b></div>
-          <div style="padding-left:.75rem;color:var(--muted)">GV đọc và cho điểm từ <b>0</b> đến <b>full điểm</b> câu.</div>
+        <div style="padding:.45rem .8rem;background:#f3e8ff;font-weight:800;font-size:.78rem;color:#7c3aed;display:flex;justify-content:space-between;align-items:center">
+          <span>✏️ Trả lời ngắn</span>
+          <span style="font-weight:500;opacity:.75;font-size:.72rem">Nhập số hoặc đoạn văn</span>
         </div>
+        <div style="padding:.55rem .85rem;font-size:.76rem;color:var(--text);line-height:1.9">
+          <div style="display:flex;justify-content:space-between"><span>✅ Trả lời đúng</span><b style="color:#15803d">6 điểm</b></div>
+          <div style="display:flex;justify-content:space-between"><span>❌ Trả lời sai / bỏ trống</span><b style="color:#991b1b">0 điểm</b></div>
+          <div style="margin-top:.4rem;padding-top:.4rem;border-top:1px dashed #e9d5ff;font-size:.72rem;color:var(--muted)">
+            ⚡ Tự chấm nếu GV đặt đáp án số — chấp nhận số thập phân, phân số (1/2), số âm (-3).<br>
+            ✏️ GV chấm tay nếu là câu văn — điểm từ <b>0</b> đến <b>6</b>.
+          </div>
+        </div>
+      </div>
+
+      <!-- Viết luận -->
+      <div style="border:1.5px solid #fecaca;border-radius:10px;overflow:hidden">
+        <div style="padding:.45rem .8rem;background:#fee2e2;font-weight:800;font-size:.78rem;color:#991b1b;display:flex;justify-content:space-between;align-items:center">
+          <span>📝 Viết luận (Writing)</span>
+          <span style="font-weight:500;opacity:.75;font-size:.72rem">Chấm theo hướng dẫn riêng</span>
+        </div>
+        <div style="padding:.55rem .85rem;font-size:.76rem;color:var(--text);line-height:1.9">
+          <div>Phần viết luận trong bài thi ngữ văn V-SAT được chấm theo hướng dẫn riêng, với điểm tối đa là
+            <b style="color:#991b1b;font-size:.88rem">30/150 điểm</b>.</div>
+        </div>
+      </div>
+
+      <!-- Tổng kết -->
+      <div style="padding:.55rem .85rem;background:#f0fdf4;border-radius:9px;border-left:3px solid #16a34a;font-size:.75rem;color:#14532d;line-height:1.7">
+        <b>📐 Tổng điểm thô tối đa:</b> 6 điểm × số câu. Điểm hiển thị trên LMS được quy đổi theo tổng điểm GV đặt cho bài (xem ô <b>🎯 Tổng điểm bài</b> khi giao bài).
       </div>
 
       <!-- Lưu ý -->

@@ -213,9 +213,11 @@ async function loadAll() {
   ]);
   const scMap = {};
   (scRows||[]).forEach(r => { if(!scMap[r.student_id]) scMap[r.student_id]=[]; scMap[r.student_id].push(r.class_name.trim()); });
+  // class_name có thể chứa nhiều lớp: "12A,12B" → lấy HS thuộc ít nhất một lớp
+  const sessClasses = String(_session.class_name||'').split(',').map(c=>c.trim()).filter(Boolean);
   _students = (allStu||[]).filter(s => {
-    if ((scMap[s.id]||[]).includes(_session.class_name)) return true;
-    return (s.class_name||'').split(',').map(c=>c.trim()).includes(_session.class_name);
+    if ((scMap[s.id]||[]).some(c=>sessClasses.includes(c))) return true;
+    return (s.class_name||'').split(',').map(c=>c.trim()).some(c=>sessClasses.includes(c));
   });
 
   await refreshRecords();

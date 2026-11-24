@@ -1219,6 +1219,17 @@ function _isSessionForStudent(s){
 function _sessionsSinceJoin(list){
   return (list||[]).filter(_isSessionForStudent);
 }
+// Tách chuỗi lớp "12A,12B" thành mảng lớp
+function parseClassList(raw){
+  return String(raw||'').split(',').map(c=>c.trim()).filter(Boolean);
+}
+// Buổi học có thuộc một trong các lớp của học sinh không
+// (dd_sessions.class_name có thể chứa nhiều lớp: "12A,12B")
+function _filterSessionsForClasses(list, classes){
+  const cs = (classes||[]).map(c=>c.trim()).filter(Boolean);
+  if(!cs.length) return [];
+  return (list||[]).filter(s=>parseClassList(s.class_name).some(c=>cs.includes(c)));
+}
 
 const STATUS = {
   present:{ label:'Đúng giờ', icon:'✅', cls:'badge-present' },
@@ -1431,16 +1442,16 @@ async function loadHome(){
     {data:todaySessionsRaw},
     {data:weekSessionsRaw},
   ] = await Promise.all([
-    db.from('dd_sessions').select('*').eq('status','open').in('class_name',myClasses).order('start_time'),
-    db.from('dd_sessions').select('*').in('class_name',myClasses).eq('session_date',todayStr).order('start_time'),
+    db.from('dd_sessions').select('*').eq('status','open').order('start_time'),
+    db.from('dd_sessions').select('*').eq('session_date',todayStr).order('start_time'),
     db.from('dd_sessions').select('id,title,session_date,start_time,status,class_name')
-      .in('class_name', myClasses)
       .gte('session_date', weekFromEff).lte('session_date', weekTo)
       .order('session_date').order('start_time'),
   ]);
-  const openSessions=_sessionsSinceJoin(openSessionsRaw);
-  const todaySessions=_sessionsSinceJoin(todaySessionsRaw);
-  const weekSessions=_sessionsSinceJoin(weekSessionsRaw);
+  // Lọc theo lớp ở client (class_name có thể chứa nhiều lớp: "12A,12B")
+  const openSessions=_sessionsSinceJoin(_filterSessionsForClasses(openSessionsRaw,myClasses));
+  const todaySessions=_sessionsSinceJoin(_filterSessionsForClasses(todaySessionsRaw,myClasses));
+  const weekSessions=_sessionsSinceJoin(_filterSessionsForClasses(weekSessionsRaw,myClasses));
 
   // Lấy record điểm danh của tôi
   const allIds=[...new Set([...(openSessions||[]).map(s=>s.id),...(todaySessions||[]).map(s=>s.id)])];
@@ -1736,11 +1747,10 @@ async function loadSchedule(){
   const rangeFrom = _studentJoinDate && _studentJoinDate > monStr ? _studentJoinDate : monStr;
   const {data} = await db.from('dd_sessions')
     .select('*')
-    .in('class_name', myClasses)
     .gte('session_date', rangeFrom)
     .lte('session_date', sunStr)
     .order('session_date').order('start_time');
-  _schedSessions = _sessionsSinceJoin(data||[]);
+  _schedSessions = _sessionsSinceJoin(_filterSessionsForClasses(data,myClasses));
 
   // Fetch records điểm danh của tôi trong tuần
   const sessIds = _schedSessions.map(s=>s.id);
@@ -1892,10 +1902,10 @@ async function showAttendanceLog(sessionId, sessionTitle) {
 async function loadHistory(){
   await loadMyClasses();
   if(!myClasses.length){document.getElementById('historyList').innerHTML='<div class="empty"><span>⚠️</span>Chưa được gán lớp</div>';return;}
-  let histQ=db.from('dd_sessions').select('*').in('class_name',myClasses).neq('status','scheduled');
+  let histQ=db.from('dd_sessions').select('*').neq('status','scheduled');
   if(_studentJoinDate) histQ=histQ.gte('session_date', _studentJoinDate);
-  const {data:sessionsRaw}=await histQ.order('session_date',{ascending:false}).order('start_time',{ascending:false}).limit(50);
-  const sessions=_sessionsSinceJoin(sessionsRaw);
+  const {data:sessionsRaw}=await histQ.order('session_date',{ascending:false}).order('start_time',{ascending:false}).limit(200);
+  const sessions=_sessionsSinceJoin(_filterSessionsForClasses(sessionsRaw,myClasses));
   const {data:recs}=await db.from('dd_records').select('*').eq('username',_u);
   const recMap=Object.fromEntries((recs||[]).map(r=>[r.session_id,r]));
   const el=document.getElementById('historyList');
@@ -1946,13 +1956,12 @@ function _getCurrentWeekRange(){
 async function loadAbsenceSessions(){
   await loadMyClasses();
   const { from, to } = _getCurrentWeekRange();
-  const {data:sessions}=await db.from('dd_sessions').select('*')
-    .in('class_name',myClasses)
+  const {data:sessionsRaw}=await db.from('dd_sessions').select('*')
     .in('status',['scheduled','open'])
     .gte('session_date', from)
     .lte('session_date', to)
     .order('session_date').order('start_time');
-  let available=_sessionsSinceJoin(sessions);
+  let available=_sessionsSinceJoin(_filterSessionsForClasses(sessionsRaw,myClasses));
   if(available.length){
     const ids=available.map(s=>s.id);
     const [{data:myRecs},{data:myAbs}]=await Promise.all([
@@ -2031,13 +2040,13 @@ async function submitAbsence(){
 async function loadStats(){
   await loadMyClasses();
   if(!myClasses.length) return;
-  let statsQ=db.from('dd_sessions').select('*').in('class_name',myClasses).neq('status','scheduled');
+  let statsQ=db.from('dd_sessions').select('*').neq('status','scheduled');
   if(_studentJoinDate) statsQ=statsQ.gte('session_date', _studentJoinDate);
   const [{data:sessionsRaw},{data:recs}]=await Promise.all([
     statsQ.order('session_date',{ascending:false}),
     db.from('dd_records').select('*').eq('username',_u),
   ]);
-  const sessions=_sessionsSinceJoin(sessionsRaw);
+  const sessions=_sessionsSinceJoin(_filterSessionsForClasses(sessionsRaw,myClasses));
   const recMap=Object.fromEntries((recs||[]).map(r=>[r.session_id,r]));
 
   // Chỉ tính chuyên cần cho buổi có count_attendance !== false

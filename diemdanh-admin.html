@@ -122,6 +122,25 @@ tr:hover td{background:rgba(255,255,255,.03)}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
 @media(max-width:540px){.form-row{grid-template-columns:1fr}}
 
+/* ── MULTI-SELECT LỚP (tag) ── */
+.ms{position:relative}
+.ms-box{min-height:42px;padding:.35rem .5rem;border:1.5px solid var(--border);border-radius:9px;background:rgba(255,255,255,.07);display:flex;flex-wrap:wrap;gap:.3rem;align-items:center;cursor:pointer;transition:border-color .2s,box-shadow .2s}
+.ms-box:hover{border-color:rgba(59,130,246,.4)}
+.ms-box.open{border-color:rgba(59,130,246,.6);box-shadow:0 0 0 3px rgba(59,130,246,.12)}
+.ms-box .ms-ph{color:var(--text3);font-size:.85rem;padding:.15rem .2rem}
+.ms-tag{display:inline-flex;align-items:center;gap:.3rem;background:rgba(59,130,246,.16);border:1px solid rgba(59,130,246,.32);color:#93c5fd;font-size:.78rem;font-weight:700;padding:.2rem .45rem .2rem .55rem;border-radius:7px;white-space:nowrap}
+.ms-tag button{border:none;background:transparent;color:inherit;cursor:pointer;font-size:.85rem;line-height:1;padding:0 0 0 .1rem;opacity:.7}
+.ms-tag button:hover{opacity:1;color:#fff}
+.ms-dd{position:fixed;z-index:1200;max-height:230px;overflow-y:auto;background:var(--bg2);border:1.5px solid var(--border);border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,.45);display:none;left:0;top:0}
+.ms-dd.show{display:block}
+.ms-dd-hd{padding:.45rem .7rem;font-size:.72rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:.5rem}
+.ms-dd-hd button{background:transparent;border:none;color:#60a5fa;font-size:.72rem;font-weight:700;cursor:pointer;padding:0}
+.ms-opt{display:flex;align-items:center;gap:.5rem;padding:.42rem .7rem;font-size:.85rem;cursor:pointer;color:var(--text2)}
+.ms-opt:hover{background:rgba(59,130,246,.1);color:var(--text)}
+.ms-opt input{accent-color:var(--accent);width:15px;height:15px;flex-shrink:0;cursor:pointer;pointer-events:none}
+.ms-opt.on{color:#93c5fd;font-weight:700}
+.ms-empty{padding:.6rem .7rem;font-size:.8rem;color:var(--text3)}
+
 /* ── MODAL ── */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(8px);z-index:1000;display:none;align-items:center;justify-content:center;padding:1rem}
 .modal-overlay.open{display:flex}
@@ -525,8 +544,17 @@ tr:hover td{background:rgba(255,255,255,.03)}
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">Lớp <span style="color:var(--red)">*</span></label>
-          <select class="form-control" id="sClass"><option value="">-- Chọn lớp --</option></select>
+          <label class="form-label">Lớp <span style="color:var(--red)">*</span> <span style="color:var(--text3);font-weight:400;text-transform:none;font-size:.72rem">(có thể chọn nhiều lớp)</span></label>
+          <div class="ms" id="sClassMS">
+            <div class="ms-box" id="sClassMSBox">
+              <span class="ms-ph" id="sClassMSPh">-- Chọn lớp --</span>
+            </div>
+            <div class="ms-dd">
+              <div class="ms-dd-hd"><span>Chọn một hoặc nhiều lớp</span><button type="button" data-ms-all="sClassMS">Chọn tất cả</button></div>
+              <div id="sClassMSOptions"></div>
+            </div>
+          </div>
+          <input type="hidden" id="sClass" value=""/>
         </div>
         <div class="form-group">
           <label class="form-label">Ngày <span style="color:var(--red)">*</span></label>
@@ -646,8 +674,17 @@ tr:hover td{background:rgba(255,255,255,.03)}
     <div class="modal-body">
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">Lớp <span style="color:var(--red)">*</span></label>
-          <select class="form-control" id="bClass"><option value="">-- Chọn lớp --</option></select>
+          <label class="form-label">Lớp <span style="color:var(--red)">*</span> <span style="color:var(--text3);font-weight:400;text-transform:none;font-size:.72rem">(có thể chọn nhiều lớp)</span></label>
+          <div class="ms" id="bClassMS">
+            <div class="ms-box" id="bClassMSBox">
+              <span class="ms-ph" id="bClassMSPh">-- Chọn lớp --</span>
+            </div>
+            <div class="ms-dd">
+              <div class="ms-dd-hd"><span>Chọn một hoặc nhiều lớp</span><button type="button" data-ms-all="bClassMS">Chọn tất cả</button></div>
+              <div id="bClassMSOptions"></div>
+            </div>
+          </div>
+          <input type="hidden" id="bClass" value=""/>
         </div>
         <div class="form-group">
           <label class="form-label">Tiêu đề chung <span style="color:var(--red)">*</span></label>
@@ -831,7 +868,12 @@ function toast(msg, type='success'){
 }
 
 // ── Modal helpers ───────────────────────────────────────────────
-function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+function closeModal(id){
+  document.getElementById(id).classList.remove('open');
+  // Đóng & trả dropdown multi-select về đúng widget
+  document.querySelectorAll('.ms.open').forEach(m=>{ m.classList.remove('open'); closeMS(m.id); });
+  closeMSDropdowns();
+}
 document.querySelectorAll('.modal-overlay').forEach(m=>{
   m.addEventListener('click', e=>{ if(e.target===m) m.classList.remove('open'); });
 });
@@ -873,7 +915,7 @@ async function loadOpenSessions(){
       return `<option value="${s.id}" data-status="${s.status}">${statusLabel} ${esc(s.title)} — ${esc(s.class_name)}</option>`;
     }).join('');
   if(cur) sel.value = cur;
-  const allClasses=[...new Set((data||[]).map(s=>s.class_name))];
+  const allClasses=[...new Set((data||[]).flatMap(s=>parseClassList(s.class_name)))];
   const cf=document.getElementById('liveClassFilter');
   const cfCur=cf?.value||'';
   if(cf){
@@ -884,16 +926,19 @@ async function loadOpenSessions(){
 
 let _liveCurrentId=null, _liveStudents=[], _liveRecs=[], _liveSession=null;
 
-// ── HELPER: Lấy danh sách học sinh của một lớp, gộp cả student_classes ──
+// ── HELPER: Lấy danh sách học sinh của MỘT hoặc NHIỀU lớp, gộp cả student_classes ──
+// className có thể là "12A" hoặc "12A,12B" (buổi học cho nhiều lớp)
 async function getStudentsForClass(className, sessionDate) {
-  const targetClass = (className||'').trim();
+  const targetClasses = parseClassList(className);
+  if(!targetClasses.length) return [];
   const [allSt, scRows] = await Promise.all([
     fetchAllRows(() => db.from('students').select('id,username,full_name,class_name,active,created_at').order('id')),
     fetchAllRows(() => db.from('student_classes').select('student_id,class_name').order('id')),
   ]);
   attachStudentClasses(allSt, scRows);
   return allSt.filter(st => {
-    if(!st._allClasses.includes(targetClass)) return false;
+    // Học sinh thuộc ít nhất một lớp trong danh sách
+    if(!st._allClasses.some(c => targetClasses.includes(c))) return false;
     if(st.active===false) return false;
     if(sessionDate && st.created_at){
       return _toLocalDate(new Date(st.created_at)) <= sessionDate;
@@ -1019,6 +1064,194 @@ function showTab(name){
   if(name==='report')    { populateClassSelects(); }
 }
 
+// ══ MULTI-SELECT LỚP (dùng cho chọn nhiều lớp) ═════════════════
+// Mỗi widget gồm: .ms > .ms-box (tags) + .ms-dd (dropdown options)
+// Hidden input chứa giá trị: "12A,12B" (phân tách bằng dấu phẩy)
+const _msState = {};   // { id: {sel:Set<string>, opts:string[]} }
+
+function toggleMS(id){
+  const wrap = document.getElementById(id);
+  if(!wrap) return;
+  const willOpen = !wrap.classList.contains('open');
+  // Đóng các widget khác
+  document.querySelectorAll('.ms.open').forEach(m=>{ if(m!==wrap) m.classList.remove('open'); });
+  closeMSDropdowns();
+  wrap.classList.toggle('open', willOpen);
+  if(willOpen){
+    renderMSOptions(id);
+    openMSDropdown(id);
+  } else {
+    closeMS(id);
+  }
+}
+
+// Dropdown được move ra document.body để tránh bị modal (overflow/backdrop-filter) cắt
+function openMSDropdown(id){
+  const wrap = document.getElementById(id);
+  const st = _msGet(id);
+  if(!wrap||!st.dd) return;
+  if(st.dd.parentElement !== document.body) document.body.appendChild(st.dd);
+  st.dd.classList.add('show');
+  positionMSDropdown(id);
+}
+function closeMSDropdowns(){
+  document.querySelectorAll('.ms-dd.show').forEach(d=>d.classList.remove('show'));
+}
+// Trả dropdown về đúng widget khi đóng
+function closeMS(id){
+  const st = _msGet(id);
+  const wrap = document.getElementById(id);
+  if(st.dd && wrap && st.dd.parentElement !== wrap) wrap.appendChild(st.dd);
+  closeMSDropdowns();
+}
+
+// Định vị dropdown (position:fixed) ngay dưới ô tag, canh theo viewport
+function positionMSDropdown(id){
+  const wrap = document.getElementById(id);
+  const box  = document.getElementById(id+'Box');
+  const st   = _msGet(id);
+  const dd   = st.dd;
+  if(!wrap||!box||!dd) return;
+  const r = box.getBoundingClientRect();
+  const vh = window.innerHeight;
+  const ddH = Math.min(230, dd.scrollHeight || 230);
+  // Nếu không đủ chỗ bên dưới → mở lên trên
+  const below = vh - r.bottom;
+  const top  = (below < ddH + 12 && r.top > below) ? Math.max(8, r.top - ddH - 6) : r.bottom + 6;
+  dd.style.top    = top + 'px';
+  dd.style.left   = r.left + 'px';
+  dd.style.width  = r.width + 'px';
+  dd.style.maxHeight = Math.max(120, Math.min(ddH, vh - top - 12)) + 'px';
+}
+// Cập nhật vị trí khi cuộn / resize
+window.addEventListener('scroll', ()=>{
+  document.querySelectorAll('.ms.open').forEach(m=>positionMSDropdown(m.id));
+}, true);
+window.addEventListener('resize', ()=>{
+  document.querySelectorAll('.ms.open').forEach(m=>positionMSDropdown(m.id));
+});
+
+function _msGet(id){
+  if(!_msState[id]){
+    _msState[id]={sel:new Set(), opts:[], dd:null};
+    // Cache dropdown element (nằm trong widget, sẽ được move ra body khi mở)
+    const wrap = document.getElementById(id);
+    if(wrap) _msState[id].dd = wrap.querySelector('.ms-dd');
+  }
+  return _msState[id];
+}
+
+function msSetValue(id, value){
+  const st = _msGet(id);
+  st.sel = new Set(parseClassList(value));
+  const hid = document.getElementById(id.replace('MS',''));
+  if(hid) hid.value = [...st.sel].join(',');
+  renderMSBox(id);
+  renderMSOptions(id);
+}
+
+function msGetValue(id){
+  const st = _msGet(id);
+  return [...st.sel].join(',');
+}
+
+function msSelectAll(id, on){
+  const st = _msGet(id);
+  if(on) st.opts.forEach(o=>st.sel.add(o));
+  else st.sel.clear();
+  const hid = document.getElementById(id.replace('MS',''));
+  if(hid) hid.value = [...st.sel].join(',');
+  renderMSBox(id);
+  renderMSOptions(id);
+  // Cập nhật nhãn nút "Chọn tất cả"
+  const btn = document.querySelector(`[data-ms-all="${id}"]`);
+  if(btn) btn.textContent = (on && st.sel.size===st.opts.length) ? 'Bỏ chọn tất cả' : 'Chọn tất cả';
+}
+
+function msToggleOption(id, cls){
+  const st = _msGet(id);
+  if(st.sel.has(cls)) st.sel.delete(cls); else st.sel.add(cls);
+  const hid = document.getElementById(id.replace('MS',''));
+  if(hid) hid.value = [...st.sel].join(',');
+  renderMSBox(id);
+  renderMSOptions(id);
+}
+
+function renderMSBox(id){
+  const st = _msGet(id);
+  const box = document.getElementById(id+'Box');
+  if(!box) return;
+  if(!st.sel.size){
+    box.innerHTML = `<span class="ms-ph">-- Chọn lớp --</span>`;
+    return;
+  }
+  // Dùng data-name để tránh nhúng trực tiếp tên lớp vào inline handler
+  box.innerHTML = [...st.sel].map(c=>
+    `<span class="ms-tag" data-name="${esc(c)}">${esc(c)}<button type="button" data-ms-remove="${id}" data-name="${esc(c)}">✕</button></span>`
+  ).join('');
+}
+
+function renderMSOptions(id){
+  const st = _msGet(id);
+  const box = document.getElementById(id+'Options');
+  if(!box) return;
+  if(!st.opts.length){
+    box.innerHTML = '<div class="ms-empty">Chưa có lớp nào. Hãy thêm lớp ở trang Quản lý lớp.</div>';
+    return;
+  }
+  box.innerHTML = st.opts.map((c,i)=>`
+    <div class="ms-opt${st.sel.has(c)?' on':''}" data-ms-opt="${id}" data-idx="${i}">
+      <input type="checkbox"${st.sel.has(c)?' checked':''} readonly/>
+      <span>${esc(c)}</span>
+    </div>`).join('');
+}
+
+// ── Event delegation cho multi-select (capture phase, 1 handler duy nhất) ──
+document.addEventListener('click', e=>{
+  // 1) Nút X trên tag
+  const rm = e.target.closest('[data-ms-remove]');
+  if(rm){
+    e.preventDefault(); e.stopPropagation();
+    const id = rm.getAttribute('data-ms-remove');
+    const cls = rm.getAttribute('data-name');
+    if(cls) msToggleOption(id, cls);
+    return;
+  }
+  // 2) Nút "Chọn tất cả"
+  const all = e.target.closest('[data-ms-all]');
+  if(all){
+    e.preventDefault(); e.stopPropagation();
+    const id = all.getAttribute('data-ms-all');
+    const st = _msGet(id);
+    const allSel = st.opts.length && st.sel.size===st.opts.length;
+    msSelectAll(id, !allSel);
+    return;
+  }
+  // 3) Option trong dropdown
+  const opt = e.target.closest('[data-ms-opt]');
+  if(opt){
+    e.preventDefault(); e.stopPropagation();
+    const id = opt.getAttribute('data-ms-opt');
+    const st = _msGet(id);
+    const cls = st.opts[parseInt(opt.getAttribute('data-idx'),10)];
+    if(cls) msToggleOption(id, cls);
+    return;
+  }
+  // 4) Bấm vào ô tag → mở/đóng dropdown
+  const box = e.target.closest('.ms-box');
+  if(box){
+    e.preventDefault(); e.stopPropagation();
+    const wrap = box.closest('.ms');
+    if(wrap) toggleMS(wrap.id);
+    return;
+  }
+  // 5) Click ra ngoài → đóng tất cả dropdown đang mở
+  document.querySelectorAll('.ms.open').forEach(m=>{
+    m.classList.remove('open');
+    closeMS(m.id);
+  });
+}, true);
+
 // ── Populate class selects ───────────────────────────────────────
 let _classes = [];
 async function populateClassSelects(forceRefresh = false){
@@ -1034,15 +1267,24 @@ async function populateClassSelects(forceRefresh = false){
   const fromStudents = (sts||[]).flatMap(s => parseClassList(s.class_name));
   const fromSC = (sc||[]).flatMap(s => parseClassList(s.class_name));
   _classes = [...new Set([...fromClasses, ...fromStudents, ...fromSC])].sort();
-  // Thêm 'bClass' (batch modal) vào danh sách cần populate
-  ['sessFilterClass','sClass','bClass','rptClass'].forEach(id=>{
+
+  // ── Widget multi-select (chọn nhiều lớp) ──
+  ['sClassMS','bClassMS'].forEach(id=>{
+    const st = _msGet(id);
+    st.opts = [..._classes];
+    const hid = document.getElementById(id.replace('MS',''));
+    if(hid && !hid.value) hid.value = [...st.sel].join(',');
+    renderMSBox(id);
+    renderMSOptions(id);
+  });
+
+  // ── Select đơn (bộ lọc) ──
+  ['sessFilterClass','rptClass'].forEach(id=>{
     const el = document.getElementById(id);
     if(!el) return;
     const cur = el.value;
-    const blank = (el.id==='sClass'||el.id==='bClass')
-      ? '<option value="">-- Chọn lớp --</option>'
-      : '<option value="">Tất cả lớp</option>';
-    el.innerHTML = blank + _classes.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+    el.innerHTML = '<option value="">Tất cả lớp</option>'
+      + _classes.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
     el.value = cur;
   });
 }
@@ -1112,9 +1354,9 @@ async function loadDashboard(){
     // Lấy toàn bộ học sinh active + student_classes để không bỏ sót học sinh đa lớp
     const allStudentsWithClasses = await getAllStudentsWithClasses();
     for(const s of (todaySess||[])){
-      const targetClass = (s.class_name||'').trim();
+      const targetClasses = parseClassList(s.class_name);   // hỗ trợ "12A,12B"
       const cnt = allStudentsWithClasses.filter(st => {
-        if(!st._allClasses.includes(targetClass)) return false;
+        if(!st._allClasses.some(c => targetClasses.includes(c))) return false;
         if(st.created_at && s.session_date){
           return _toLocalDate(new Date(st.created_at)) <= s.session_date;
         }
@@ -1194,6 +1436,7 @@ function openBatchCreate(){
   document.getElementById('bStart').value = '';
   document.getElementById('bEnd').value   = '';
   document.getElementById('bPlatform').value = '';
+  msSetValue('bClassMS','');
   document.getElementById('bPreview').style.display='none';
   document.getElementById('batchError').style.display='none';
   document.getElementById('batchSaveText').textContent='💾 Tạo tất cả';
@@ -1234,7 +1477,8 @@ function previewBatch(){
 }
 
 async function saveBatch(){
-  const cls=document.getElementById('bClass').value;
+  const clsList=parseClassList(msGetValue('bClassMS'));
+  const cls=clsList.join(',');   // "12A,12B"
   const title=document.getElementById('bTitle').value.trim();
   const start=document.getElementById('bStart').value;
   const end=document.getElementById('bEnd').value;
@@ -1248,10 +1492,9 @@ async function saveBatch(){
   const btn=document.getElementById('batchSaveText');
   btn.textContent=`⏳ Đang kiểm tra...`;
 
-  // Fetch tất cả buổi hiện có của lớp trong khoảng thời gian để check trùng
+  // Fetch tất cả buổi hiện có trong khoảng thời gian để check trùng (so khớp theo từng lớp)
   const {data:existingSess} = await db.from('dd_sessions')
-    .select('session_date,start_time,end_time')
-    .eq('class_name',cls)
+    .select('session_date,class_name,start_time,end_time')
     .gte('session_date',dates[0])
     .lte('session_date',dates[dates.length-1])
     .neq('status','closed');
@@ -1260,10 +1503,13 @@ async function saveBatch(){
   let created=0, skipped=0, failed=0;
   btn.textContent=`⏳ Đang tạo 0/${dates.length}...`;
   for(const date of dates){
-    // Kiểm tra trùng
-    const dup=(existingSess||[]).find(s=>
-      s.session_date===date && start<s.end_time.slice(0,5) && s.start_time.slice(0,5)<end
-    );
+    // Kiểm tra trùng: cùng ngày + giờ chồng nhau + có chung lớp
+    const dup=(existingSess||[]).find(s=>{
+      if(s.session_date!==date) return false;
+      if(!(start<s.end_time.slice(0,5) && s.start_time.slice(0,5)<end)) return false;
+      const sCls=parseClassList(s.class_name);
+      return clsList.some(c=>sCls.includes(c));
+    });
     if(dup){skipped++;continue;}
 
     const d=new Date(date+'T00:00:00');
@@ -1303,13 +1549,15 @@ async function loadSessions(){
   const fs = document.getElementById('sessFilterStatus').value;
 
   let q = db.from('dd_sessions').select('*').order('session_date',{ascending:false}).order('start_time',{ascending:false});
-  if(fc) q=q.eq('class_name',fc);
   if(fd) q=q.eq('session_date',fd);
   if(fs) q=q.eq('status',fs);
 
   const {data:sessions,error} = await q;
   if(error){tbody.innerHTML=`<tr><td colspan="7" style="color:var(--red);padding:1.5rem;text-align:center">❌ ${error.message}</td></tr>`;return;}
-  _allSessions = sessions||[];
+  // Lọc lớp ở client (class_name có thể chứa nhiều lớp: "12A,12B")
+  _allSessions = fc
+    ? (sessions||[]).filter(s=>parseClassList(s.class_name).includes(fc))
+    : (sessions||[]);
   if(!_allSessions.length){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:2.5rem;color:var(--text3)">📭 Chưa có buổi học nào</td></tr>';return;}
 
   // Lấy số điểm danh
@@ -1331,6 +1579,7 @@ async function loadSessions(){
         <div style="font-weight:700;font-size:.9rem">${esc(s.title)}</div>
         <div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;margin-top:.2rem">
           <span style="font-size:.75rem;background:rgba(59,130,246,.12);color:#60a5fa;padding:.12rem .5rem;border-radius:6px">${esc(s.class_name)}</span>
+          ${parseClassList(s.class_name).length>1?`<span style="font-size:.65rem;background:rgba(139,92,246,.14);color:#c4b5fd;padding:.12rem .45rem;border-radius:6px;font-weight:700" title="Buổi học cho ${parseClassList(s.class_name).length} lớp">📚 ${parseClassList(s.class_name).length} lớp</span>`:''}
           ${statusBadge(s.status)}
           ${_platformBadge(s)}
           ${s.count_attendance===false?`<span style="font-size:.65rem;padding:.1rem .4rem;border-radius:6px;font-weight:700;background:rgba(100,116,139,.15);color:var(--text3)" title="Không tính chuyên cần">📊 Không tính</span>`:''}
@@ -1358,7 +1607,7 @@ function openCreateSession(){
   _editSessionId = null;
   document.getElementById('sessionModalTitle').textContent = 'Tạo buổi học';
   document.getElementById('sTitle').value  = '';
-  document.getElementById('sClass').value  = '';
+  msSetValue('sClassMS','');
   document.getElementById('sDate').value   = today();
   document.getElementById('sStart').value  = '';
   document.getElementById('sEnd').value    = '';
@@ -1400,13 +1649,14 @@ function editSession(id){
   document.getElementById('sAutoClose').checked = !!s.auto_close;
   document.getElementById('sessionModalError').style.display='none';
   document.getElementById('sessionSaveText').textContent='💾 Cập nhật';
-  populateClassSelects().then(()=>{ document.getElementById('sClass').value=s.class_name; });
+  populateClassSelects().then(()=>{ msSetValue('sClassMS', s.class_name); });
   document.getElementById('sessionModal').classList.add('open');
 }
 
 async function saveSession(){
   const title = document.getElementById('sTitle').value.trim();
-  const cls   = document.getElementById('sClass').value;
+  const clsList = parseClassList(msGetValue('sClassMS'));
+  const cls   = clsList.join(',');   // "12A,12B" — một buổi học cho nhiều lớp
   const date  = document.getElementById('sDate').value;
   const start = document.getElementById('sStart').value;
   const end   = document.getElementById('sEnd').value;
@@ -1428,9 +1678,10 @@ async function saveSession(){
   btnText.textContent='⏳ Đang kiểm tra...';
 
   // ── Kiểm tra trùng lịch (cùng lớp, cùng ngày, giờ chồng nhau) ──
+  // Lấy tất cả buổi chưa đóng trong ngày, rồi so khớp theo TỪNG lớp đã chọn
+  // (hỗ trợ class_name dạng "12A,12B" — buổi hiện có có thể chứa nhiều lớp)
   let dupQ = db.from('dd_sessions')
-    .select('id,title,start_time,end_time')
-    .eq('class_name', cls)
+    .select('id,title,class_name,start_time,end_time')
     .eq('session_date', date)
     .neq('status','closed'); // chỉ kiểm tra buổi chưa đóng
   if(_editSessionId) dupQ = dupQ.neq('id', _editSessionId); // bỏ qua chính nó khi sửa
@@ -1439,11 +1690,15 @@ async function saveSession(){
   // Kiểm tra giờ chồng nhau: [start, end] overlap với buổi hiện có
   const overlap = (existing||[]).find(s=>{
     // Hai khoảng [a1,a2] và [b1,b2] chồng nhau nếu a1 < b2 && b1 < a2
-    return start < s.end_time.slice(0,5) && s.start_time.slice(0,5) < end;
+    if(!(start < s.end_time.slice(0,5) && s.start_time.slice(0,5) < end)) return false;
+    // Có chung ít nhất một lớp với buổi đang tạo/sửa
+    const sCls = parseClassList(s.class_name);
+    return clsList.some(c => sCls.includes(c));
   });
 
   if(overlap){
-    errEl.innerHTML=`⚠️ Trùng lịch! Lớp <strong>${esc(cls)}</strong> đã có buổi <strong>"${esc(overlap.title)}"</strong> vào lúc <strong>${overlap.start_time.slice(0,5)}–${overlap.end_time.slice(0,5)}</strong> cùng ngày.`;
+    const dupCls = parseClassList(overlap.class_name).filter(c=>clsList.includes(c));
+    errEl.innerHTML=`⚠️ Trùng lịch! Lớp <strong>${esc(dupCls.join(', '))}</strong> đã có buổi <strong>"${esc(overlap.title)}"</strong> vào lúc <strong>${overlap.start_time.slice(0,5)}–${overlap.end_time.slice(0,5)}</strong> cùng ngày.`;
     errEl.style.display='';
     btnText.textContent='💾 Lưu';
     return;
@@ -1515,13 +1770,17 @@ async function cloneSession(id){
   next.setDate(orig.getDate()+7);
   const nextDate = _toLocalDate(next);
 
-  // Kiểm tra trùng lịch
+  // Kiểm tra trùng lịch — so khớp theo từng lớp (class_name có thể chứa "12A,12B")
+  const srcCls=parseClassList(s.class_name);
   const {data:existing} = await db.from('dd_sessions')
-    .select('id,title')
-    .eq('class_name',s.class_name)
+    .select('id,title,class_name,start_time,end_time')
     .eq('session_date',nextDate)
     .neq('status','closed');
-  const overlap = (existing||[]).find(x=>s.start_time<x.end_time?.slice(0,5)&&x.start_time?.slice(0,5)<s.end_time);
+  const overlap = (existing||[]).find(x=>{
+    if(!(s.start_time<x.end_time?.slice(0,5)&&x.start_time?.slice(0,5)<s.end_time)) return false;
+    const xCls=parseClassList(x.class_name);
+    return srcCls.some(c=>xCls.includes(c));
+  });
   if(overlap){
     toast(`⚠️ Đã có buổi trùng giờ ngày ${fmtDate(nextDate)}: "${overlap.title}"`, 'error');
     return;
@@ -2025,11 +2284,14 @@ async function loadReport(){
   el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text3)">⏳ Đang tải...</div>';
 
   let q = db.from('dd_sessions').select('*').eq('status','closed').order('session_date');
-  if(cls)  q=q.eq('class_name',cls);
   if(from) q=q.gte('session_date',from);
   if(to)   q=q.lte('session_date',to);
 
-  const {data:sessions} = await q;
+  const {data:sessionsRaw} = await q;
+  // Lọc lớp ở client (class_name có thể chứa nhiều lớp: "12A,12B")
+  const sessions = cls
+    ? (sessionsRaw||[]).filter(s=>parseClassList(s.class_name).includes(cls))
+    : (sessionsRaw||[]);
   if(!(sessions||[]).length){el.innerHTML='<div class="empty"><span>📊</span>Không có dữ liệu trong khoảng thời gian này</div>';return;}
 
   // Chỉ tính chuyên cần cho buổi có count_attendance !== false
@@ -2050,10 +2312,11 @@ async function loadReport(){
     : studentsWithClasses;
 
   _reportRows = studentList.map(st=>{
-    // Tính buổi thuộc lớp của học sinh — dùng _allClasses để không bỏ sót
+    // Tính buổi thuộc lớp của học sinh — dùng _allClasses + parseClassList (hỗ trợ "12A,12B")
     const joinDate = st.created_at ? _toLocalDate(new Date(st.created_at)) : '';
     const mySess = countedSessions.filter(s => {
-      if(!st._allClasses.includes((s.class_name||'').trim())) return false;
+      const sCls = parseClassList(s.class_name);
+      if(!st._allClasses.some(c => sCls.includes(c))) return false;
       // Học sinh mới: không tính buổi điểm danh trước ngày tạo tài khoản
       if(joinDate && (s.session_date||'') < joinDate) return false;
       return true;
@@ -2246,23 +2509,25 @@ async function viewStudentReport(username, name){
   const from=document.getElementById('rptFrom').value;
   const to=document.getElementById('rptTo').value;
   let q=db.from('dd_sessions').select('*').eq('status','closed').order('session_date',{ascending:false});
-  if(cls) q=q.eq('class_name',cls);
   if(from) q=q.gte('session_date',from);
   if(to) q=q.lte('session_date',to);
   const [{data:sessionsRaw},{data:stRow}]=await Promise.all([
     q,
     db.from('students').select('created_at').eq('username',username).single(),
   ]);
+  // Lọc lớp ở client (class_name có thể chứa nhiều lớp)
+  const sessions=(sessionsRaw||[])
+    .filter(s=>!cls || parseClassList(s.class_name).includes(cls));
   const joinDate = stRow?.created_at ? _toLocalDate(new Date(stRow.created_at)) : '';
-  const sessions=(sessionsRaw||[]).filter(s=>!joinDate || (s.session_date||'')>=joinDate);
-  const ids=sessions.map(s=>s.id);
+  const filteredSessions=sessions.filter(s=>!joinDate || (s.session_date||'')>=joinDate);
+  const ids=filteredSessions.map(s=>s.id);
   const {data:recs}=ids.length?await db.from('dd_records').select('*').eq('username',username).in('session_id',ids):{data:[]};
   const recMap=Object.fromEntries((recs||[]).map(r=>[r.session_id,r]));
   const body=document.getElementById('studentReportBody');
-  if(!sessions.length){body.innerHTML='<div class="empty"><span>📭</span>Không có dữ liệu</div>';return;}
+  if(!filteredSessions.length){body.innerHTML='<div class="empty"><span>📭</span>Không có dữ liệu</div>';return;}
   body.innerHTML=`<div class="table-wrap"><table>
     <thead><tr><th>Buổi học</th><th>Lớp</th><th>Ngày</th><th>Chuyên cần</th><th>Trạng thái</th><th>Giờ vào</th></tr></thead>
-    <tbody>${sessions.map(s=>{
+    <tbody>${filteredSessions.map(s=>{
       const r=recMap[s.id];
       const sm=r?(STATUS_MAP[r.status]||STATUS_MAP.absent):STATUS_MAP.absent;
       const notCount=s.count_attendance===false;
