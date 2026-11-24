@@ -1,4 +1,4 @@
-const CACHE = 'DHDT-lms-v1.5.9';
+const CACHE = 'DHDT-lms-v1.5.15';
 const BASE = '/duyhoangdaytaon-cantho.1.1';
 const STATIC = [
   `${BASE}/style.css`,

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Bài Tập - DHDT LMS</title>
+  <title>Hệ Thống Thi Thử - DHDT LMS</title>
   <meta http-equiv="X-Frame-Options" content="DENY"/>
   <link rel="icon" type="image/png" href="icons/icon-192.png"/>
   <link rel="stylesheet" href="style.css"/>
@@ -776,7 +776,7 @@
   <header class="topbar">
     <button class="menu-toggle" id="menuToggle">☰</button>
     <div style="font-weight:700;font-size:.95rem;color:var(--text);display:flex;align-items:center;gap:.5rem">
-      <img src="icons/icon-192.png" style="width:24px;height:24px;border-radius:6px"/> DHDT LMS — Bài Tập
+      <img src="icons/icon-192.png" style="width:24px;height:24px;border-radius:6px"/> DHDT LMS — Hệ Thống Thi Thử
     </div>
     <div class="topbar-right">
       <button id="darkBtn" title="Chế độ tối"
@@ -804,10 +804,17 @@
     <!-- Header banner -->
     <div style="background:linear-gradient(135deg,#1e1b4b,#4338ca);border-radius:16px;padding:1.25rem 1.5rem;margin-bottom:1.5rem;color:#fff;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem">
       <div>
-        <h1 style="font-size:1.3rem;font-weight:900;margin:0;letter-spacing:-.3px">📝 Bài Tập</h1>
+        <h1 style="font-size:1.3rem;font-weight:900;margin:0;letter-spacing:-.3px">📝 Hệ Thống Thi Thử</h1>
         <p style="font-size:.8rem;opacity:.7;margin-top:.25rem" id="hwSubtitle">Đang tải...</p>
       </div>
-      <div style="display:flex;gap:.6rem;flex-wrap:wrap" id="hwHeaderActions"></div>
+      <div style="display:flex;gap:.6rem;flex-wrap:wrap;align-items:center">
+        <button type="button" onclick="toggleHwPolicy()" id="hwPolicyBtn"
+          style="display:inline-flex;align-items:center;gap:.4rem;background:rgba(255,255,255,.14);border:1.5px solid rgba(255,255,255,.28);color:#fff;font-weight:700;font-size:.83rem;padding:.5rem .95rem;border-radius:10px;cursor:pointer;transition:all .18s;font-family:inherit"
+          onmouseover="this.style.background='rgba(255,255,255,.24)'" onmouseout="this.style.background='rgba(255,255,255,.14)'">
+          📜 Quy định chung
+        </button>
+        <div style="display:flex;gap:.6rem;flex-wrap:wrap" id="hwHeaderActions"></div>
+      </div>
     </div>
 
     <!-- ADMIN TABS -->
@@ -830,6 +837,57 @@
       <!-- HƯỚNG DẪN HỌC VIÊN — đã chuyển lên topbar (nút 📖) -->
     </div>
 
+    <!-- QUY ĐỊNH CHUNG VỀ HỆ THỐNG THI THỬ DHDT -->
+    <div id="hwPolicyBox" hidden
+      style="background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:1.5rem 1.6rem;margin-bottom:1.5rem;box-shadow:var(--shadow);line-height:1.85;font-size:.9rem;color:var(--text)">
+      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:1rem;flex-wrap:wrap">
+        <span style="font-size:1.3rem">📜</span>
+        <h2 style="margin:0;font-size:1.05rem;font-weight:900;letter-spacing:-.2px">Quy định chung về Hệ Thống Thi Thử DHDT</h2>
+        <button type="button" onclick="toggleHwPolicy()"
+          style="margin-left:auto;background:none;border:1.5px solid var(--border);color:var(--muted);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:.9rem;font-family:inherit;display:flex;align-items:center;justify-content:center"
+          title="Đóng">✕</button>
+      </div>
+
+      <h3 style="font-size:.95rem;font-weight:800;margin:1.1rem 0 .4rem;color:var(--primary)">1. Giới thiệu hệ thống</h3>
+      <p style="margin:0 0 .3rem">Hệ thống thi thử DHDT là nền tảng thi thử chính thức dành riêng cho học viên thuộc các lớp <b>VIP</b> trong hệ sinh thái Duy Hoàng Dạy Toán (DHDT).</p>
+      <p style="margin:0">Hệ thống được xây dựng nhằm hỗ trợ học viên làm quen với cấu trúc đề thi, rèn luyện kỹ năng làm bài và đánh giá năng lực trong quá trình ôn tập.</p>
+
+      <h3 style="font-size:.95rem;font-weight:800;margin:1.1rem 0 .4rem;color:var(--primary)">2. Quyền sở hữu và bản quyền nội dung</h3>
+      <p style="margin:0 0 .3rem">Toàn bộ nội dung đề thi, câu hỏi, dữ liệu và tài liệu được đăng tải trên hệ thống đều do <b>DHDT</b> trực tiếp nghiên cứu, biên soạn và phát triển.</p>
+      <p style="margin:0 0 .3rem">Các nội dung thuộc quyền sở hữu của DHDT được bảo hộ theo quy định về quyền sở hữu trí tuệ.</p>
+      <p style="margin:0">Nghiêm cấp mọi hành vi sao chép, chỉnh sửa, phát tán, chia sẻ hoặc khai thác nội dung hệ thống khi chưa được DHDT cho phép.</p>
+
+      <h3 style="font-size:.95rem;font-weight:800;margin:1.1rem 0 .4rem;color:var(--primary)">3. Quy định về cấu trúc và giao diện đề thi</h3>
+      <p style="margin:0 0 .5rem">Hệ thống được xây dựng với mục tiêu mô phỏng chính xác 100% cấu trúc đề thi, bao gồm:</p>
+      <ul style="margin:0 0 .5rem;padding-left:1.35rem;line-height:1.85">
+        <li>Bố cục và trình tự các phần thi.</li>
+        <li>Dạng thức và cách phân chia câu hỏi.</li>
+        <li>Cấu trúc nội dung và phương thức làm bài.</li>
+        <li>Cách thức tổ chức bài thi trên nền tảng trực tuyến.</li>
+      </ul>
+      <p style="margin:0">Riêng giao diện hiển thị đáp án và một số thành phần trình bày được thiết kế theo hướng mô phỏng, với mức độ hoàn thiện khoảng <b>70%</b>. Đây là lựa chọn thiết kế có chủ đích nhằm tạo trải nghiệm luyện tập phù hợp, đồng thời hạn chế việc tái tạo nguyên trạng các yếu tố giao diện thuộc quyền sở hữu của những đơn vị tổ chức kỳ thi khác.</p>
+
+      <h3 style="font-size:.95rem;font-weight:800;margin:1.1rem 0 .4rem;color:var(--primary)">4. Phạm vi và mục đích sử dụng</h3>
+      <p style="margin:0 0 .3rem">Hệ thống chỉ phục vụ mục đích giáo dục, học tập, ôn luyện và thi thử nội bộ dành cho học viên DHDT.</p>
+      <p style="margin:0">Học viên có trách nhiệm bảo mật tài khoản, không chia sẻ thông tin đăng nhập và không phát tán nội dung đề thi ra bên ngoài khi chưa được sự đồng ý của DHDT.</p>
+
+      <h3 style="font-size:.95rem;font-weight:800;margin:1.1rem 0 .4rem;color:var(--primary)">5. Tuyên bố độc lập và tôn trọng bản quyền</h3>
+      <p style="margin:0 0 .3rem">DHDT là đơn vị phát triển hệ thống thi thử độc lập, không đại diện, không trực thuộc và không có tuyên bố liên kết chính thức với các đơn vị tổ chức kỳ thi được mô phỏng.</p>
+      <p style="margin:0 0 .3rem">Việc tham khảo cấu trúc đề thi nhằm phục vụ mục đích giáo dục, không đồng nghĩa với việc DHDT sở hữu hoặc có quyền sử dụng các tài liệu, giao diện hay nội dung được bảo hộ của bên thứ ba.</p>
+      <p style="margin:0">DHDT cam kết tôn trọng quyền sở hữu trí tuệ và thực hiện các quy định pháp luật liên quan.</p>
+
+      <h3 style="font-size:.95rem;font-weight:800;margin:1.1rem 0 .4rem;color:var(--primary)">6. Thời điểm áp dụng và hiệu lực</h3>
+      <p style="margin:0 0 .3rem">Quy định này chính thức có hiệu lực kể từ thời điểm được đăng tải công khai trên website thi thử DHDT.</p>
+      <p style="margin:0 0 .3rem">Các điều khoản trong văn bản được áp dụng liên tục đối với toàn bộ học viên và người sử dụng hệ thống kể từ thời điểm công bố cho đến khi DHDT có thông báo chính thức về việc sửa đổi, thay thế, bổ sung hoặc chấm dứt hiệu lực của quy định này.</p>
+      <p style="margin:0 0 .3rem">Trong thời gian áp dụng, mọi người sử dụng hệ thống có trách nhiệm đọc, hiểu và tuân thủ các nội dung được quy định.</p>
+      <p style="margin:0">DHDT có quyền cập nhật và điều chỉnh quy định khi cần thiết. Các thay đổi sẽ được thông báo thông qua website hoặc các kênh thông tin chính thức của DHDT.</p>
+
+      <div style="margin-top:1.4rem;padding-top:1.1rem;border-top:1.5px solid var(--border);text-align:center">
+        <div style="font-weight:900;font-size:.95rem;letter-spacing:.3px">DHDT – DUY HOÀNG DẠY TOÁN</div>
+        <div style="font-size:.8rem;color:var(--muted);font-style:italic;margin-top:.35rem;line-height:1.7">Hệ thống thi thử độc lập – Đồng hành cùng học viên trên hành trình chinh phục kỳ thi.</div>
+      </div>
+    </div>
+
     <div id="hwContent">
       <div class="hw-empty"><div class="hw-empty-icon">⏳</div><p>Đang tải...</p></div>
     </div>
@@ -837,7 +895,7 @@
     <!-- Footer bản quyền -->
     <div style="margin-top:2.5rem;padding:1rem 0;border-top:1.5px solid var(--border);text-align:center">
       <div style="font-size:.75rem;color:var(--muted);line-height:1.9">
-        <span style="font-weight:800;color:var(--text)">© DHDT LMS</span> — Hệ thống bài tập trực tuyến<br/>
+        <span style="font-weight:800;color:var(--text)">© DHDT LMS</span> — Hệ Thống Thi Thử trực tuyến<br/>
         <span style="font-size:.72rem">Bản quyền sở hữu trí tuệ thuộc về <b>DHDT LMS</b> · Phát triển &amp; điều hành bởi <b>Tr. Cường</b></span><br/>
         <span style="font-size:.68rem;opacity:.55">Nghiêm cấm sao chép, phân phối dưới mọi hình thức khi chưa được cho phép.</span>
       </div>
@@ -1321,6 +1379,13 @@ let cdWarned60    = false;  // đã hiện cảnh báo 60s chưa
 document.addEventListener('DOMContentLoaded', async () => {
   initSidebar();
   initDarkMode();
+  // Khôi phục trạng thái mở/đóng của mục "Quy định chung" (không tự cuộn trang)
+  try {
+    if (sessionStorage.getItem('hw_policy_open') === '1') {
+      const pb = document.getElementById('hwPolicyBox');
+      if (pb) pb.hidden = false;
+    }
+  } catch (e) {}
   // Toggle hiển thị vùng upload file đề — không cần nữa (dùng exportHW)
   await loadUser();
   if (!currentUser) {
@@ -1329,7 +1394,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       <div style="text-align:center;padding:3rem 1rem">
         <div style="font-size:3rem;margin-bottom:1rem">🔐</div>
         <div style="font-size:1.1rem;font-weight:800;color:var(--text);margin-bottom:.5rem">Chưa đăng nhập</div>
-        <div style="font-size:.9rem;color:var(--muted);margin-bottom:1.5rem">Vui lòng đăng nhập để sử dụng trang Bài Tập.</div>
+        <div style="font-size:.9rem;color:var(--muted);margin-bottom:1.5rem">Vui lòng đăng nhập để sử dụng Hệ Thống Thi Thử.</div>
         <a href="login.html" class="btn-primary" style="display:inline-flex;align-items:center;gap:.5rem;text-decoration:none">
           🏠 Về trang đăng nhập
         </a>
@@ -1516,8 +1581,8 @@ function renderSidebarNav() {
       <a href="admin.html" class="slink" data-label="Tổng quan">
         <span class="slink-icon">📊</span><span class="slink-label">Tổng quan</span>
       </a>
-      <a href="homework.html" class="slink active" data-label="Bài Tập">
-        <span class="slink-icon">📝</span><span class="slink-label">Bài Tập</span>
+      <a href="homework.html" class="slink active" data-label="Hệ Thống Thi Thử">
+        <span class="slink-icon">📝</span><span class="slink-label">Hệ Thống Thi Thử</span>
       </a>
       <a href="admin.html" class="slink" data-label="Học sinh">
         <span class="slink-icon">👨‍🎓</span><span class="slink-label">Học sinh</span>
@@ -1542,7 +1607,7 @@ function renderSidebarNav() {
       </div>`;
   } else {
     // Học sinh
-    const links = [['student.html','🏠','Trang chủ'],['homework.html','📝','Bài Tập'],['library.html','🏛️','Thư viện số'],['groups.html','💬','Nhóm trao đổi'],['student.html#feedback','💡','Góp ý'],['student.html','🔔','Thông báo']];
+    const links = [['student.html','🏠','Trang chủ'],['homework.html','📝','Hệ Thống Thi Thử'],['library.html','🏛️','Thư viện số'],['groups.html','💬','Nhóm trao đổi'],['student.html#feedback','💡','Góp ý'],['student.html','🔔','Thông báo']];
     nav.innerHTML = links.map(([href,icon,label]) =>
       `<a href="${href}" class="slink${href==='homework.html'?' active':''}" data-label="${label}">
         <span class="slink-icon">${icon}</span><span class="slink-label">${label}</span>
@@ -2050,6 +2115,18 @@ function _clearSubmissionBadge() {
   const el = document.getElementById('sideTab_submissions');
   if (el) { const label = el.querySelector('.slink-label'); if (label) label.textContent = 'Bài nộp'; }
 }
+// ═══ MỞ / ĐÓNG MỤC "QUY ĐỊNH CHUNG" ═══
+function toggleHwPolicy(force) {
+  const box = document.getElementById('hwPolicyBox');
+  if (!box) return;
+  const show = (force === undefined) ? box.hidden : !!force;
+  box.hidden = !show;
+  if (show) {
+    box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  try { sessionStorage.setItem('hw_policy_open', show ? '1' : '0'); } catch (e) {}
+}
+
 // Token chống race condition khi chuyển tab học sinh
 let _studentTabToken = 0;
 
@@ -3752,7 +3829,7 @@ function exportScoresCSV() {
 </style>
 </head><body>
 <button class="btn-print no-print" onclick="window.print()">🖨 In / Lưu PDF</button>
-<h1>📊 Bảng điểm Bài Tập</h1>
+<h1>📊 Bảng điểm Hệ Thống Thi Thử</h1>
 <div class="meta">Xuất lúc ${date} &nbsp;·&nbsp; ${students.length} học sinh &nbsp;·&nbsp; ${hwList.length} bài tập</div>
 <div class="wrap">
 <table>
@@ -8966,7 +9043,7 @@ async function exportHW(hwId) {
         <span style="font-size:1.2rem">📖</span>
         <div>
           <div style="font-weight:900;font-size:.95rem">Hướng dẫn sử dụng</div>
-          <div style="font-size:.7rem;opacity:.65">DHDT LMS — Trang Bài Tập</div>
+          <div style="font-size:.7rem;opacity:.65">DHDT LMS — Hệ Thống Thi Thử</div>
         </div>
       </div>
       <button onclick="document.getElementById('modalGuide').classList.remove('open')"

@@ -74,8 +74,8 @@
       <a href="#" class="slink" data-page="guide" data-label="Hướng dẫn">
         <span class="slink-icon">📖</span><span class="slink-label">Hướng dẫn</span>
       </a>
-      <a href="homework.html" class="slink" data-label="Bài Tập">
-        <span class="slink-icon">📝</span><span class="slink-label">Bài Tập</span>
+      <a href="homework.html" class="slink" data-label="Hệ Thống Thi Thử">
+        <span class="slink-icon">📝</span><span class="slink-label">Hệ Thống Thi Thử</span>
       </a>
       <a href="library.html" class="slink" data-label="Thư viện số">
         <span class="slink-icon">🏛️</span><span class="slink-label">Thư viện số</span>
@@ -777,10 +777,10 @@
     </div>
   </div>
 
-  <script src="student.js?v=1.5.9"></script>
+  <script src="student.js?v=1.5.13"></script>
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=1.5.9').catch(() => {});
+      navigator.serviceWorker.register('./sw.js?v=1.5.13').catch(() => {});
       navigator.serviceWorker.addEventListener('message', e => {
         if (e.data?.type === 'SW_UPDATED') window.location.reload();
       });
